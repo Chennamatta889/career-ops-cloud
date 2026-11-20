@@ -1,0 +1,101 @@
+name: Career-Ops isolated cloud test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/career-ops-cloud-test.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: career-ops-sandbox
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      CAREER_OPS_ROOT: ${{ runner.temp }}/career-ops-data
+    steps:
+      - name: Checkout pinned upstream Career-Ops (unmodified)
+        uses: actions/checkout@v4
+        with:
+          repository: career-ops-hq/career-ops
+          ref: 87996a80abac26e39862117a79496952c83b5741
+          path: upstream
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install upstream dependencies
+        working-directory: upstream
+        run: |
+          if [ -f package-lock.json ]; then npm ci --ignore-scripts --no-audit --no-fund; else npm install --ignore-scripts --no-audit --no-fund; fi
+      - name: Configure isolated discovery test
+        working-directory: upstream
+        shell: bash
+        run: |
+          mkdir -p "$CAREER_OPS_ROOT"/{config,data,reports,output,jds,batch/tracker-additions}
+          cat > "$CAREER_OPS_ROOT/config/profile.yml" <<'EOF'
+          candidate:
+            years_of_experience: 3
+          target_roles:
+            primary: [DevOps Engineer, Cloud Engineer, Site Reliability Engineer, Platform Engineer]
+          location:
+            country: India
+            city: Hyderabad
+            timezone: Asia/Kolkata
+          spend_tier: economy
+          EOF
+          cat > "$CAREER_OPS_ROOT/portals.yml" <<'EOF'
+          title_filter:
+            positive: [DevOps, Cloud Engineer, Site Reliability, SRE, Platform Engineer, Infrastructure Engineer, Build Engineer, Release Engineer]
+            negative: ["word:Intern", Internship, "word:Director", "word:Principal", "word:Staff", "word:Senior", "word:Manager"]
+          location_filter:
+            strict: true
+            allow: [India, Hyderabad, Bengaluru, Bangalore, Pune, Mumbai, Chennai, Gurugram, Gurgaon, Noida, Delhi, Remote India]
+          experience_filter:
+            enabled: true
+            stretch_years: 1
+            action: label
+          tracked_companies:
+            - name: Glean
+              careers_url: https://job-boards.greenhouse.io/gleanwork
+              api: https://boards-api.greenhouse.io/v1/boards/gleanwork/jobs
+              enabled: true
+            - name: RZR
+              careers_url: https://job-boards.greenhouse.io/rzr
+              api: https://boards-api.greenhouse.io/v1/boards/rzr/jobs
+              enabled: true
+            - name: Temporal
+              careers_url: https://jobs.ashbyhq.com/temporal
+              enabled: true
+          job_boards: []
+          EOF
+      - name: Run native scanner (read-only, no application submission)
+        working-directory: upstream
+        shell: bash
+        run: |
+          set -o pipefail
+          node scan.mjs --dry-run --json --quiet | tee "$RUNNER_TEMP/career-ops-scan.json"
+      - name: Summarize native scanner result
+        if: always()
+        shell: bash
+        run: |
+          if [ -s "$RUNNER_TEMP/career-ops-scan.json" ]; then
+            node -e 'const fs=require("node:fs"); const x=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); if(x.dry_run!==true)throw new Error("Expected dry run"); console.log(JSON.stringify(x,null,2)); fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,"## Career-Ops scan receipt\n\n"+JSON.stringify(x,null,2)+"\n");' "$RUNNER_TEMP/career-ops-scan.json"
+          else
+            echo 'No scan receipt generated. Inspect preceding logs.' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+      - name: Upload public discovery receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: career-ops-scan-receipt
+          path: ${{ runner.temp }}/career-ops-scan.json
+          if-no-files-found: warn
+          retention-days: 7
