@@ -17,9 +17,9 @@ jobs:
   discover:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
-    env:
-      CAREER_OPS_ROOT: ${{ runner.temp }}/career-ops-data
     steps:
+      - name: Initialize temporary data directory
+        run: echo "CAREER_OPS_ROOT=$RUNNER_TEMP/career-ops-data" >> "$GITHUB_ENV"
       - name: Checkout pinned upstream Career-Ops (unmodified)
         uses: actions/checkout@v4
         with:
