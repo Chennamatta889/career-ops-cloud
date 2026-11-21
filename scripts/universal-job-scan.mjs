@@ -40,8 +40,17 @@ function workableLocation(job){
   return clean([remote?"Remote":null,job.city,job.state,countryName]
     .filter(x=>typeof x==="string"&&x.trim()).join(", "),160)||"Not specified";
 }
+function recruiteeLocation(job){
+  const locations=Array.isArray(job.locations)?job.locations:[];
+  const names=locations.map(l=>typeof l==="string"?l:
+    [l?.city,l?.region,l?.country].filter(Boolean).join(", ")).filter(Boolean);
+  if(names.length)return clean(names.join(" / "),160);
+  const place=typeof job.location==="string"?job.location:
+    [job.city,job.country].filter(Boolean).join(", ");
+  return clean(place,160)||"Not specified";
+}
 function assertSource(source){
-  if(!source || !["greenhouse","ashby","lever","smartrecruiters","workable"].includes(source.provider) ||
+  if(!source || !["greenhouse","ashby","lever","smartrecruiters","workable","recruitee"].includes(source.provider) ||
     !/^[a-zA-Z0-9_-]{2,90}$/.test(source.slug) || !clean(source.name,120))
     throw Error("Invalid public employer board");
 }
@@ -49,20 +58,22 @@ function normalize(source,job){
   if(!job || source.provider==="ashby"&&job.isListed===false ||
     source.provider==="smartrecruiters"&&job.active===false)return null;
   const workable=source.provider==="workable";
-  const rawId=String((workable?job.shortcode:job.id)||"");
+  const recruitee=source.provider==="recruitee";
+  const rawId=String((workable?job.shortcode:recruitee?job.slug:job.id)||"");
   if(source.provider==="greenhouse"?!/^\d{3,18}$/.test(rawId):
       workable?!/^[A-Za-z0-9]{6,24}$/.test(rawId):
       !/^[A-Za-z0-9_-]{3,110}$/.test(rawId))return null;
   const gh=source.provider==="greenhouse";
   const lever=source.provider==="lever";
   const smart=source.provider==="smartrecruiters";
-  const title=clean(plainText(smart?job.name:lever?job.text:job.title,160),160);
+  const title=clean(plainText(smart?job.name:lever?job.text:job.title||job.position,160),160);
   if(!title)return null;
   const department=clean(plainText(workable?(job.department||job.function||""):smart?(job.department?.label||job.function?.label||""):gh?
     (Array.isArray(job.departments)?job.departments.map(x=>x?.name).filter(Boolean).join(" / "):""):
     lever?(job.categories?.department||job.categories?.team||""):
+    recruitee?(typeof job.department==="string"?job.department:job.department?.name||""):
     (job.department||job.team||job.jobDepartment||""),130),130);
-  const location=clean(plainText(workable?workableLocation(job):smart?smartRecruitersLocation(job.location):gh?job.location?.name:
+  const location=clean(plainText(recruitee?recruiteeLocation(job):workable?workableLocation(job):smart?smartRecruitersLocation(job.location):gh?job.location?.name:
     lever?(job.categories?.location||job.categories?.allLocations?.join(" / ")||job.workplaceType||""):
     (job.location||job.locationName||job.workplaceType),160),160)||"Not specified";
   // SmartRecruiters list results generally omit the full job ad. Never
@@ -72,13 +83,16 @@ function normalize(source,job){
     job.jobAd?.sections?.qualifications?.text
   ].filter(Boolean).join(" "):gh?job.content:
     lever?(job.descriptionPlain||job.description||job.openingPlain||""):
+    recruitee?(job.description||job.requirements||""):
     (job.descriptionPlain||job.descriptionHtml||"");
   const desc=plainText(rawDescription,2500);
   const requirement=experienceRequirement(plainText(rawDescription,16000));
   // Lever's createdAt is a creation timestamp, NOT a published-on date.
-  const published=date(workable?job.published_on:smart?job.releasedDate:gh?job.first_published||job.updated_at:
+  const published=date(recruitee?job.published_at:workable?job.published_on:
+    smart?job.releasedDate:gh?job.first_published||job.updated_at:
     job.publishedAt||job.updatedAt);
-  const publicUrl=workable?"https://apply.workable.com/"+source.slug+"/j/"+rawId+"/":smart?"https://jobs.smartrecruiters.com/"+source.slug+"/"+rawId:gh?
+  const publicUrl=recruitee?"https://"+source.slug+".recruitee.com/o/"+rawId:
+    workable?"https://apply.workable.com/"+source.slug+"/j/"+rawId+"/":smart?"https://jobs.smartrecruiters.com/"+source.slug+"/"+rawId:gh?
     "https://job-boards.greenhouse.io/"+source.slug+"/jobs/"+rawId:
     lever?"https://jobs.lever.co/"+source.slug+"/"+rawId:
     "https://jobs.ashbyhq.com/"+source.slug+"/"+rawId;
@@ -88,7 +102,9 @@ function normalize(source,job){
     category:classify(title,department),description:desc,
     url:publicUrl,skills:[],requiredExperience:requirement?.label||"",
     posted_at:published,addedAt:published,
-    source:workable?"Workable public board":smart?"SmartRecruiters public board":gh?"Greenhouse public board":lever?"Lever public board":"Ashby public board"
+    source:recruitee?"Recruitee public board":workable?"Workable public board":
+      smart?"SmartRecruiters public board":gh?"Greenhouse public board":
+      lever?"Lever public board":"Ashby public board"
   };
 }
 async function limitedJson(url,fetchImpl){
@@ -118,11 +134,20 @@ export async function scanBoard(source,fetchImpl=fetch){
   if(source.provider==="workable"){
     // Documented anonymous endpoint for published employer jobs. A company
     // may disable public access; record the error instead of inventing jobs.
-    const url="https://www.workable.com/api/accounts/"+source.slug+"?details=true";
+    const url="https://apply.workable.com/api/v1/widget/accounts/"+source.slug+"?details=true";
     const data=await limitedJson(url,fetchImpl);
     if(!data||!Array.isArray(data.jobs)||data.jobs.length>10000)
       throw Error("Workable public employer response is invalid");
     return data.jobs.map(job=>normalize(source,job)).filter(Boolean);
+  }
+  if(source.provider==="recruitee"){
+    // Employer-enabled anonymous careers-site offers; links stay on this
+    // employer's Recruitee board. No applicant API, token or auto-apply.
+    const url="https://"+source.slug+".recruitee.com/api/offers/";
+    const data=await limitedJson(url,fetchImpl);
+    if(!data||!Array.isArray(data.offers)||data.offers.length>10000)
+      throw Error("Recruitee public offers response is invalid");
+    return data.offers.map(job=>normalize(source,job)).filter(Boolean);
   }
   if(source.provider==="smartrecruiters"){
     // Public list endpoint returns active company postings and a totalFound
