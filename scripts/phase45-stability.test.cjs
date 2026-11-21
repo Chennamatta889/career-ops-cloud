@@ -31,6 +31,7 @@ function dashboardHarness({initialLocal={},feedPromise}={}){
       };
       if(id==="matchFilter")obj.value="all";
       if(id==="sortFilter")obj.value="variety";
+      if(id==="locationFilter")obj.value="india";
       els.set(id,obj);
     }return els.get(id);
   };
@@ -40,7 +41,7 @@ function dashboardHarness({initialLocal={},feedPromise}={}){
     createElement:()=>({click(){},remove(){},setAttribute(){}}),
     body:{appendChild(){},classList:{add(){},remove(){},toggle(){},contains(){return false}}}
   };
-  const win={CareerOpsJobText:require("../job-text.js"),CareerOpsApplicationEmail:require("../application-email.js"),CareerOpsJobSearch:require("../job-search.js"),CareerOpsCategories:{
+  const win={CareerOpsJobText:require("../job-text.js"),CareerOpsApplicationEmail:require("../application-email.js"),CareerOpsJobSearch:require("../job-search.js"),CareerOpsIndiaJobs:require("../india-jobs.js"),CareerOpsCategories:{
     categories:["IT & Software","Sales & Business","Other"],
     classify:(title)=>/software|developer|devops/i.test(title)?"IT & Software":/sales/i.test(title)?"Sales & Business":"Other"
   },CareerOpsMatch:{
@@ -57,8 +58,8 @@ function dashboardHarness({initialLocal={},feedPromise}={}){
   scrollTo(){}
   };
   class CustomEvent{constructor(type,options){this.type=type;this.detail=options?.detail;}}
-  const emptyFeed={schema:"careerops.public-jobs.v1",jobs:[],generated_at:"2026-11-21T05:00:00Z",
-    scan:{status:"success",scanned:32,found:0,error_count:0}};
+  const emptyFeed={schema:"careerops.public-jobs.v1",market:"IN",jobs:[],generated_at:"2026-11-21T05:00:00Z",
+    scan:{india_only:true,status:"success",scanned:32,found:0,error_count:0}};
   const ctx={
     window:win,document:doc,localStorage:store,sessionStorage:session,
     fetch:()=>feedPromise||Promise.resolve({ok:true,json:async()=>emptyFeed}),
@@ -148,8 +149,8 @@ test("old in-flight public feed may not replace a newly signed-in user's stored 
     job_url:"https://example.com/my-job",stage:"Interview"
   }]);
   h.auth(USER_B);
-  finish({ok:true,json:async()=>({schema:"careerops.public-jobs.v1",
-    scan:{status:"success",scanned:32,found:1,error_count:0},
+  finish({ok:true,json:async()=>({schema:"careerops.public-jobs.v1",market:"IN",
+    scan:{india_only:true,status:"success",scanned:32,found:1,error_count:0},
     generated_at:"2026-11-21T05:00:00Z",jobs:[
       {title:"Other job",company:"Possible company",url:"https://example.com/jobs/other"}
     ]})});
@@ -227,8 +228,8 @@ test("Phase 6 preserves tracked jobs and all searchable roles when a public feed
     url:"https://job-boards.greenhouse.io/example/jobs/"+(100000+i),
     posted_at:"2026-11-20"
   }));
-  const feed={schema:"careerops.public-jobs.v1",jobs,generated_at:"2026-11-21T05:00:00Z",
-    scan:{status:"success",scanned:57,found:725,error_count:0}};
+  const feed={schema:"careerops.public-jobs.v1",market:"IN",jobs,generated_at:"2026-11-21T05:00:00Z",
+    scan:{india_only:true,status:"success",scanned:57,found:725,error_count:0}};
   const h=dashboardHarness({feedPromise:Promise.resolve({ok:true,json:async()=>feed})});
   h.auth(USER_A);
   h.window.CareerOpsDashboard.mergeRemoteTracking([{
@@ -248,11 +249,11 @@ test("Phase 6 preserves tracked jobs and all searchable roles when a public feed
   assert.equal(h.el("loadMoreJobs").hidden,true);
 });
 test("Phase 5 warns when a successful-looking feed is stale and does not invent posting dates",async()=>{
-  const feed={schema:"careerops.public-jobs.v1",jobs:[{
-    title:"No date role",company:"Example Inc",location:"Remote",
+  const feed={schema:"careerops.public-jobs.v1",market:"IN",jobs:[{
+    title:"No date role",company:"Example Inc",location:"Remote - India",
     url:"https://jobs.ashbyhq.com/example/something"
   }],generated_at:"2020-01-01T00:00:00Z",
-  scan:{status:"success",scanned:1,found:1,error_count:0}};
+  scan:{india_only:true,status:"success",scanned:1,found:1,error_count:0}};
   const h=dashboardHarness({feedPromise:Promise.resolve({ok:true,json:async()=>feed})});
   await tick();await tick();
   assert.equal(h.el("feedFreshness").hidden,false);
@@ -308,8 +309,8 @@ test("Phase 6 shows useful messages when a feed is still loading or unavailable"
 });
 
 test("Experience filter shows matching job cards and explicit unknowns without guessing",async()=>{
-  const feed={schema:"careerops.public-jobs.v1",generated_at:"2026-11-21T10:00:00Z",
-    scan:{status:"success",scanned:3,found:3,error_count:0},
+  const feed={schema:"careerops.public-jobs.v1",market:"IN",generated_at:"2026-11-21T10:00:00Z",
+    scan:{india_only:true,status:"success",scanned:3,found:3,error_count:0},
     jobs:[
       {title:"Cloud Engineer",company:"Cloud Co",location:"India",
         url:"https://example.com/cloud",requiredExperience:"3–5 years",
@@ -317,7 +318,7 @@ test("Experience filter shows matching job cards and explicit unknowns without g
       {title:"Support Associate",company:"Support Co",location:"India",
         url:"https://example.com/support",requiredExperience:"1–2 years",
         description:"1–2 years of customer service experience"},
-      {title:"Marketing Specialist",company:"Marketing Co",location:"Remote",
+      {title:"Marketing Specialist",company:"Marketing Co",location:"Remote - India",
         url:"https://example.com/marketing",description:"Senior creative thinker with excellent writing"}
     ]};
   const h=dashboardHarness({feedPromise:Promise.resolve({ok:true,json:async()=>feed})});
@@ -348,8 +349,8 @@ test("Experience control exists in Discover and the details dialog",()=>{
 
 test("clicking an employer listing records Opened but never silently records Applied",async()=>{
   const h=dashboardHarness({feedPromise:Promise.resolve({ok:true,json:async()=>({
-    schema:"careerops.public-jobs.v1",generated_at:"2026-11-21T10:00:00Z",
-    scan:{status:"success",scanned:1,found:1,error_count:0},
+    schema:"careerops.public-jobs.v1",market:"IN",generated_at:"2026-11-21T10:00:00Z",
+    scan:{india_only:true,status:"success",scanned:1,found:1,error_count:0},
     jobs:[{id:"sample-123",title:"Platform Engineer",company:"Example Ltd",location:"India",
       url:"https://job-boards.greenhouse.io/example/jobs/123123"}]
   })})});
@@ -469,7 +470,7 @@ test("Phase 08 repeat company/role confirmation warns before recording another a
     {job_key:"https://example.com/other123",job_url:"https://example.com/other123",
       title:"Cloud Engineer",company:"ACME",location:"India",stage:"Applied",applied_on:"2026-11-20"},
     {job_key:"https://example.com/new123",job_url:"https://example.com/new123",
-      title:"Cloud Engineer",company:"Acme",location:"Remote",stage:"Opened"}
+      title:"Cloud Engineer",company:"Acme",location:"Remote - India",stage:"Opened"}
   ]);
   const record=JSON.parse(h.session.getItem("career-ops-session-account-v1-"+USER_A)).jobs.find(x=>x.stage==="Opened");
   h.changeStage(record.id,"Applied");
@@ -480,8 +481,8 @@ test("Phase 08 repeat company/role confirmation warns before recording another a
 });
 test("Phase 10 missing tracked jobs are flagged only when employer board was rechecked",async()=>{
   for(const [status,message] of [["ok","Not in the latest employer feed"],["error","Employer board unavailable"]]){
-    const feed={schema:"careerops.public-jobs.v1",generated_at:"2026-11-21T10:00:00Z",
-      scan:{status:status==="error"?"partial":"success",scanned:2,found:1,error_count:status==="error"?1:0},
+    const feed={schema:"careerops.public-jobs.v1",market:"IN",generated_at:"2026-11-21T10:00:00Z",
+      scan:{india_only:true,status:status==="error"?"partial":"success",scanned:2,found:1,error_count:status==="error"?1:0},
       source_health:[{provider:"greenhouse",board:"sampleboard",status}],
       jobs:[{title:"Operations Executive",company:"Different Employer",location:"India",
         url:"https://job-boards.greenhouse.io/different/jobs/123456",posted_at:"2026-11-21"}]};
@@ -509,8 +510,8 @@ test("Phase 08 email and listing warnings have stable HTML targets, no Gmail per
 });
 
 test("ServiceNow keyword returns ServiceNow job, not Salesforce title mentioning ServiceNow",async()=>{
-  const feed={schema:"careerops.public-jobs.v1",generated_at:"2026-11-21T10:00:00Z",
-    scan:{status:"success",scanned:3,found:3,error_count:0},
+  const feed={schema:"careerops.public-jobs.v1",market:"IN",generated_at:"2026-11-21T10:00:00Z",
+    scan:{india_only:true,status:"success",scanned:3,found:3,error_count:0},
     jobs:[
       {title:"Salesforce Administrator",company:"CRM Company",location:"India",
         url:"https://example.com/sf",description:"Support CRM integrations with ServiceNow."},
@@ -546,7 +547,7 @@ test("Salesforce keyword excludes unrelated ServiceNow roles and strict search p
   const h=dashboardHarness();h.auth(USER_A);
   h.window.CareerOpsDashboard.mergeRemoteTracking([
     {job_key:"https://example.com/sf",job_url:"https://example.com/sf",
-      title:"Salesforce Engineer",company:"CRM",stage:"Saved",location:"Remote"},
+      title:"Salesforce Engineer",company:"CRM",stage:"Saved",location:"Remote - India"},
     {job_key:"https://example.com/sn",job_url:"https://example.com/sn",
       title:"ServiceNow Developer",company:"ITSM",stage:"Saved",location:"India"}
   ]);
