@@ -180,3 +180,65 @@ test("IT and non-IT discovery filters keep unrelated categories discoverable",as
   assert.match(h.el("jobsGrid").innerHTML,/Software Developer/);
   assert.match(h.el("jobsGrid").innerHTML,/Sales Executive/);
 });
+
+test("Phase 5 paginates job cards while preserving all searchable results and resets sorting",async()=>{
+  const h=dashboardHarness();
+  h.auth(USER_A);
+  h.window.CareerOpsDashboard.mergeRemoteTracking(Array.from({length:45},(_,i)=>({
+    job_key:"https://example.com/role-"+i,
+    title:"Cloud DevOps AWS Engineer "+i,company:"Employer "+i,location:"India",
+    job_url:"https://example.com/role-"+i,stage:"Saved"
+  })));
+  const countCards=()=>[...h.el("jobsGrid").innerHTML.matchAll(/class="job-card"/g)].length;
+  assert.equal(countCards(),30,"initial DOM only renders the first thirty cards");
+  assert.equal(h.el("loadMoreJobs").hidden,false);
+  assert.match(h.el("resultsCount").textContent,/showing 30/);
+  h.el("loadMoreJobs").listeners.get("click")();
+  assert.equal(countCards(),45,"load more preserves all matching jobs");
+  assert.equal(h.el("loadMoreJobs").hidden,true);
+  h.el("sortFilter").value="company";
+  h.el("sortFilter").listeners.get("change")();
+  assert.equal(countCards(),30,"filter and sort changes reset pagination");
+  h.el("jobSearch").value="  DEVops,  awS  ";
+  h.el("jobSearch").listeners.get("input")();
+  assert.match(h.el("jobsGrid").innerHTML,/Cloud DevOps AWS Engineer/,"punctuation and whitespace match independent terms");
+  assert.equal(h.el("resetDiscoverFilters").hidden,false);
+  h.el("resetDiscoverFilters").listeners.get("click")();
+  assert.equal(h.el("jobSearch").value,"");
+  assert.equal(h.el("sortFilter").value,"newest");
+  assert.equal(h.el("resetDiscoverFilters").hidden,true);
+});
+test("Phase 5 preserves saved and manually tracked jobs when a 500-job public feed arrives",async()=>{
+  const jobs=Array.from({length:500},(_,i)=>({
+    title:"Public Role "+i,company:"Public Employer",location:"India",
+    url:"https://job-boards.greenhouse.io/example/jobs/"+(100000+i),
+    posted_at:"2026-11-20"
+  }));
+  const feed={schema:"careerops.public-jobs.v1",jobs,generated_at:"2026-11-21T05:00:00Z",
+    scan:{status:"success",scanned:57,found:500,error_count:0}};
+  const h=dashboardHarness({feedPromise:Promise.resolve({ok:true,json:async()=>feed})});
+  h.auth(USER_A);
+  h.window.CareerOpsDashboard.mergeRemoteTracking([{
+    job_key:"https://example.com/personal-saved",
+    title:"My tracked application",company:"My employer",location:"India",
+    job_url:"https://example.com/personal-saved",stage:"Interview"
+  }]);
+  await tick();await tick();
+  assert.equal(h.window.CareerOpsDashboard.getTrackedJobs().length,1);
+  assert.equal(h.window.CareerOpsDashboard.getTrackedJobs()[0].company,"My employer");
+  assert.equal(h.el("loadMoreJobs").hidden,false);
+  assert.match(h.el("resultsCount").textContent,/500 job listings/);
+});
+test("Phase 5 warns when a successful-looking feed is stale and does not invent posting dates",async()=>{
+  const feed={schema:"careerops.public-jobs.v1",jobs:[{
+    title:"No date role",company:"Example Inc",location:"Remote",
+    url:"https://jobs.ashbyhq.com/example/something"
+  }],generated_at:"2020-01-01T00:00:00Z",
+  scan:{status:"success",scanned:1,found:1,error_count:0}};
+  const h=dashboardHarness({feedPromise:Promise.resolve({ok:true,json:async()=>feed})});
+  await tick();await tick();
+  assert.equal(h.el("feedFreshness").hidden,false);
+  assert.match(h.el("feedFreshness").textContent,/over 48 hours old/);
+  assert.match(h.el("jobsGrid").innerHTML,/Source date: date not provided/);
+  assert.equal(h.el("headerFeedStatus").dataset.state,"partial");
+});
