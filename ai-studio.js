@@ -12,6 +12,7 @@
   let session = null;
   let activeResult = null;
   let reviewReady = false;
+  let jobFetchVersion=0;
   let authCallbackError = "";
   let googleProviderEnabled = null; // true/false/null: verified/disabled/unknown
   let googleRedirectStarted = false;
@@ -90,7 +91,7 @@
       reviewReady = result.ok===true && result.ready===true;
       const missing = Array.isArray(result.missing) ? result.missing.join(", ") : "";
       const modelName=text(result.model,75);
-      status(reviewReady ? "AI endpoint ready" + (modelName ? " · model: "+modelName : "") + ". Verified users: up to "+(Number(result.daily_user_limit)||2)+" reviews per UTC day; shared limit "+(Number(result.daily_global_limit)||20)+". Complete your resume and job description to generate drafts."
+      status(reviewReady ? "AI configuration ready" + (modelName ? " · configured model: "+modelName : "") + ". A successful Gemini review is not yet confirmed for this session. Verified users: up to "+(Number(result.daily_user_limit)||2)+" attempts per UTC day; shared limit "+(Number(result.daily_global_limit)||20)+". Complete the inputs to test a review."
         : "AI backend is connected but not enabled. Missing private settings: " + (missing || "unknown") +
           ". Configure these in Career-Ops Supabase → Edge Functions → Secrets.");
       return reviewReady;
@@ -335,6 +336,7 @@
   });
   byId("aiSignOut").addEventListener("click",async()=>{
     try{const jwt=await getAccessToken();if(jwt)await api("/auth/v1/logout",{method:"POST",headers:headers(jwt)});}catch(_){}
+    jobFetchVersion++;
     window.dispatchEvent(new CustomEvent("careerops:signed-out"));
     saveSession(null);activeResult=null;byId("aiResume").value="";byId("aiJd").value="";byId("aiConsent").checked=false;byId("aiResult").replaceChildren();byId("aiResult").hidden=true;byId("aiDownload").hidden=true;byId("aiPrint").hidden=true;
     await refreshAuth();
@@ -398,6 +400,8 @@
 
   byId("aiFetchJob").addEventListener("click",async function(){
     const link=byId("aiJobUrl").value.trim();
+    const initialDescription=byId("aiJd").value;
+    const requestId=++jobFetchVersion;
     const feedback=byId("aiJobFetchStatus");
     if(!link){feedback.textContent="Paste an official Greenhouse, Ashby or Lever posting link.";return;}
     const jwt=await getAccessToken();
@@ -410,6 +414,16 @@
         body:JSON.stringify({action:"fetch_job",url:link})
       });
       const job=response.job;
+      // If the candidate changed jobs or began editing the description
+      // while the network call ran, never overwrite the newer input.
+      if(requestId!==jobFetchVersion || byId("aiJobUrl").value.trim()!==link){
+        feedback.textContent="Job link changed during retrieval. Earlier result was discarded.";
+        return;
+      }
+      if(byId("aiJd").value!==initialDescription){
+        feedback.textContent="You edited the description while the employer lookup was running. Your edits were preserved; tap Fetch again if needed.";
+        return;
+      }
       if(!job || typeof job.description!=="string" || job.description.length<120) {
         throw new Error("The employer API did not provide enough job-description text.");
       }
@@ -473,6 +487,7 @@
     byId("aiCompany").value=text(j.company,130);
     byId("aiJobUrl").value=text(j.url,1000);
     byId("aiJd").value=text(j.description,15000);
+    jobFetchVersion++;
     byId("aiResult").hidden=true;byId("aiDownload").hidden=true;byId("aiPrint").hidden=true;activeResult=null;
     prerequisites();
     status("Job selected. Preparing available public job details. Verify your resume and the full description before requesting AI Review.");
@@ -480,8 +495,7 @@
     // A job-card click is an explicit request to prepare that job. Fetch only
     // its public ATS description, never login-protected pages or Gemini.
     const link=byId("aiJobUrl").value.trim();
-    if(byId("aiJd").value.trim().length<200 &&
-       /^https:\/\/(?:jobs\.ashbyhq\.com|boards\.greenhouse\.io|job-boards\.greenhouse\.io|boards\.eu\.greenhouse\.io|job-boards\.eu\.greenhouse\.io|jobs\.lever\.co|jobs\.eu\.lever\.co)\//i.test(link)){
+    if(/^https:\/\/(?:jobs\.ashbyhq\.com|boards\.greenhouse\.io|job-boards\.greenhouse\.io|boards\.eu\.greenhouse\.io|job-boards\.eu\.greenhouse\.io|jobs\.lever\.co|jobs\.eu\.lever\.co)\//i.test(link)){
       getAccessToken().then(jwt=>{
         if(jwt)byId("aiFetchJob").click();
         else byId("aiJobFetchStatus").textContent="Sign in with Google to load public employer job details.";
