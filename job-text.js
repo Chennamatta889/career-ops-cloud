@@ -64,7 +64,7 @@
     if(!text)return null;
     const lines=text.split(/\n/);
     for(const line of lines){
-      if(/\b(?:no (?:prior |previous |professional |relevant |work )?experience (?:is )?(?:required|necessary|needed)|freshers? (?:are )?(?:welcome|encouraged|eligible)|(?:zero|0)\s+years?\s+(?:of\s+)?experience)\b/i.test(line)){
+      if(/\b(?:no (?:prior |previous |professional |relevant |work )?experience (?:is )?(?:required|necessary|needed)|freshers? (?:are )?(?:welcome|encouraged|eligible)|(?:welcome|welcoming) freshers?|(?:zero|0)\s+years?\s+(?:of\s+)?experience)\b/i.test(line)){
         return {label:"No experience required",minYears:0};
       }
     }
