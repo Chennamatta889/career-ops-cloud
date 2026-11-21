@@ -7,6 +7,7 @@ const code=fs.readFileSync(path.join(__dirname,"../ai-studio.js"),"utf8");
 const markup=fs.readFileSync(path.join(__dirname,"../index.html"),"utf8");
 const app=fs.readFileSync(path.join(__dirname,"../app.js"),"utf8");
 const site="https://chennamatta889.github.io/";
+const allowedCallback="https://chennamatta889.github.io/career-ops-cloud/";
 
 function harness({hash="",search="",pathname="/",origin="https://chennamatta889.github.io",connected=true}={}){
   const els=new Map(),store=new Map(),historyUrls=[],redirects=[],requests=[];
@@ -20,7 +21,7 @@ function harness({hash="",search="",pathname="/",origin="https://chennamatta889.
     });
     return els.get(id);
   };
-  const location={origin,pathname,hash,search,assign(url){redirects.push(url)}};
+  const location={origin,pathname,hash,search,assign(url){redirects.push(url)},replace(url){redirects.push(url)}};
   const document={
     getElementById:element,
     querySelector(q){return q==='[data-nav="ai"]'?{click(){navigations++}}:null}
@@ -77,7 +78,7 @@ test("Google button redirects to dedicated Supabase OAuth authorize endpoint wit
   assert.equal(url.hostname,"nnhzihcugvifhegsfmua.supabase.co");
   assert.equal(url.pathname,"/auth/v1/authorize");
   assert.equal(url.searchParams.get("provider"),"google");
-  assert.equal(url.searchParams.get("redirect_to"),site);
+  assert.equal(url.searchParams.get("redirect_to"),allowedCallback);
   assert.equal(url.searchParams.has("client_secret"),false);
   assert.equal(h.requests.filter(r=>r.includes("/auth/v1/otp")).length,0,"Google auth must not consume an email OTP");
 });
@@ -121,4 +122,23 @@ test("Google authentication errors are preserved until AI Studio reads them",()=
   assert.match(app,/history\.pushState/);
   assert.match(app,/window\.addEventListener\("popstate",syncHistoryRoute\)/);
   assert.doesNotMatch(code,/google.*(?:client_secret|AIza)[A-Za-z0-9_-]{15}/i);
+});
+
+test("legacy allowlisted callback securely hands session to the root homepage",async()=>{
+  const h=harness({pathname:"/career-ops-cloud/",
+    hash:"#access_token=fake-test-jwt&refresh_token=fake-refresh&expires_in=3600"});
+  await flush();
+  assert.equal(h.redirects[0],site+"#ai");
+  assert.equal(h.historyUrls[0],"/career-ops-cloud/#ai");
+  assert.equal(JSON.parse(h.store.get("careerops-v3-tab-session")).access_token,"fake-test-jwt");
+  assert.equal(h.redirects.some(x=>x.includes("access_token=")),false);
+});
+test("legacy callback errors forward safely without leaking OAuth fragment",async()=>{
+  const h=harness({pathname:"/career-ops-cloud/",
+    hash:"#error=access_denied&error_description=User+cancelled"});
+  await flush();
+  assert.equal(h.redirects[0],site+"#ai");
+  assert.equal(h.historyUrls[0],"/career-ops-cloud/#ai");
+  assert.match(h.store.get("careerops-login-error"),/User cancelled/);
+  assert.ok(h.redirects.every(x=>!x.includes("access_denied")));
 });
