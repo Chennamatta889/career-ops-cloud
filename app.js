@@ -234,7 +234,9 @@
       const kept = new Map();
       keep.forEach(function (j) { kept.set(j.url || (j.company + "/" + j.title + "/" + j.location).toLowerCase(), j.stage); });
       jobs.forEach(function (j) { const key = j.url || (j.company + "/" + j.title + "/" + j.location).toLowerCase(); j.stage = kept.get(key) || ""; });
-      state.jobs = jobs;
+      const importedKeys = new Set(jobs.map(function (j) { return j.url || (j.company + "/" + j.title + "/" + j.location).toLowerCase(); }));
+      const previousTrackedJobs = keep.filter(function (j) { return !importedKeys.has(j.url || (j.company + "/" + j.title + "/" + j.location).toLowerCase()); });
+      state.jobs = jobs.concat(previousTrackedJobs).slice(0,500);
       state.mode = "imported";
       state.importedAt = stamp();
       log("Scan results imported", jobs.length + " unique job records from " + file.name);
