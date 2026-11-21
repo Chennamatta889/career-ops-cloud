@@ -124,6 +124,42 @@
       "sector": "Technology & Services",
       "focus": "fresher",
       "reference_url": "https://jobs.ashbyhq.com/junipersquare/58e050b8-16c6-412b-9ac7-82bbf5a1a765/"
+    },
+    {
+      "provider": "smartrecruiters",
+      "slug": "Eurofins",
+      "name": "Eurofins",
+      "sector": "Healthcare & Life Sciences",
+      "focus": "fresher",
+      "indiaOnly": true,
+      "reference_url": "https://jobs.smartrecruiters.com/Eurofins/743999731497821-trainee-analyst"
+    },
+    {
+      "provider": "smartrecruiters",
+      "slug": "CamiAI",
+      "name": "Cami.AI",
+      "sector": "Technology & Services",
+      "focus": "fresher",
+      "indiaOnly": true,
+      "reference_url": "https://jobs.smartrecruiters.com/CamiAI/743999832631889-full-stack-developer-trainee"
+    },
+    {
+      "provider": "smartrecruiters",
+      "slug": "Kredx",
+      "name": "KredX",
+      "sector": "Finance & Technology",
+      "focus": "fresher",
+      "indiaOnly": true,
+      "reference_url": "https://jobs.smartrecruiters.com/Kredx/744000123904890-corporate-sales-trainee-freshers-"
+    },
+    {
+      "provider": "smartrecruiters",
+      "slug": "Connectionphase",
+      "name": "Connectionphase",
+      "sector": "Technology & Services",
+      "focus": "fresher",
+      "indiaOnly": true,
+      "reference_url": "https://jobs.smartrecruiters.com/Connectionphase/112000419-project-coordinator-trainee"
     }
   ]
 }
