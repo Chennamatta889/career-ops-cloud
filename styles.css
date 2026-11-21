@@ -134,3 +134,19 @@
   #aiResult .ai-answer-section{break-inside:avoid-page;page-break-inside:avoid}
   #aiResult .ai-draft-text{white-space:pre-wrap!important;overflow:visible!important}
 }
+
+/* Phase 4.5: explicit read-only system diagnostics, accessible on mobile */
+.health-panel{margin-top:20px;padding:20px}
+.health-panel #healthSummary{font-size:11px;line-height:1.65;color:#b4d2db;margin:12px 0 7px;overflow-wrap:anywhere}
+.health-results{display:grid;gap:9px;margin-top:13px}
+.health-line{display:flex;gap:11px;align-items:flex-start;border:1px solid #2a465b;border-radius:10px;background:#12263a;padding:11px}
+.health-line .health-symbol{font-size:17px;flex:none;font-weight:750;min-width:19px;text-align:center;color:#c9d8e5}
+.health-line[data-state="pass"]{border-color:#287563}
+.health-line[data-state="pass"] .health-symbol{color:#96e5bf}
+.health-line[data-state="fail"]{border-color:#a3645c}
+.health-line[data-state="fail"] .health-symbol{color:#ffb1a6}
+.health-line[data-state="warn"]{border-color:#a88242}
+.health-line[data-state="warn"] .health-symbol{color:#f8d59c}
+.health-line strong{font-size:12px;color:#eaf8ff}
+.health-line p{font-size:11px;color:#b0c8d4;line-height:1.55;margin-top:4px;overflow-wrap:anywhere}
+@media(max-width:650px){.health-panel{padding:13px}.health-panel #runHealthChecks{width:100%}}
