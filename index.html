@@ -13,15 +13,16 @@
   <meta name="description" content="Discover IT and non-IT opportunities, manage your applications, and prepare tailored documents in one secure career workspace.">
   <title>Overview | Career-Ops</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='17' fill='%230b1425'/%3E%3Cpath d='m17 34 11 11 20-26' fill='none' stroke='%2342dfb6' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="./styles.css?v=20261121-application-confirmation-v1">
+  <link rel="stylesheet" href="./styles.css?v=20261121-phase08-10-v1">
   <script defer src="./match-engine.js"></script>
   <script defer src="./job-categories.js"></script>
   <script defer src="./job-text.js?v=20261121-experience-filter-v1"></script>
   <script defer src="./careerops-config.js"></script>
-  <script defer src="./app.js?v=20261121-application-confirmation-v1"></script>
+  <script defer src="./application-email.js?v=20261121-phase08-10-v1"></script>
+  <script defer src="./app.js?v=20261121-phase08-10-v1"></script>
   <script defer src="./resume-parser.js"></script>
   <script defer src="./ai-studio.js"></script>
-  <script defer src="./private-workspace.js?v=20261121-application-confirmation-v1"></script>
+  <script defer src="./private-workspace.js?v=20261121-phase08-10-v1"></script>
   <script defer src="./health-check.js"></script>
 </head>
 <body>
@@ -93,6 +94,23 @@
           <button class="btn btn-outline" id="cloudImportTracking" type="button">Upload this device's saved jobs</button></div>
           <p class="phase4-privacy">Only real jobs are synced. These are your manual tracking statuses, not employer-confirmed application results.</p>
         </div>
+        <details class="panel email-review-panel" id="emailReviewPanel">
+          <summary><strong>Review a Gmail application acknowledgement</strong> <span class="muted small">Optional · copy and paste</span></summary>
+          <p class="email-review-disclosure">For now, open Gmail yourself and copy the sender, subject and relevant acknowledgement text. Career-Ops does not connect to or read your inbox. Email content is processed in this browser and is not uploaded or stored. Pasted emails cannot independently verify the sender or prove a submission.</p>
+          <div class="form-stack">
+            <label>Tracked job<select id="emailReviewJob" aria-label="Select an application to review"><option value="">Select a tracked job</option></select></label>
+            <label>Sender address<input id="emailReviewSender" type="text" maxlength="254" autocomplete="off" placeholder="e.g. recruiting@employer.example"></label>
+            <label>Email subject<input id="emailReviewSubject" type="text" maxlength="250" autocomplete="off" placeholder="e.g. Application received"></label>
+            <label>Relevant email text<textarea id="emailReviewBody" rows="4" maxlength="16000" placeholder="Paste only the acknowledgement. Avoid sensitive details."></textarea></label>
+          </div>
+          <p id="emailReviewResult" role="status" aria-live="polite" class="email-review-result">Nothing has been analysed or attached.</p>
+          <div class="email-review-actions">
+            <button type="button" class="btn btn-outline" id="emailReviewAnalyze">Check acknowledgement</button>
+            <button type="button" class="btn btn-primary" id="emailReviewAttach" disabled>Attach reviewed note</button>
+            <button type="button" class="btn btn-outline" id="emailReviewClear">Clear email</button>
+          </div>
+          <p class="muted small">Attaching a note never changes the application to Applied. To confirm submission, select “Yes, I applied” for that job. Original email content is not stored in Career-Ops.</p>
+        </details>
         <div class="board" id="applicationsBoard"></div>
       </section>
       <section class="page" id="page-resume">
