@@ -109,7 +109,12 @@
     return '<div class="overview-row"><div class="company-symbol">' + escapeHtml(companyInitials(j.company)) + '</div><div class="overview-row-copy"><strong>' + escapeHtml(j.title) + '</strong><p>' + escapeHtml(j.company) + ' · ' + escapeHtml(j.location) + '</p></div><span class="match unscored">Not scored</span><button class="overview-open" data-action="details" data-id="' + escapeHtml(j.id) + '" aria-label="Details for ' + escapeHtml(j.title) + '">↗</button></div>';
   };
   const card = function (j) {
-    return '<article class="job-card"><div class="job-card-top"><div class="company-symbol">' + escapeHtml(companyInitials(j.company)) + '</div><button class="save-button ' + (j.stage ? 'saved' : '') + '" data-action="save" data-id="' + escapeHtml(j.id) + '">' + (j.stage ? '✓ Tracking' : '+ Save') + '</button></div><h3>' + escapeHtml(j.title) + '</h3><p class="company-line">' + escapeHtml(j.company) + ' · ' + escapeHtml(j.location) + '</p><p class="description">' + escapeHtml(j.description || 'No job description added yet.') + '</p><div class="chip-wrap">' + chips(j.skills) + '</div><div class="card-footer"><span class="job-date">' + escapeHtml(jobSource(j)) + '</span><button class="text-link" data-action="details" data-id="' + escapeHtml(j.id) + '">View details ↗</button></div></article>';
+    const url = safeUrl(j.url);
+    const details = '<button class="text-link secondary-link" type="button" data-action="details" data-id="' + escapeHtml(j.id) + '">Details</button>';
+    const open = url
+      ? '<a class="text-link open-job-link" href="' + escapeHtml(url) + '" rel="noopener noreferrer" aria-label="Open job listing for ' + escapeHtml(j.title) + ' at ' + escapeHtml(j.company) + '">Open listing ↗</a>'
+      : '<span class="no-url-label">' + (j.demo ? 'Sample job — no link' : 'Posting link unavailable') + '</span>';
+    return '<article class="job-card"><div class="job-card-top"><div class="company-symbol">' + escapeHtml(companyInitials(j.company)) + '</div><button class="save-button ' + (j.stage ? 'saved' : '') + '" data-action="save" data-id="' + escapeHtml(j.id) + '">' + (j.stage ? '✓ Tracking' : '+ Save') + '</button></div><h3>' + escapeHtml(j.title) + '</h3><p class="company-line">' + escapeHtml(j.company) + ' · ' + escapeHtml(j.location) + '</p><p class="description">' + escapeHtml(j.description || 'No job description added yet.') + '</p><div class="chip-wrap">' + chips(j.skills) + '</div><div class="card-footer"><span class="job-date">' + escapeHtml(jobSource(j)) + '</span><div class="card-action-group">' + details + open + '</div></div></article>';
   };
   const pipelineCount = function (stage) { return state.jobs.filter(function (j) { return j.stage === stage; }).length; };
   const renderOverview = function () {
@@ -177,10 +182,19 @@
     $("dialogMeta").textContent = j.company + " · " + j.location;
     $("dialogDescription").textContent = j.description || "No description provided. Review the original job listing for full requirements.";
     $("dialogSkills").innerHTML = chips(j.skills);
-    $("dialogSource").textContent = jobSource(j);
+    const url = safeUrl(j.url);
+    $("dialogSource").textContent = url ? jobSource(j) + " · opens on the employer website"
+      : (j.demo ? "Sample job: this is not a real listing, so there is no external URL."
+      : "This job record has no valid posting URL. Open the employer's career site to locate it.");
     $("dialogSave").textContent = j.stage ? "✓ Tracking" : "+ Save job";
-    const url = safeUrl(j.url); $("dialogLink").hidden = !url;
-    if (url) $("dialogLink").href = url; else $("dialogLink").removeAttribute("href");
+    $("dialogLink").hidden = !url;
+    if (url) {
+      $("dialogLink").href = url;
+      $("dialogLink").setAttribute("aria-label", "Open original job listing at " + j.company);
+    } else {
+      $("dialogLink").removeAttribute("href");
+      $("dialogLink").removeAttribute("aria-label");
+    }
     $("jobDialog").showModal();
   };
   const setStage = function (id, stage) {
