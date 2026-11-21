@@ -66,7 +66,10 @@ try {
     error = 'Scanner did not produce a valid receipt.';
   }
 } catch (err) {
-  error = 'Scanner receipt could not be parsed: ' + err.message;
+  // An invalid or dry-run receipt must never be eligible for publication.
+  // JSON.parse() can succeed before schema validation throws.
+  receipt = null;
+  error = 'Scanner receipt rejected: ' + err.message;
 }
 const generatedAt = new Date().toISOString();
 const scanDate = receipt && /^\d{4}-\d{2}-\d{2}$/.test(receipt.date) ? receipt.date : generatedAt.slice(0,10);
