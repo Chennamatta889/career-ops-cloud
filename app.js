@@ -1,4 +1,4 @@
-/* Career-Ops browser-only dashboard. No backend, scanning, AI scoring, or automatic submissions. */
+/* Career-Ops dashboard: public read-only job feed + local rule-based priorities. No AI or automatic submissions. */
 (function () {
   "use strict";
   const STORAGE_KEY = "career-ops-workspace-v1";
@@ -41,7 +41,7 @@
       return {
         mode: ["imported","manual","live"].includes(x.mode) ? x.mode : "demo",
         jobs: x.jobs.slice(0,500).map(function (j) {
-          return { id: str(j.id) || newId(), title: str(j.title), company: str(j.company), location: str(j.location), skills: Array.isArray(j.skills) ? j.skills.slice(0,12).map(str) : [], description: str(j.description), url: safeUrl(j.url), demo: !!j.demo, manual: !!j.manual || (x.mode === "manual" && !j.demo), source: str(j.source), stage: STAGES.some(function (s) { return s.name === j.stage; }) ? j.stage : "", addedAt: str(j.addedAt) };
+          return { id: str(j.id) || newId(), title: str(j.title), company: str(j.company), location: str(j.location), skills: Array.isArray(j.skills) ? j.skills.slice(0,12).map(str) : [], description: str(j.description), url: safeUrl(j.url), demo: !!j.demo, manual: !!j.manual || (x.mode === "manual" && !j.demo), source: str(j.source), requiredExperience: str(j.requiredExperience), stage: STAGES.some(function (s) { return s.name === j.stage; }) ? j.stage : "", addedAt: str(j.addedAt) };
         }),
         prefs: Object.assign({}, DEFAULT_PREFS, x.prefs || {}),
         activity: Array.isArray(x.activity) ? x.activity.slice(0,100) : [],
@@ -84,15 +84,22 @@
     hideMobileMenu();
     window.scrollTo({ top: 0, behavior: "instant" });
   };
+  const priority = function (job) { return window.CareerOpsMatch.rank(job,state.prefs); };
   const visibleJobs = function () {
     const search = $("jobSearch").value.trim().toLowerCase();
     const role = $("roleFilter").value.toLowerCase();
     const loc = $("locationFilter").value.toLowerCase();
     const sort = $("sortFilter").value;
+    const minPriority = $("matchFilter").value;
     return state.jobs.filter(function (job) {
       const all = [job.title,job.company,job.location,job.description].concat(job.skills).join(" ").toLowerCase();
-      return (!search || all.includes(search)) && (!role || job.title.toLowerCase().includes(role)) && (!loc || job.location.toLowerCase().includes(loc));
+      const group = window.CareerOpsMatch.groups(job.title);
+      const roleOk = !role || job.title.toLowerCase().includes(role) || (role === "site reliability" && group.includes("sre"));
+      const n = priority(job).score;
+      const priorityOk = minPriority === "all" || (minPriority === "below" ? n < 50 : n >= Number(minPriority));
+      return (!search || all.includes(search)) && roleOk && (!loc || job.location.toLowerCase().includes(loc)) && priorityOk;
     }).sort(function (a,b) {
+      if (sort === "priority") return priority(b).score - priority(a).score || String(b.addedAt).localeCompare(String(a.addedAt));
       if (sort === "company") return a.company.localeCompare(b.company);
       if (sort === "role") return a.title.localeCompare(b.title);
       return String(b.addedAt).localeCompare(String(a.addedAt));
@@ -105,16 +112,23 @@
   const jobSource = function (j) { return j.demo ? "Illustrative job" : j.source === "cloud" ? "Public scanner result" : (j.url ? "Job URL attached" : "No source URL"); };
   const chips = function (skills) { return (skills || []).slice(0,5).map(function (s) { return '<span class="skill-chip">' + escapeHtml(s) + '</span>'; }).join(""); };
   const find = function (id) { return state.jobs.find(function (j) { return j.id === id; }); };
+  const priorityBadge = function (j) {
+    const fit = priority(j);
+    return '<span class="match ' + (fit.quality === "Limited evidence" ? 'limited' : '') + '" title="' + escapeHtml(fit.quality + " · rule-based, not AI") + '">' +
+      (j.demo ? 'Sample ' : 'Priority ') + fit.score + '/100</span>';
+  };
   const overviewRow = function (j) {
-    return '<div class="overview-row"><div class="company-symbol">' + escapeHtml(companyInitials(j.company)) + '</div><div class="overview-row-copy"><strong>' + escapeHtml(j.title) + '</strong><p>' + escapeHtml(j.company) + ' · ' + escapeHtml(j.location) + '</p></div><span class="match unscored">Not scored</span><button class="overview-open" data-action="details" data-id="' + escapeHtml(j.id) + '" aria-label="Details for ' + escapeHtml(j.title) + '">↗</button></div>';
+    return '<div class="overview-row"><div class="company-symbol">' + escapeHtml(companyInitials(j.company)) + '</div><div class="overview-row-copy"><strong>' + escapeHtml(j.title) + '</strong><p>' + escapeHtml(j.company) + ' · ' + escapeHtml(j.location) + '</p></div>' + priorityBadge(j) +
+      '<button class="overview-open" data-action="details" data-id="' + escapeHtml(j.id) + '" aria-label="Details for ' + escapeHtml(j.title) + '">↗</button></div>';
   };
   const card = function (j) {
     const url = safeUrl(j.url);
-    const details = '<button class="text-link secondary-link" type="button" data-action="details" data-id="' + escapeHtml(j.id) + '">Details</button>';
+    const fit = priority(j);
+    const details = '<button class="text-link secondary-link" type="button" data-action="details" data-id="' + escapeHtml(j.id) + '">Why this priority?</button>';
     const open = url
       ? '<a class="text-link open-job-link" href="' + escapeHtml(url) + '" rel="noopener noreferrer" aria-label="Open job listing for ' + escapeHtml(j.title) + ' at ' + escapeHtml(j.company) + '">Open listing ↗</a>'
       : '<span class="no-url-label">' + (j.demo ? 'Sample job — no link' : 'Posting link unavailable') + '</span>';
-    return '<article class="job-card"><div class="job-card-top"><div class="company-symbol">' + escapeHtml(companyInitials(j.company)) + '</div><button class="save-button ' + (j.stage ? 'saved' : '') + '" data-action="save" data-id="' + escapeHtml(j.id) + '">' + (j.stage ? '✓ Tracking' : '+ Save') + '</button></div><h3>' + escapeHtml(j.title) + '</h3><p class="company-line">' + escapeHtml(j.company) + ' · ' + escapeHtml(j.location) + '</p><p class="description">' + escapeHtml(j.description || 'No job description added yet.') + '</p><div class="chip-wrap">' + chips(j.skills) + '</div><div class="card-footer"><span class="job-date">' + escapeHtml(jobSource(j)) + '</span><div class="card-action-group">' + details + open + '</div></div></article>';
+    return '<article class="job-card"><div class="job-card-top"><div class="company-symbol">' + escapeHtml(companyInitials(j.company)) + '</div><button class="save-button ' + (j.stage ? 'saved' : '') + '" data-action="save" data-id="' + escapeHtml(j.id) + '">' + (j.stage ? '✓ Tracking' : '+ Save') + '</button></div><div class="card-priority-row">' + priorityBadge(j) + '<span class="priority-quality">' + escapeHtml(fit.quality) + '</span></div><h3>' + escapeHtml(j.title) + '</h3><p class="company-line">' + escapeHtml(j.company) + ' · ' + escapeHtml(j.location) + '</p><p class="description">' + escapeHtml(j.description || 'Full requirements are not included in the public scan. Open the listing to review them.') + '</p><div class="chip-wrap">' + chips(j.skills) + '</div><div class="card-footer"><span class="job-date">' + escapeHtml(jobSource(j)) + '</span><div class="card-action-group">' + details + open + '</div></div></article>';
   };
   const pipelineCount = function (stage) { return state.jobs.filter(function (j) { return j.stage === stage; }).length; };
   const renderOverview = function () {
@@ -123,7 +137,7 @@
     $("statApplied").textContent = ["Applied","Interview","Offer","Rejected"].reduce(function (n,s) { return n + pipelineCount(s); },0);
     $("statInterviews").textContent = pipelineCount("Interview");
     $("navJobsCount").textContent = state.jobs.length;
-    const top = state.jobs.slice(0,4);
+    const top = state.jobs.slice().sort(function (a,b) { return priority(b).score - priority(a).score; }).slice(0,4);
     $("overviewJobs").innerHTML = top.length ? top.map(overviewRow).join("") : '<p class="muted">No opportunities yet. Add a job or import scan results.</p>';
     const total = STAGES.reduce(function (n,s) { return n + pipelineCount(s.name); },0);
     $("pipelineChart").innerHTML = STAGES.map(function (s) { const n = pipelineCount(s.name); return n ? '<span class="pipeline-bar" style="background:' + s.color + ';flex:' + n + '"></span>' : ''; }).join("");
@@ -182,6 +196,16 @@
     $("dialogMeta").textContent = j.company + " · " + j.location;
     $("dialogDescription").textContent = j.description || "No description provided. Review the original job listing for full requirements.";
     $("dialogSkills").innerHTML = chips(j.skills);
+    const fit = priority(j);
+    const signalRow = function (title, result, total) {
+      return '<div class="priority-factor"><div><strong>' + escapeHtml(title) + '</strong><p>' + escapeHtml(result.detail) +
+        '</p></div><span>+' + result.points + '/' + total + '</span></div>';
+    };
+    $("matchExplanation").innerHTML = '<div class="priority-head"><div><span class="eyebrow">RULE-BASED PRIORITY</span><h3>' +
+      (j.demo ? 'Sample ' : '') + fit.score + '/100</h3></div><span class="priority-quality">' + escapeHtml(fit.quality) +
+      '</span></div>' + signalRow("Target role",fit.role,50) + signalRow("Location",fit.location,30) +
+      signalRow("Skills mentioned",fit.skills,20) + '<div class="priority-experience">' +
+      escapeHtml(fit.experience) + '</div><p class="priority-disclaimer">' + escapeHtml(fit.method) + '</p>';
     const url = safeUrl(j.url);
     $("dialogSource").textContent = url ? jobSource(j) + " · opens on the employer website"
       : (j.demo ? "Sample job: this is not a real listing, so there is no external URL."
@@ -220,6 +244,7 @@
       location: str(locationValue).slice(0,120) || "Not specified",
       skills: skills.map(str).filter(Boolean).slice(0,12),
       description: str(j.description || j.summary || j.job_description || "").slice(0,3000),
+      requiredExperience: str(j.requiredExperience || j.required_experience || j.experience_requirement || "").slice(0,100),
       url: safeUrl(j.apply_url || j.job_url || j.url || j.link || j.source_url),
       demo: false, manual: false, source: "import", stage: "", addedAt: stamp()
     };
@@ -277,8 +302,8 @@
   document.addEventListener("change", function (e) {
     if (e.target.matches("[data-stage-id]")) setStage(e.target.getAttribute("data-stage-id"), e.target.value);
   });
-  ["jobSearch","roleFilter","locationFilter","sortFilter"].forEach(function (id) { $(id).addEventListener(id === "jobSearch" ? "input" : "change", renderDiscover); });
-  $("clearFilters").addEventListener("click", function () { $("jobSearch").value = ""; $("roleFilter").value = ""; $("locationFilter").value = ""; renderDiscover(); });
+  ["jobSearch","roleFilter","locationFilter","matchFilter","sortFilter"].forEach(function (id) { $(id).addEventListener(id === "jobSearch" ? "input" : "change", renderDiscover); });
+  $("clearFilters").addEventListener("click", function () { $("jobSearch").value = ""; $("roleFilter").value = ""; $("locationFilter").value = ""; $("matchFilter").value = "all"; renderDiscover(); });
   $("mobileMenu").addEventListener("click", function () { const open = $("sidebar").classList.toggle("open"); $("mobileScrim").classList.toggle("show",open); $("mobileMenu").setAttribute("aria-expanded", String(open)); });
   $("mobileScrim").addEventListener("click", hideMobileMenu);
   window.addEventListener("hashchange", function () { showPage(location.hash.replace("#","")); });
@@ -304,7 +329,7 @@
     e.preventDefault();
     state.prefs = { roles:$("targetRoles").value.trim(),locations:$("targetLocations").value.trim(),experience:$("targetExperience").value.trim(),skills:$("targetSkills").value.trim() };
     log("Preferences updated","Target role and skill preferences were saved locally");
-    save(); renderActivity(); toast("Preferences saved locally");
+    save(); render(); toast("Preferences saved; priorities recalculated");
   });
   $("resumeFile").addEventListener("change", function (e) {
     const f = e.target.files && e.target.files[0];
