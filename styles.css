@@ -364,3 +364,23 @@ a:focus-visible,button:focus-visible,[role="button"]:focus-visible{outline:2px s
 .job-experience-badge{display:inline-flex;align-items:center;background:#20334a;color:#d3e4f4;border:1px solid #3a5770;border-radius:9px;padding:5px 9px;font-size:11px;font-weight:700;line-height:1.4}
 .dialog-experience{margin:10px 0 15px;color:#b9e9d9;background:#17342f;border:1px solid #335c51;border-radius:10px;padding:9px 12px;font-size:12px;font-weight:700}
 #experienceFilter{min-width:155px}
+
+/* Phase 6 — separate employer-page opens and user-confirmed applications. */
+.application-followup{position:fixed;right:20px;bottom:20px;z-index:1300;width:min(410px,calc(100vw - 32px));padding:20px;background:#132c40;border:1px solid #45826f;border-radius:17px;box-shadow:0 20px 80px rgba(0,0,0,.5);max-height:85dvh;overflow-y:auto}
+.application-followup[hidden]{display:none!important}
+.application-followup h2{font-size:18px;line-height:1.4;margin:8px 0}
+.application-followup p{color:#c6d8e1;font-size:12px;line-height:1.6;margin:8px 0 12px}
+.application-followup .application-followup-job{font-size:13px;font-weight:800;color:#c9f8e6}
+.application-followup>label{display:block;font-size:12px;font-weight:750;margin:12px 0 5px;color:#d4e9f1}
+.application-followup input[type=date]{width:100%;min-height:39px;border:1px solid #53778c;border-radius:9px;background:#0b1e30;color:#e8f1f7;padding:8px}
+.application-followup-close{position:absolute;right:14px;top:10px;border:0;background:transparent;color:#fff;font-size:25px;cursor:pointer}
+.application-followup-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:13px}
+.application-followup .application-followup-error{color:#f8b5af;font-weight:650;margin:5px 0;min-height:14px}
+.application-followup .application-followup-note{font-size:10px;color:#a6c9cf;margin-bottom:0}
+.card-tracking-summary,.board-timeline{display:flex;flex-wrap:wrap;gap:7px;margin:9px 0;color:#9cdbc9;font-size:11px}
+.card-tracking-summary:empty,.board-timeline:empty{display:none}
+.card-tracking-summary span,.board-timeline span{display:inline-flex;padding:4px 7px;background:#193d3c;border:1px solid #286a60;border-radius:7px;line-height:1.3}
+.dialog-tracking{color:#9fdacb;font-size:11px;font-weight:700;margin:7px 0}
+.board-followup-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:9px 0}
+.board-confirm-button{font-size:11px;padding:7px 10px}
+@media(max-width:600px){.application-followup{right:8px;bottom:8px;width:calc(100vw - 16px);padding:16px}.application-followup-actions>.btn{flex:1}}
