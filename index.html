@@ -13,6 +13,7 @@
   <script defer src="./app.js"></script>
   <script defer src="./resume-parser.js"></script>
   <script defer src="./ai-studio.js"></script>
+  <script defer src="./private-workspace.js"></script>
 </head>
 <body>
 <div class="app-shell" id="app">
@@ -72,6 +73,12 @@
       <section class="page" id="page-applications">
         <div class="page-heading"><div><div class="eyebrow">TRACK</div><h1>Your application <span>pipeline.</span></h1><p>Move jobs through your own workflow. No applications are submitted from this UI.</p></div><button class="btn btn-outline" data-nav="discover">Browse jobs ↗</button></div>
         <div class="notice notice-compact"><span class="notice-icon">ⓘ</span><div>Statuses you change here are local tracking records, not confirmation from any employer.</div></div>
+        <div class="panel phase4-sync">
+          <div><h2>Private application tracking</h2><p id="cloudTrackingStatus" role="status">Sign in with Google under AI Studio to sync your saved jobs across devices.</p></div>
+          <div class="phase4-actions"><button class="btn btn-outline" id="cloudRefreshTracking" type="button">Sync tracked jobs</button>
+          <button class="btn btn-outline" id="cloudImportTracking" type="button">Upload this device's saved jobs</button></div>
+          <p class="phase4-privacy">Only real jobs are synced. These are your manual tracking statuses, not employer-confirmed application results.</p>
+        </div>
         <div class="board" id="applicationsBoard"></div>
       </section>
       <section class="page" id="page-resume">
@@ -110,6 +117,15 @@
               <div class="form-stack">
                 <label>Your resume text<textarea id="aiResume" rows="14" maxlength="16000" spellcheck="false" placeholder="Paste your actual resume content. Do not add or invent skills, experience, or metrics."></textarea></label><p id="aiResumeCount" class="ai-field-count" aria-live="polite">0 / 250 characters minimum</p>
                 <label class="btn btn-outline upload-btn" for="aiResumeTxtFile">Choose PDF / DOCX / TXT to extract</label><input id="aiResumeTxtFile" type="file" accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain" hidden><p id="aiResumeParseStatus" class="ai-field-count resume-parse-status" role="status" data-state="idle" aria-live="polite">Choose a file to extract text here. Uploaded files do not automatically start AI Review.</p>
+                  <section class="vault-inline" aria-label="Private resume vault">
+                    <div><strong>Private Resume Vault</strong><p id="vaultStatus" role="status">Sign in with Google to securely save extracted resume text for reuse across devices.</p></div>
+                    <div class="phase4-actions">
+                      <button id="vaultSave" class="btn btn-primary" type="button">Save resume privately</button>
+                      <button id="vaultLoad" class="btn btn-outline" type="button">Load saved resume</button>
+                      <button id="vaultDelete" class="btn btn-outline" type="button">Delete saved resume</button>
+                    </div>
+                    <p class="phase4-privacy">Only text is stored in your private Supabase account. The original PDF/DOCX file is not uploaded. Saving is separate from AI Review; no Gemini request occurs until you consent and click Review.</p>
+                  </section>
               </div>
             </section>
             <section class="panel ai-form-panel">
