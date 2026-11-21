@@ -53,6 +53,7 @@ function harness(parser){
     sessionStorage:{getItem:()=>null,setItem(){},removeItem(){}},
     location:{hash:"",pathname:"/",search:"",origin:"https://test.invalid"},
     history:{replaceState(){}},
+    URL,URLSearchParams,
     setTimeout,clearTimeout,setInterval,clearInterval
   };
   vm.runInNewContext(source,context,{filename:"ai-studio.js"});
