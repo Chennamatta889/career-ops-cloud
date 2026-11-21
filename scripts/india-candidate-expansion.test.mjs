@@ -255,3 +255,48 @@ test("phase 10 only imports previous health from a validated India public feed",
   assert.deepEqual(await readPreviousCandidateHealth(invalid),{});
   assert.deepEqual(await readPreviousCandidateHealth(async()=>{throw Error("offline")}),{});
 });
+
+
+test("phase 12 board focus never fabricates fresher eligibility from senior vacancies",async()=>{
+  const source={provider:"greenhouse",slug:"freshermarketing",name:"Example Graduate Board",focus:"fresher"};
+  const out=await discoverIndiaCandidates({candidates:[source],curatedSources:[],
+    scanBoard,isIndiaLocation,now:new Date("2026-11-21T12:00:00Z"),
+    fetchImpl:async()=>fakeResponse({jobs:[
+      {id:901,title:"Senior DevOps Engineer",location:{name:"Hyderabad, India"},first_published:"2026-11-20T00:00:00Z"},
+      {id:902,title:"Graduate Engineer Trainee",location:{name:"Bengaluru, India"},first_published:"2026-11-20T00:00:00Z"},
+      {id:903,title:"Junior Analyst",location:{name:"Pune, India"},first_published:"2026-11-20T00:00:00Z"}
+    ]})});
+  assert.equal(out.report.fresher_focus_activated,1);
+  assert.equal(out.report.fresher_focus_with_entry_jobs,1);
+  assert.equal(out.report.entry_positions,2);
+  assert.equal(out.report.explicit_zero_experience_positions,0);
+  assert.equal(out.health[0].entry_positions,2);
+  assert.equal(out.history["greenhouse:freshermarketing"].entry_positions,2);
+  assert.equal(out.jobs.length,3,"all verified India jobs stay in the feed");
+});
+
+test("phase 12 prioritizes boards with proven entry-level India vacancies without skipping new leads",async()=>{
+  const candidates=[
+    {provider:"greenhouse",slug:"newcandidate",name:"New Candidate",focus:"fresher"},
+    {provider:"greenhouse",slug:"provenboard",name:"Proven Employer"},
+    {provider:"greenhouse",slug:"senioronly",name:"Senior Employer",focus:"fresher"}
+  ];
+  const calls=[];
+  const out=await discoverIndiaCandidates({candidates,curatedSources:[],
+    scanBoard,isIndiaLocation,concurrency:1,now:new Date("2026-11-21T12:00:00Z"),
+    previousHealth:{
+      "greenhouse:provenboard":{status:"active",entry_positions:8,consecutive_failures:0},
+      "greenhouse:senioronly":{status:"active",entry_positions:0,consecutive_failures:0}
+    },
+    fetchImpl:async(url)=>{
+      calls.push(url);
+      return fakeResponse({jobs:[{id:calls.length+800,title:"Graduate Engineer Trainee",
+        location:{name:"Hyderabad, India"},first_published:"2026-11-20T00:00:00Z"}]});
+    }});
+  assert.match(calls[0],/provenboard/);
+  assert.match(calls[1],/newcandidate/);
+  assert.match(calls[2],/senioronly/);
+  assert.equal(out.report.checked,3);
+  assert.equal(out.report.entry_positions,3);
+  assert.equal(out.report.explicit_zero_experience_positions,0);
+});
