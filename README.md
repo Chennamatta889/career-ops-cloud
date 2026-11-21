@@ -17,6 +17,18 @@ The AI Studio was observed to reach Supabase successfully, then a Gemini generat
 
 Existing GEMINI_MODEL configuration takes precedence over the faster default. If the connection displays gemini-3.8-flash and generation still times out, the owner can select the faster gemini-3.5-flash-lite by setting GEMINI_MODEL securely in Supabase Edge Function secrets; check model availability and pricing before changing. No automatic repeat requests are made following provider errors to avoid surprise provider charges. AI output must be reviewed and verified.
 
+## Phase 3B — Resume parsing and external employer job review
+
+The dashboard now provides **local resume text extraction** and **public external job-description fetching**:
+
+- **Resume Lab / AI Studio:** upload a text-based PDF, DOCX or TXT resume up to 6 MB. PDF.js 5.4.624 and Mammoth 1.11.0 are pinned, installed at build time and hosted on the **same GitHub Pages origin** under /vendor/ (not third-party scripts loaded at runtime). Browser extraction fills the editable AI Studio resume textarea, capped at 16,000 characters. No resume file is uploaded to Supabase or any third-party parsing API. The extracted text is transmitted to the private Gemini backend **only when you explicitly consent and click Review with AI**.
+- **Image/scanned PDF:** OCR is **not provided**; an image-only PDF will show a plain-language extraction error. Multi-column text and special characters may be imperfect. Verify every field before reviewing.
+- **External job URL:** paste a published official job URL from Greenhouse, Ashby, or Lever and choose **Fetch job description**. If the public employer API returns a matching posting, AI Studio fills the job title and editable full JD. The signed-in account's backend calls only official public ATS endpoints (no arbitrary URLs, redirects, login bypass, resume transfer, job application or external form submission).
+- **Other sites:** LinkedIn, Indeed, Workday, custom career pages, logins, and blocked/removed listings are not scraped or bypassed. Copy and paste the job description when the fetch button reports unsupported or unavailable.
+- **Privacy:** employer job descriptions are public data, while resumes are processed locally and AI reviews require consent. The external job-fetch endpoint is JWT protected and checks the same account allowlist as AI review. Imported JD remains in browser memory until explicitly reviewed. No database writes were added.
+
+New source: resume-parser.js, scripts/resume-parser.test.cjs, supabase/functions/careerops-ai-review/job-fetch.mjs, scripts/job-fetch.test.mjs. The GitHub Actions Pages workflow installs and bundles the pinned parser assets, and runs security/unit checks before publishing. When working with a new resume, use a private browser tab and review the extracted result before requesting AI processing.
+
 ## AI Review troubleshooting (November 21, 2026)
 
 The browser now checks the authenticated Supabase Edge Function when AI Studio opens and when **Check AI connection** is selected. The function returns readiness information **only to the email allowlisted account**, never exposing secret values.
@@ -34,7 +46,7 @@ The browser now checks the authenticated Supabase Edge Function when AI Studio o
 
 ## Phase 3 — Private AI Studio (code ready, not yet activated)
 
-The public UI includes an AI Studio page and an **AI review** action on job cards. It supports passwordless email sign-in, session-only resume text entry (paste or .txt import), job title/employer/description inputs, explicit consent to third-party AI processing, fit analysis, suggested resume rewrites, cover letter, recruiter email, screening answer drafts, and a local .txt export. It never sends an application, uploads an entire PDF, or modifies an existing resume.
+The public UI includes an AI Studio page and an **AI review** action on job cards. It supports passwordless email sign-in, session-only resume text extraction (PDF/DOCX/TXT or paste), official public employer job URL importing, job title/employer/description inputs, explicit consent to third-party AI processing, fit analysis, suggested resume rewrites, cover letter, recruiter email, screening answer drafts, and a local .txt export. It never submits an application, uploads resume files for parsing, or modifies the original document.
 
 **Backend created and deployed:** Career-Ops has its own separate Supabase project, `career-ops-private` (`nnhzihcugvifhegsfmua`, ap-south-1, initially quoted at $0/month), with the `careerops-ai-review` Edge Function ACTIVE and `verify_jwt=true`. Its browser-safe project URL and publishable key are in `careerops-config.js`. DraftflowAI has not been altered. AI requests remain intentionally disabled until the Gemini provider key, account allowlist and `AI_CALLS_ENABLED=true` secrets are configured.
 
@@ -96,6 +108,6 @@ The [existing read-only workflow](./.github/workflows/career-ops-cloud-test.yml)
 
 ## Privacy and security
 
-**This repository is public.** Never commit resumes, contact information, credentials, API keys, applicant answers, or private application reports. The dashboard saves jobs, preferences, and status changes only in the browser's localStorage; it has no private account or backend. File imports and exports happen inside the browser. Choosing a resume shows its filename in the current session but does not read or upload it.
+**This repository is public.** Never commit resumes, contact information, credentials, API keys, applicant answers, or private application reports. The dashboard saves jobs, preferences, and status changes only in the browser's localStorage; it has no private account or backend. File imports and exports happen inside the browser. Choosing a resume reads its text locally in the browser and populates AI Studio; file bytes are not uploaded to the parsing service. AI Review sends resume text to the private function and Gemini only after consent.
 
 For real multi-user access or automated applications, first add a private authenticated backend with authorization, secret management, and real submission/confirmation tracking.
