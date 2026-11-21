@@ -11,7 +11,6 @@ import {filterRecentJobs} from "./job-freshness.mjs";
 const PROVIDERS=new Set(["greenhouse","ashby","lever","smartrecruiters"]);
 const KEY=s=>s.provider+":"+s.slug.toLowerCase();
 const clean=s=>typeof s==="string"?s.trim():"";
-const MAX_HISTORY=1000;
 const MAX_RETRY_DAYS=7;
 const DAY=86400000;
 function priorRecord(history,key){
