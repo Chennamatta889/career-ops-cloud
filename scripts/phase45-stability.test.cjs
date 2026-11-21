@@ -30,7 +30,7 @@ function dashboardHarness({initialLocal={},feedPromise}={}){
         querySelector:()=>({innerHTML:""}),showModal(){this.open=true},close(){this.open=false}
       };
       if(id==="matchFilter")obj.value="all";
-      if(id==="sortFilter")obj.value="newest";
+      if(id==="sortFilter")obj.value="variety";
       els.set(id,obj);
     }return els.get(id);
   };
@@ -192,7 +192,7 @@ test("Phase 5 paginates job cards while preserving all searchable results and re
   const countCards=()=>[...h.el("jobsGrid").innerHTML.matchAll(/class="job-card"/g)].length;
   assert.equal(countCards(),30,"initial DOM only renders the first thirty cards");
   assert.equal(h.el("loadMoreJobs").hidden,false);
-  assert.match(h.el("resultsCount").textContent,/showing 30/);
+  assert.equal(h.el("loadMoreJobs").textContent,"Show more jobs");
   h.el("loadMoreJobs").listeners.get("click")();
   assert.equal(countCards(),45,"load more preserves all matching jobs");
   assert.equal(h.el("loadMoreJobs").hidden,true);
@@ -205,17 +205,17 @@ test("Phase 5 paginates job cards while preserving all searchable results and re
   assert.equal(h.el("resetDiscoverFilters").hidden,false);
   h.el("resetDiscoverFilters").listeners.get("click")();
   assert.equal(h.el("jobSearch").value,"");
-  assert.equal(h.el("sortFilter").value,"newest");
+  assert.equal(h.el("sortFilter").value,"variety");
   assert.equal(h.el("resetDiscoverFilters").hidden,true);
 });
-test("Phase 5 preserves saved and manually tracked jobs when a 500-job public feed arrives",async()=>{
-  const jobs=Array.from({length:500},(_,i)=>({
+test("Phase 6 preserves tracked jobs and all searchable roles when a public feed exceeds 500",async()=>{
+  const jobs=Array.from({length:725},(_,i)=>({
     title:"Public Role "+i,company:"Public Employer",location:"India",
     url:"https://job-boards.greenhouse.io/example/jobs/"+(100000+i),
     posted_at:"2026-11-20"
   }));
   const feed={schema:"careerops.public-jobs.v1",jobs,generated_at:"2026-11-21T05:00:00Z",
-    scan:{status:"success",scanned:57,found:500,error_count:0}};
+    scan:{status:"success",scanned:57,found:725,error_count:0}};
   const h=dashboardHarness({feedPromise:Promise.resolve({ok:true,json:async()=>feed})});
   h.auth(USER_A);
   h.window.CareerOpsDashboard.mergeRemoteTracking([{
@@ -227,7 +227,12 @@ test("Phase 5 preserves saved and manually tracked jobs when a 500-job public fe
   assert.equal(h.window.CareerOpsDashboard.getTrackedJobs().length,1);
   assert.equal(h.window.CareerOpsDashboard.getTrackedJobs()[0].company,"My employer");
   assert.equal(h.el("loadMoreJobs").hidden,false);
-  assert.match(h.el("resultsCount").textContent,/500 job listings/);
+  const stored=JSON.parse(h.session.getItem("career-ops-session-account-v1-"+USER_A));
+  assert.equal(stored.jobs.length,1,"public job feed must not fill browser session storage");
+  h.el("jobSearch").value="Public Role 724";
+  h.el("jobSearch").listeners.get("input")();
+  assert.match(h.el("jobsGrid").innerHTML,/Public Role 724/,"last job beyond old cap is searchable");
+  assert.equal(h.el("loadMoreJobs").hidden,true);
 });
 test("Phase 5 warns when a successful-looking feed is stale and does not invent posting dates",async()=>{
   const feed={schema:"careerops.public-jobs.v1",jobs:[{
@@ -241,4 +246,29 @@ test("Phase 5 warns when a successful-looking feed is stale and does not invent 
   assert.match(h.el("feedFreshness").textContent,/over 48 hours old/);
   assert.match(h.el("jobsGrid").innerHTML,/Source date: date not provided/);
   assert.equal(h.el("headerFeedStatus").dataset.state,"partial");
+});
+
+test("Phase 6 Discover view shows cards, not public job totals, and mixes job types",async()=>{
+  const html=fs.readFileSync(path.resolve(__dirname,"../index.html"),"utf8");
+  assert.doesNotMatch(html,/id="resultsCount"/);
+  assert.doesNotMatch(html,/id="navJobsCount"/);
+  assert.doesNotMatch(html,/id="statDiscovered"/);
+  assert.match(html,/value="variety">Explore all industries/);
+  const h=dashboardHarness();
+  h.auth(USER_A);
+  h.window.CareerOpsDashboard.mergeRemoteTracking([
+    ...Array.from({length:42},(_,i)=>({
+      job_key:"https://example.com/it-"+i,title:"Software Developer "+i,
+      company:"Tech",location:"India",job_url:"https://example.com/it-"+i,stage:"Saved"
+    })),
+    {job_key:"https://example.com/sales",title:"Sales Executive",company:"Retail",
+      location:"India",job_url:"https://example.com/sales",stage:"Saved"},
+    {job_key:"https://example.com/other",title:"General Associate",company:"Education",
+      location:"India",job_url:"https://example.com/other",stage:"Saved"}
+  ]);
+  const cards=h.el("jobsGrid").innerHTML;
+  assert.match(cards,/Sales Executive/);
+  assert.match(cards,/General Associate/);
+  assert.match(cards,/Software Developer/);
+  assert.equal(h.el("loadMoreJobs").textContent,"Show more jobs");
 });
