@@ -41,6 +41,7 @@ function parseLine(line, scanDate) {
   const extras = match[4].split('|').map(s => scalar(s, 260)).filter(Boolean);
   const location = extras.find(s => !isLabel(s)) || 'Location not specified';
   const posted = extras.find(s => /^posted:\s*\d{4}-\d{2}-\d{2}$/.test(s));
+  const years = extras.find(s => /^yrs:\s*/i.test(s));
   return {
     id: 'scan-' + createHash('sha256').update(url).digest('hex').slice(0,16),
     company,
@@ -50,6 +51,7 @@ function parseLine(line, scanDate) {
     skills: [],
     description: '',
     posted_at: posted ? posted.replace(/^posted:\s*/, '') : null,
+    requiredExperience: years ? scalar(years.replace(/^yrs:\s*/i,''), 100) : '',
     addedAt: posted ? posted.replace(/^posted:\s*/, '') : scanDate,
     source: 'Career-Ops public portal scan'
   };
