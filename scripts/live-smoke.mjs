@@ -2,6 +2,8 @@
  * Calls only public GitHub Pages paths and an unauthenticated status request.
  * Never creates a user, accesses private records or invokes Gemini.
  */
+import {createRequire} from "node:module";
+const {isIndiaLocation}=createRequire(import.meta.url)("../india-jobs.js");
 const site="https://chennamatta889.github.io/career-ops-cloud/";
 const supabase="https://nnhzihcugvifhegsfmua.supabase.co";
 const checks=[
@@ -16,6 +18,7 @@ const checks=[
   {path:"app.js",contains:"ACCOUNT_STORAGE_PREFIX"},
   {path:"app.js",contains:"recordEmployerOpen"},
   {path:"job-categories.js",contains:"CareerOpsCategories"},
+  {path:"india-jobs.js",contains:"CareerOpsIndiaJobs"},
   {path:"job-text.js",contains:"CareerOpsJobText"},
   {path:"enterprise-careers.js",contains:"CareerOpsEnterpriseCareers"},
   {path:"ai-studio.js",contains:"jobFetchVersion"},
@@ -48,7 +51,10 @@ async function check(item){
     const data=await r.json();
     if(data.schema!=="careerops.public-jobs.v1" || !Array.isArray(data.jobs) || !data.category_counts)
       throw Error("Public feed JSON has invalid schema.");
-    console.log("All-role postings:",data.jobs.length,"employer boards:",data.scan?.scanned,"categories:",JSON.stringify(data.category_counts),"scan:",data.scan?.status);
+    if(data.market!=="IN"||data.scan?.india_only!==true ||
+       data.jobs.some(job=>!isIndiaLocation(job?.location)))
+      throw Error("Published job feed contains non-India or unverified locations.");
+    console.log("India-only postings:",data.jobs.length,"employer boards:",data.scan?.scanned,"categories:",JSON.stringify(data.category_counts),"scan:",data.scan?.status);
   }else{
     const source=await r.text();
     if(!source.includes(item.contains))throw Error((item.path||"index.html")+" does not contain the latest version.");

@@ -1,5 +1,14 @@
 # Career-Ops Cloud Sandbox
 
+## India-only discovery mode (November 21, 2026)
+
+The scheduled public employer scanner now publishes **India-based vacancies only**. It does not limit jobs by title, skill, employer or seniority; it includes IT and non-IT roles in India. Locations explicitly marked India or using recognized Indian cities/states qualify. Global-remote jobs, overseas-only roles and jobs with unknown locations are excluded until their India eligibility can be confirmed. Country filtering is performed before publication even where an ATS requires fetching an unfiltered public employer board.
+
+Discover Jobs and Overview also enforce this India-only scope, including on older imported or cached results. The location dropdown starts at **All India**; other choices are Indian cities or **Remote (India only)**. Reset returns to All India and cannot reveal worldwide results. Existing foreign-location tracked, saved and manually added jobs are **not deleted** and remain in My applications; they simply stop appearing in the new opportunity shortlist. Naukri and Indeed links remain India-oriented, and LinkedIn is an external homepage link.
+
+CI rejects a published job feed without `market: "IN"` and `scan.india_only: true`, checks the location of every published job, and protects against empty feeds and provider outages. Post-deploy smoke tests verify that the live JSON and client-side India classifier are present. This is a temporary market setting and can be expanded later through a tested code change.
+
+
 ## India job-source integration (November 21, 2026)
 
 Career-Ops now provides user-initiated, location-aware outbound searches to **Naukri and Indeed India**, plus homepage navigation to **LinkedIn**, in Discover Jobs. These are links, not scraped or imported listings; the portals' APIs and terms do not establish permission for an open read-all-jobs index. No portal login, scraping or automatic applications are added.

@@ -28,7 +28,7 @@ function createHarness(initialHash="#overview"){
       const attributes=new Map(),listeners=new Map();
       const el={
         id,hidden:false,disabled:false,open:false,innerHTML:"",textContent:"",
-        value:id==="matchFilter"?"all":id==="sortFilter"?"variety":"",
+        value:id==="matchFilter"?"all":id==="sortFilter"?"variety":id==="locationFilter"?"india":"",
         dataset:{},classList:classList(),attributes,listeners,
         addEventListener(name,cb){listeners.set(name,cb)},
         getAttribute(name){return attributes.get(name)||null},
@@ -65,6 +65,7 @@ function createHarness(initialHash="#overview"){
     CareerOpsCategories:{categories:["IT & Software","Other"],classify:()=>"Other"},
     CareerOpsJobText:require("../job-text.js"),
     CareerOpsJobSearch:require("../job-search.js"),
+    CareerOpsIndiaJobs:require("../india-jobs.js"),
     CareerOpsMatch:{
       rank:()=>({score:0,quality:"Limited evidence",role:{points:0,detail:"Unknown"},
         location:{points:0,detail:"Unknown"},skills:{points:0,detail:"Unknown"},
@@ -254,7 +255,7 @@ test("imported employer markup is readable in the job dialog and optional rankin
   const raw='<p><strong>Opportunity Overview</strong></p><p>Senior Applied Scientist &nbsp; working with clinical workflows.</p><ul><li>Complex clinical document understanding</li><li>Deploying models</li></ul>';
   const data=[{
     id:"cohere-health-sample",title:"Senior Applied Scientist",company:"Cohere Health",
-    location:"Remote, USA",url:"https://example.com/job/123",
+    location:"Hyderabad, India",url:"https://example.com/job/123",
     description:raw
   }];
   const listener=ui.node("scanImport").listeners.get("change");
@@ -275,4 +276,26 @@ test("imported employer markup is readable in the job dialog and optional rankin
   assert.doesNotMatch(displayed,/<\/?p>|&nbsp;|\\</);
   assert.equal(ui.node("matchExplanation").hidden,true);
   assert.equal(ui.node("matchExplanation").innerHTML,"");
+});
+
+test("Discover defaults to India and never reveals previously imported overseas-only jobs",async()=>{
+  assert.match(markup,/<option value="india" selected>All India<\/option>/);
+  assert.doesNotMatch(markup,/All locations worldwide/);
+  const ui=createHarness("#discover");
+  assert.equal(ui.node("locationFilter").value,"india");
+  const data=[
+    {title:"DevOps Engineer",company:"India Example",location:"Hyderabad, India",url:"https://example.com/india-role"},
+    {title:"Cloud Engineer",company:"Overseas Example",location:"Remote, United States",url:"https://example.com/us-role"},
+    {title:"SRE",company:"Unknown Example",location:"Not specified",url:"https://example.com/unknown-role"}
+  ];
+  const listener=ui.node("scanImport").listeners.get("change");
+  listener({target:{files:[{size:900,name:"scope-test.json",text:async()=>JSON.stringify(data)}],value:"selected"}});
+  await new Promise(resolve=>setImmediate(resolve));
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.match(ui.node("jobsGrid").innerHTML,/India Example/);
+  assert.doesNotMatch(ui.node("jobsGrid").innerHTML,/Overseas Example|Unknown Example/);
+  ui.node("locationFilter").value="";
+  ui.node("locationFilter").listeners.get("change")();
+  assert.doesNotMatch(ui.node("jobsGrid").innerHTML,/Overseas Example|Unknown Example/,
+    "Clearing filters cannot re-enable international job discovery");
 });
