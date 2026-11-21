@@ -27,3 +27,18 @@
 .no-url-label{font-size:10px;color:#8c9cb1;white-space:nowrap}
 .dialog-bottom #dialogSource{max-width:260px;color:#9fb4c8;font-size:11px;line-height:1.65}
 @media(max-width:520px){.card-action-group{width:100%;justify-content:flex-start}.card-footer{align-items:flex-start;flex-direction:column;gap:10px}}
+
+/* Phase 2: transparent job relevance, not AI or ATS screening */
+.priority-notice{border:1px solid #314e60;background:#152638;color:#b3c6d4;border-radius:11px;padding:11px 14px;font-size:11px;line-height:1.6;margin:14px 0 0}
+.card-priority-row{margin-top:12px;display:flex;justify-content:flex-start;gap:9px;align-items:center}
+.match.limited{background:#253850;color:#b4c8db;border-color:#3e5670}
+.priority-quality{font-size:10px;color:#96abbc;white-space:nowrap}
+.priority-explanation{margin-top:23px;border:1px solid #334e62;border-radius:13px;background:#14263a;padding:17px}
+.priority-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.priority-head h3{font-size:22px;color:var(--teal);margin:6px 0 0}
+.priority-factor{border-top:1px solid #314457;padding:11px 0;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.priority-factor strong{font-size:11px}
+.priority-factor p{font-size:10px;color:#9eb4c6;margin-top:5px;line-height:1.5}
+.priority-factor>span{font-size:12px;font-weight:800;color:#d9eee9;white-space:nowrap}
+.priority-experience{color:#b9cee0;background:#1b3346;padding:10px 12px;border-radius:8px;font-size:11px;line-height:1.55}
+.priority-disclaimer{font-size:10px;color:#819bb0;margin-top:13px}
