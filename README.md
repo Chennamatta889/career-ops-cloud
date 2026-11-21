@@ -2,7 +2,7 @@
 
 ## India job-source integration (November 21, 2026)
 
-Career-Ops now provides user-initiated, location-aware outbound searches to **Naukri, LinkedIn Jobs, and Indeed India** in Discover Jobs. These are links, not scraped or imported listings; the portals' APIs and terms do not establish permission for an open read-all-jobs index. No portal login, scraping or automatic applications are added.
+Career-Ops now provides user-initiated, location-aware outbound searches to **Naukri and Indeed India**, plus homepage navigation to **LinkedIn**, in Discover Jobs. These are links, not scraped or imported listings; the portals' APIs and terms do not establish permission for an open read-all-jobs index. No portal login, scraping or automatic applications are added.
 
 Actual indexed employer postings are sourced from selected read-only public Greenhouse, Ashby, Lever, SmartRecruiters, and **Workable** career boards. Eight Workable companies with publicly visible India-facing career pages are newly configured. Workable source failures are reported independently and never turned into fabricated vacancies. Terms, permissions, API references, limitations and expansion criteria: [India job-source policy](docs/INDIA_JOB_SOURCE_POLICY.md).
 
