@@ -283,6 +283,25 @@ export async function runScan({sources,fetchImpl=fetch,concurrency=5,now=new Dat
     source_errors:errors.slice(0,30),source_health:health,jobs:published
   };
 }
+// Read only the previously published, public health snapshot. A failed read
+// must never fail a job scan or silently reuse old jobs.
+export async function readPreviousCandidateHealth(fetchImpl=fetch){
+  const url="https://chennamatta889.github.io/career-ops-cloud/data/jobs.json";
+  try{
+    const response=await fetchImpl(url,{headers:{Accept:"application/json"},
+      signal:AbortSignal.timeout(8000),redirect:"error"});
+    if(!response.ok)return {};
+    const contentLength=Number(response.headers?.get?.("content-length")||0);
+    if(contentLength>4*1024*1024)return {};
+    const raw=await response.text();
+    if(raw.length>4*1024*1024)return {};
+    const feed=JSON.parse(raw);
+    if(feed?.schema!=="careerops.public-jobs.v1"||feed?.market!=="IN"||
+      !feed.scan?.india_only)return {};
+    const health=feed.scan?.candidate_health;
+    return health&&typeof health==="object"&&!Array.isArray(health)?health:{};
+  }catch{return {};}
+}
 async function main(){
   const sourceFile=process.env.JOB_SOURCES_FILE||"scripts/universal-job-sources.json";
   const output=process.env.FEED_OUTPUT||"public/data/jobs.json";
@@ -301,8 +320,9 @@ async function main(){
     // Source leads are NOT automatically validated openings: every board
     // must pass public API, India, real vacancy and 30-day eligibility gates.
     const candidates=[...earlyCandidates,...fresherCandidates,...legacyCandidates];
+    const previousHealth=await readPreviousCandidateHealth();
     const expansion=await discoverIndiaCandidates({candidates,curatedSources:sources,
-      scanBoard,isIndiaLocation,now});
+      scanBoard,isIndiaLocation,now,previousHealth});
     feed=mergeIndiaCandidates(feed,expansion,balanceJobs);
     console.log("India candidate discovery:",JSON.stringify(expansion.report));
     if(expansion.errors.length)
