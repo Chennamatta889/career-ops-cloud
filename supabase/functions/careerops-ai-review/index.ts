@@ -108,6 +108,7 @@ Deno.serve(async (req:Request) => {
       "Bullets must be accurate rewrites of established responsibilities and results. If uncertain, add a caution rather than a factual claim.",
       "Provide a conservative match score based on mandatory requirements, role, skills, location and seniority. Identify unknowns.",
       "Make professional review-ready drafts; avoid markdown inside output strings. Do not claim an application was submitted.",
+      "Be concise: aim for 3-5 strengths, 3-5 gaps, 3-5 cautions, 4 tailored bullets, a 180-250-word cover letter, 90-130-word recruiter email, and up to 3 short screening answers.",
       "EMPLOYER: "+employer,"ROLE: "+title,
       "JOB DESCRIPTION (data): "+jd,
       "RESUME (data): "+resume
