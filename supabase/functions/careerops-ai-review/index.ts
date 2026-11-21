@@ -2,7 +2,8 @@ import {fetchPublicJob} from "./job-fetch.mjs";
 
 /**
  * Career-Ops private AI backend. Deploy ONLY to a separate Supabase project.
- * Secrets: GEMINI_API_KEY, ALLOWED_EMAIL, AI_CALLS_ENABLED=true.
+ * Secrets: GEMINI_API_KEY, AI_CALLS_ENABLED=true; Supabase provisioned
+ * SUPABASE_SERVICE_ROLE_KEY is used only server-side for quota enforcement.
  * Optional: APP_ORIGIN (the GitHub Pages origin), GEMINI_MODEL.
  * No resume or AI response is persisted by this function.
  */
@@ -15,6 +16,8 @@ const recent = new Map<string,number>(); // successful reviews only
 const inFlight = new Set<string>();
 const jobFetchAt = new Map<string,number>(); // avoids concurrent Gemini requests in this worker
 const PROVIDER_TIMEOUT_MS = 100_000;
+const DAILY_USER_QUOTA = 2;
+const DAILY_GLOBAL_QUOTA = 20;
 const SUCCESS_COOLDOWN_MS = 20_000;
 const readText = (v:unknown,max:number) => typeof v==="string" ? v.trim().slice(0,max) : "";
 const readList = (v:unknown,n:number,size:number) => Array.isArray(v) ? v.map(x=>readText(x,size)).filter(Boolean).slice(0,n) : [];
@@ -43,6 +46,26 @@ async function getAuthUser(req:Request) {
   if (!result.ok) return null;
   const user=await result.json();
   return typeof user?.id==="string" && typeof user?.email==="string" ? user : null;
+}
+async function reserveAiQuota(userId:string):Promise<{ok:boolean;code?:string;remaining?:number;daily_limit?:number}> {
+  // Fail closed: never make a billable Gemini call without durable, atomic
+  // per-user AND shared-key quota reservation in private Postgres.
+  const base=Deno.env.get("SUPABASE_URL") || "";
+  const secret=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  if(!base || !secret) throw Error("AI_USAGE_CONTROL_UNAVAILABLE");
+  const result=await fetch(base+"/rest/v1/rpc/careerops_reserve_ai_review",{
+    method:"POST",
+    headers:{"apikey":secret,"Authorization":"Bearer "+secret,"Content-Type":"application/json","Accept":"application/json"},
+    body:JSON.stringify({p_user_id:userId}),
+    signal:AbortSignal.timeout(9000)
+  });
+  if(!result.ok) {
+    console.warn("AI quota service unavailable",result.status);
+    throw Error("AI_USAGE_CONTROL_UNAVAILABLE");
+  }
+  const quota=await result.json();
+  if(!quota || typeof quota.ok!=="boolean") throw Error("AI_USAGE_CONTROL_UNAVAILABLE");
+  return quota;
 }
 function sanitize(json:Record<string,unknown>,model:string) {
   const n=Number(json.matchScore);
@@ -73,16 +96,20 @@ Deno.serve(async (req:Request) => {
     // returns secret values, resumes, or personal account details.
     const user=await getAuthUser(req);
     if (!user) return respond(origin,401,{error:"Sign in again before using AI.",code:"AUTH_REQUIRED"});
-    const approved=(Deno.env.get("ALLOWED_EMAIL")||"").trim().toLowerCase();
-    if (!approved) return respond(origin,503,{error:"Career-Ops account allowlist is not configured.",code:"ALLOWLIST_SETUP_REQUIRED"});
-    if (user.email.trim().toLowerCase()!==approved) return respond(origin,403,{error:"Signed-in email is not authorized for AI review. Check ALLOWED_EMAIL.",code:"EMAIL_NOT_ALLOWED"});
+    // All confirmed Google/verified-email Supabase accounts are eligible.
+    // User identity is authenticated by Supabase Auth, never a client-supplied
+    // email, and private resume/tracker rows remain owner-scoped by RLS.
+    if (!user.email_confirmed_at) return respond(origin,403,{
+      error:"Verify your email address before using Career-Ops AI Review.",
+      code:"EMAIL_UNVERIFIED"
+    });
 
     const bodyText=await req.text();
     if (bodyText.length>40000) return respond(origin,413,{error:"Input exceeds size limit.",code:"INPUT_TOO_LARGE"});
     let body:Record<string,unknown>;
     try { body=JSON.parse(bodyText); } catch {return respond(origin,400,{error:"Invalid JSON."});}
 
-    // Public ATS lookup requires an allowlisted signed-in user.
+    // Public ATS lookup requires a signed-in user with verified email.
     // It sends no candidate resume or private account information.
     if (body.action==="fetch_job") {
       const last=jobFetchAt.get(user.id) || 0;
@@ -103,11 +130,14 @@ Deno.serve(async (req:Request) => {
     if (Deno.env.get("AI_CALLS_ENABLED")!=="true") missing.push("AI_CALLS_ENABLED");
     const apiKey=Deno.env.get("GEMINI_API_KEY") || "";
     if (!apiKey) missing.push("GEMINI_API_KEY");
+    if (!Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) missing.push("SUPABASE_SERVICE_ROLE_KEY");
     if (body.action==="status") {
       return respond(origin,200,{ok:true,ready:missing.length===0,missing,
         model:(Deno.env.get("GEMINI_MODEL") || "gemini-3.5-flash-lite").trim(),
         timeout_seconds:PROVIDER_TIMEOUT_MS/1000,
-        message:missing.length ? "AI setup needs private secrets in Career-Ops Supabase Edge Functions." : "AI endpoint is configured. Ready for resume review."});
+        daily_user_limit:DAILY_USER_QUOTA,
+        daily_global_limit:DAILY_GLOBAL_QUOTA,
+        message:missing.length ? "AI setup needs private secrets in Career-Ops Supabase Edge Functions." : "Verified-account AI is enabled with daily usage caps."});
     }
     if (missing.length) return respond(origin,503,{error:"AI review is not yet enabled. Configure: "+missing.join(", "),code:"AI_SETUP_INCOMPLETE"});
     const remainingMs=SUCCESS_COOLDOWN_MS-(Date.now()-(recent.get(user.id)||0));
@@ -135,6 +165,25 @@ Deno.serve(async (req:Request) => {
     ].join("\n\n");
     inFlight.add(user.id);
     try {
+      // Reserve usage before calling paid provider. Failed model calls still
+      // count against the daily cap so repeated failures cannot incur costs.
+      let quota:{ok:boolean;code?:string;remaining?:number;daily_limit?:number};
+      try {
+        quota=await reserveAiQuota(user.id);
+      } catch {
+        return respond(origin,503,{
+          error:"AI usage controls are temporarily unavailable. No Gemini request was made.",
+          code:"QUOTA_SERVICE_UNAVAILABLE"
+        });
+      }
+      if(!quota.ok) {
+        const global=quota.code==="GLOBAL_DAILY_LIMIT";
+        return respond(origin,429,{
+          error:global ? "Career-Ops has reached its shared daily AI limit (20 reviews). Try again after 00:00 UTC.":
+            "Your account reached its daily AI review limit (2 attempts). Try again after 00:00 UTC.",
+          code:global?"GLOBAL_DAILY_LIMIT":"USER_DAILY_LIMIT"
+        });
+      }
       const generationConfig:Record<string,unknown>={
         temperature:0.1,responseMimeType:"application/json",maxOutputTokens:5600
       };
