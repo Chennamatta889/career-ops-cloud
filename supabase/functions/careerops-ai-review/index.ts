@@ -1,3 +1,5 @@
+import {fetchPublicJob} from "./job-fetch.mjs";
+
 /**
  * Career-Ops private AI backend. Deploy ONLY to a separate Supabase project.
  * Secrets: GEMINI_API_KEY, ALLOWED_EMAIL, AI_CALLS_ENABLED=true.
@@ -10,7 +12,8 @@ function allowedOrigin() {
   catch { return fallbackOrigin; }
 }
 const recent = new Map<string,number>(); // successful reviews only
-const inFlight = new Set<string>(); // avoids concurrent Gemini requests in this worker
+const inFlight = new Set<string>();
+const jobFetchAt = new Map<string,number>(); // avoids concurrent Gemini requests in this worker
 const PROVIDER_TIMEOUT_MS = 100_000;
 const SUCCESS_COOLDOWN_MS = 20_000;
 const readText = (v:unknown,max:number) => typeof v==="string" ? v.trim().slice(0,max) : "";
@@ -78,6 +81,23 @@ Deno.serve(async (req:Request) => {
     if (bodyText.length>40000) return respond(origin,413,{error:"Input exceeds size limit.",code:"INPUT_TOO_LARGE"});
     let body:Record<string,unknown>;
     try { body=JSON.parse(bodyText); } catch {return respond(origin,400,{error:"Invalid JSON."});}
+
+    // Public ATS lookup requires an allowlisted signed-in user.
+    // It sends no candidate resume or private account information.
+    if (body.action==="fetch_job") {
+      const last=jobFetchAt.get(user.id) || 0;
+      if (Date.now()-last<3000) return respond(origin,429,{error:"Please allow a moment between employer job lookups.",code:"JOB_LOOKUP_LIMIT"});
+      jobFetchAt.set(user.id,Date.now());
+      try {
+        const job=await fetchPublicJob(readText(body.url,1500));
+        return respond(origin,200,{ok:true,job});
+      } catch(error) {
+        const code=error && typeof error==="object" && "code" in error ? String(error.code) : "JOB_LOOKUP_FAILED";
+        const allowedCodes=new Set(["UNSUPPORTED_JOB_LINK","JOB_SOURCE_UNAVAILABLE","JOB_NOT_FOUND","JOB_DETAILS_MISSING"]);
+        const message=error instanceof Error ? error.message : "Unable to fetch this job description.";
+        return respond(origin,code==="UNSUPPORTED_JOB_LINK"?400:404,{error:message.slice(0,240),code:allowedCodes.has(code)?code:"JOB_LOOKUP_FAILED"});
+      }
+    }
 
     const missing:string[]=[];
     if (Deno.env.get("AI_CALLS_ENABLED")!=="true") missing.push("AI_CALLS_ENABLED");
