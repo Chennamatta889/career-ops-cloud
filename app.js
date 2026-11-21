@@ -9,6 +9,7 @@
   let activeAccountId=null;
   let accountEpoch=0;
   const STAGES = [
+    { name: "Opened", color: "#79b9df" },
     { name: "Saved", color: "#42dfb6" },
     { name: "Review", color: "#8cd9ff" },
     { name: "Applied", color: "#b4a7ff" },
@@ -59,7 +60,10 @@
       return {
         mode: ["imported","manual","live"].includes(x.mode) ? x.mode : "demo",
         jobs: x.jobs.map(function (j) {
-          return { id: str(j.id) || newId(), title: str(j.title), company: str(j.company), location: str(j.location), category:jobCategory(j), department:str(j.department), skills: Array.isArray(j.skills) ? j.skills.slice(0,12).map(str) : [], description: readableJobText(j.description,6000), url: safeUrl(j.url), demo: !!j.demo, manual: !!j.manual || (x.mode === "manual" && !j.demo), source: str(j.source), requiredExperience: str(j.requiredExperience), stage: STAGES.some(function (s) { return s.name === j.stage; }) ? j.stage : "", addedAt: str(j.addedAt) };
+          return { id: str(j.id) || newId(), title: str(j.title), company: str(j.company), location: str(j.location), category:jobCategory(j), department:str(j.department), skills: Array.isArray(j.skills) ? j.skills.slice(0,12).map(str) : [], description: readableJobText(j.description,6000), url: safeUrl(j.url), demo: !!j.demo, manual: !!j.manual || (x.mode === "manual" && !j.demo), source: str(j.source), requiredExperience: str(j.requiredExperience),
+            stage: STAGES.some(function (s) { return s.name === j.stage; }) ? j.stage : "",
+            openedAt:str(j.openedAt||j.opened_at),appliedOn:str(j.appliedOn||j.applied_on),
+            trackingUpdatedAt:str(j.trackingUpdatedAt||j.updated_at),addedAt: str(j.addedAt) };
         }),
         prefs: Object.assign({}, DEFAULT_PREFS, x.prefs || {}),
         activity: Array.isArray(x.activity) ? x.activity.slice(0,100) : [],
@@ -70,6 +74,22 @@
   };
   let state = load(GUEST_STORAGE_KEY);
   let activeJobId = null;
+  let pendingConfirmationId = null;
+  const localToday = function(date=new Date()){
+    const local=new Date(date.getTime()-date.getTimezoneOffset()*60000);
+    return local.toISOString().slice(0,10);
+  };
+  const formatTrackingDate=function(value){
+    const parsed=new Date(value);
+    return value&&!Number.isNaN(parsed.valueOf())?
+      parsed.toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"}):"";
+  };
+  const validApplicationDate=function(raw){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(raw))return false;
+    const date=new Date(raw+"T12:00:00Z");
+    return Number.isFinite(date.valueOf())&&date.toISOString().slice(0,10)===raw&&
+      raw>="2000-01-01"&&raw<=localToday();
+  };
   const save = function () {
     try {
       // The published job feed is public and can now contain thousands of roles.
@@ -239,6 +259,14 @@
   };
   const chips = function (skills) { return (skills || []).slice(0,5).map(function (s) { return '<span class="skill-chip">' + escapeHtml(s) + '</span>'; }).join(""); };
   const find = function (id) { return state.jobs.find(function (j) { return j.id === id; }); };
+  const trackingSummary=function(j){
+    const items=[];
+    if(j.openedAt)items.push("Opened "+formatTrackingDate(j.openedAt));
+    if(j.appliedOn)items.push("Applied "+formatTrackingDate(j.appliedOn+"T12:00:00"));
+    else if(["Applied","Interview","Offer","Rejected"].includes(j.stage))
+      items.push("Application date not recorded");
+    return items;
+  };
   const priorityBadge = function(j){
     if(!state.prefs.roles.trim()&&!state.prefs.locations.trim()&&!state.prefs.skills.trim())
       return "";
@@ -267,9 +295,9 @@
     const details = '<button class="text-link secondary-link" type="button" data-action="details" data-id="' + escapeHtml(j.id) + '">View details</button>';
     const aiReview = '<button class="text-link open-job-link" type="button" data-action="ai" data-id="' + escapeHtml(j.id) + '">Review with AI</button>';
     const open = url
-      ? '<a class="text-link open-job-link" href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer" aria-label="Open job listing for ' + escapeHtml(j.title) + ' at ' + escapeHtml(j.company) + '">Open listing ↗</a>'
+      ? '<a class="text-link open-job-link" data-action="open-listing" data-id="' + escapeHtml(j.id) + '" href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer" aria-label="Open job listing for ' + escapeHtml(j.title) + ' at ' + escapeHtml(j.company) + '">Open listing ↗</a>'
       : '<span class="no-url-label">' + (j.demo ? 'Sample job — no link' : 'Posting link unavailable') + '</span>';
-    return '<article class="job-card"><div class="job-card-top"><div class="company-symbol">' + escapeHtml(companyInitials(j.company)) + '</div><button class="save-button ' + (j.stage ? 'saved' : '') + '" data-action="save" data-id="' + escapeHtml(j.id) + '">' + (j.stage ? '✓ Tracking' : '+ Save') + '</button></div>' + ranking + '<h3>' + escapeHtml(j.title) + '</h3><p class="company-line">' + escapeHtml(j.company) + ' · ' + escapeHtml(j.location) + '</p><p class="description">' + escapeHtml(readableJobText(j.description,220) || 'A description is not available in this listing. Open the employer website for details.') + '</p><div class="chip-wrap"><span class="skill-chip category-chip">' + escapeHtml(categoryName) + '</span>' + experienceBadge + chips(j.skills) + '</div><div class="card-footer"><span class="job-date">' + escapeHtml(jobSource(j)) + '</span><div class="card-action-group">' + details + aiReview + open + '</div></div></article>';
+    return '<article class="job-card"><div class="job-card-top"><div class="company-symbol">' + escapeHtml(companyInitials(j.company)) + '</div><button class="save-button ' + (j.stage ? 'saved' : '') + '" data-action="save" data-id="' + escapeHtml(j.id) + '">' + (j.stage ? '✓ Tracking' : '+ Save') + '</button></div>' + ranking + '<h3>' + escapeHtml(j.title) + '</h3><p class="company-line">' + escapeHtml(j.company) + ' · ' + escapeHtml(j.location) + '</p><p class="description">' + escapeHtml(readableJobText(j.description,220) || 'A description is not available in this listing. Open the employer website for details.') + '</p><div class="chip-wrap"><span class="skill-chip category-chip">' + escapeHtml(categoryName) + '</span>' + experienceBadge + chips(j.skills) + '</div><div class="card-tracking-summary">'+trackingSummary(j).map(function(value){return '<span>'+escapeHtml(value)+'</span>';}).join("")+'</div><div class="card-footer"><span class="job-date">' + escapeHtml(jobSource(j)) + '</span><div class="card-action-group">' + details + aiReview + open + '</div></div></article>';
   };
   const pipelineCount = function (stage) { return state.jobs.filter(function (j) { return j.stage === stage; }).length; };
   const renderOverview = function () {
@@ -340,13 +368,16 @@
   const broadcastStage = function(job) {
     if(!job || job.demo) return;
     window.dispatchEvent(new CustomEvent("careerops:tracking-changed",{detail:{job:{
-      job_key:privateJobKey(job),title:job.title,company:job.company,location:job.location,url:job.url,stage:job.stage
+      job_key:privateJobKey(job),title:job.title,company:job.company,location:job.location,url:job.url,
+      stage:job.stage,openedAt:job.openedAt||"",appliedOn:job.appliedOn||"",
+      trackingUpdatedAt:job.trackingUpdatedAt||""
     }}}));
   };
   const track = function (id) {
     const job = find(id); if (!job) return;
     if (job.stage && job.stage !== "Saved") { toast("This job is marked " + job.stage + ". Update its status in My applications."); return; }
-    job.stage = job.stage === "Saved" ? "" : "Saved";
+    job.stage = job.stage === "Saved" ? (job.openedAt?"Opened":"") : "Saved";
+    job.trackingUpdatedAt=stamp();
     log(job.stage ? "Job saved" : "Job removed from shortlist", job.title + " · " + job.company);
     save(); render(); broadcastStage(job); toast(job.stage ? "Job saved to My applications" : "Job removed from saved listings");
   };
@@ -386,6 +417,9 @@
       : (j.demo ? "Sample job: this is not a real listing, so there is no external URL."
       : "This job record has no valid posting URL. Open the employer's career site to locate it.");
     $("dialogSave").textContent = j.stage ? "✓ Tracking" : "+ Save job";
+    $("dialogTracking").textContent=trackingSummary(j).join(" · ")||"Not tracked yet";
+    $("dialogConfirmApplied").hidden=j.demo;
+    $("dialogConfirmApplied").textContent=j.appliedOn?"Edit application date":"Yes, I applied";
     $("dialogLink").hidden = !url;
     const report=$("dialogReport");
     report.hidden=j.demo || !url;
@@ -397,9 +431,11 @@
     }else report.removeAttribute("href");
     if (url) {
       $("dialogLink").href = url;
+      $("dialogLink").setAttribute("data-id",j.id);
       $("dialogLink").setAttribute("aria-label", "Open original job listing at " + j.company);
     } else {
       $("dialogLink").removeAttribute("href");
+      $("dialogLink").removeAttribute("data-id");
       $("dialogLink").removeAttribute("aria-label");
     }
     $("jobDialog").showModal();
@@ -693,6 +729,9 @@
         const existing = oldByKey.get(key);
         job.id = existing ? existing.id : (str(raw.id) || newId());
         job.stage = existing ? existing.stage : "";
+        job.openedAt=existing?.openedAt||"";
+        job.appliedOn=existing?.appliedOn||"";
+        job.trackingUpdatedAt=existing?.trackingUpdatedAt||"";
         job.source = "cloud";
         job.manual = false;
         const date = str(raw.posted_at || raw.addedAt);
@@ -734,7 +773,9 @@
   };
   const trackable = function(j) {
     return {job_key:privateJobKey(j),title:j.title,company:j.company,
-      location:j.location,job_url:j.url,stage:j.stage};
+      location:j.location,job_url:j.url,stage:j.stage,
+      opened_at:j.openedAt||null,applied_on:j.appliedOn||null,
+      updated_at:j.trackingUpdatedAt||""};
   };
   function oldDeviceJobs(){
     // Data stored by earlier Career-Ops versions is unassigned to any account.
