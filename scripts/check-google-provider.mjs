@@ -21,13 +21,24 @@ try{
   });
   if(!response.ok)throw Error("Auth settings endpoint returned HTTP "+response.status);
   const settings=await response.json();
-  if(settings?.external?.google!==true) {
-    console.error("Google provider: NOT enabled in dedicated Career-Ops Supabase Auth settings.");
+  const value=settings?.external?.google;
+  let report;
+  if(value===true) {
+    report="Google provider: ENABLED in Career-Ops Supabase Auth settings.";
+    console.log(report);
+    console.log("This checks provider activation, not an individual user's end-to-end login.");
+  } else if(value===false) {
+    report="Google provider: DISABLED in Career-Ops Supabase Auth settings. Open Authentication → Sign In / Providers → Google and enable it in project nnhzihcugvifhegsfmua.";
+    console.error(report);
+    console.log("::warning title=Google OAuth disabled::"+report);
     process.exitCode=1;
   } else {
-    console.log("Google provider: ENABLED in Career-Ops Supabase Auth settings.");
-    console.log("This only verifies provider activation, not an end-to-end user login.");
+    report="Google provider: UNVERIFIED (Supabase Auth settings response did not include external.google).";
+    console.error(report);
+    console.log("::warning title=Google OAuth status unknown::"+report);
+    process.exitCode=1;
   }
+  if(process.env.GITHUB_STEP_SUMMARY)fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,"### Career-Ops Google OAuth check\n\n"+report+"\n\n");
 }catch(e){
   console.error("Google provider verification failed:",String(e?.message||e).slice(0,200));
   process.exitCode=1;
