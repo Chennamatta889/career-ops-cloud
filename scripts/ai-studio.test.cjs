@@ -18,10 +18,10 @@ test("AI Studio controls exist and are connected to its navigation",()=>{
   assert.match(app,/ai:"AI Studio"/);
   assert.match(app,/data-action="ai"/);
 });
-test("only publishable config is allowed and is disabled by default",()=>{
-  assert.match(config,/supabaseUrl: ""/);
-  assert.match(config,/publishableKey: ""/);
-  assert.doesNotMatch(config,/eyJhbG|sk-[A-Za-z0-9]{12}|AIza[A-Za-z0-9_-]{15}/);
+test("only browser-safe values for the dedicated Career-Ops project are published",()=>{
+  assert.match(config,/supabaseUrl: "https:\/\/nnhzihcugvifhegsfmua\.supabase\.co"/);
+  assert.match(config,/publishableKey: "sb_publishable_[A-Za-z0-9_-]+"/);
+  assert.doesNotMatch(config,/eyJhbG|sb_secret_|service_role|sk-[A-Za-z0-9]{12}|AIza[A-Za-z0-9_-]{15}/);
   assert.match(ai,/if\(!ready\)/);
 });
 test("the app preserves auth callback URL fragment until the AI tab reads it",()=>{
