@@ -43,6 +43,7 @@
       expires_at:expiry
     });
     history.replaceState(null,"",location.pathname+location.search+"#ai");
+    document.querySelector('[data-nav="ai"]')?.click();
   }
   async function getAccessToken() {
     if(!session) return null;
