@@ -61,7 +61,10 @@
       throw Error("Private storage error (HTTP "+response.status+")"+(message?": "+message:""));
     }
     if(response.status===204 || method==="DELETE" || extra.Prefer?.includes("return=minimal"))return null;
-    try{return await response.json();}catch(_){return null;}
+    let body;
+    try{body=await response.json();}catch(_){return null;}
+    if(accountVersion!==version || currentUser?.id!==account.id)throw changedAccount();
+    return body;
   }
   const qs=v=>encodeURIComponent(String(v));
   async function checkVault(){
