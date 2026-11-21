@@ -169,6 +169,39 @@ jobs:
             - name: Triomics
               careers_url: https://jobs.ashbyhq.com/triomics
               enabled: true
+            - name: New Era Technology
+              careers_url: https://job-boards.greenhouse.io/neweratech
+              enabled: true
+            - name: Arcana Analytics
+              careers_url: https://job-boards.greenhouse.io/arcanaanalytics
+              enabled: true
+            - name: Instawork
+              careers_url: https://job-boards.greenhouse.io/instawork
+              enabled: true
+            - name: Teikametrics
+              careers_url: https://job-boards.greenhouse.io/teikametrics
+              enabled: true
+            - name: WPP
+              careers_url: https://job-boards.greenhouse.io/wpp
+              enabled: true
+            - name: MerQube
+              careers_url: https://job-boards.greenhouse.io/merqube
+              enabled: true
+            - name: Sarvam
+              careers_url: https://jobs.ashbyhq.com/sarvam
+              enabled: true
+            - name: OpenObserve
+              careers_url: https://jobs.ashbyhq.com/openobserve-careers
+              enabled: true
+            - name: ScienceLogic
+              careers_url: https://jobs.ashbyhq.com/sciencelogic
+              enabled: true
+            - name: Arkose Labs
+              careers_url: https://jobs.ashbyhq.com/arkoselabs
+              enabled: true
+            - name: Lyric
+              careers_url: https://jobs.ashbyhq.com/lyric
+              enabled: true
           job_boards: []
           EOF
 
