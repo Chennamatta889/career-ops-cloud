@@ -42,3 +42,37 @@
 .priority-factor>span{font-size:12px;font-weight:800;color:#d9eee9;white-space:nowrap}
 .priority-experience{color:#b9cee0;background:#1b3346;padding:10px 12px;border-radius:8px;font-size:11px;line-height:1.55}
 .priority-disclaimer{font-size:10px;color:#819bb0;margin-top:13px}
+
+/* Phase 3: private AI Studio */
+.ai-intro{display:flex;align-items:center;gap:16px;margin:18px 0;border-color:#31595e}
+.ai-intro-icon{display:grid;place-items:center;border-radius:15px;background:#1c4c47;color:#69eac5;width:52px;height:52px;flex:none;font-size:26px}
+.ai-intro>div{flex:1}
+.ai-intro strong{color:#eafbf5;font-size:14px}
+.ai-intro p{color:#a1b7ca;font-size:11px;line-height:1.7;margin-top:5px}
+.ai-intro .btn{flex:none}
+.ai-login{margin-top:22px}
+.ai-login-row{display:flex;gap:10px;margin-top:15px}
+.ai-login-row input{flex:1;min-width:0}
+.ai-workflow{margin-top:20px}
+.ai-workflow .panel{min-width:0}
+.ai-workflow textarea{width:100%;min-height:220px;resize:vertical}
+.ai-workflow input[readonly]{opacity:.68;cursor:default}
+.ai-signed-in{font-size:11px;color:#a6bbce;margin-top:20px}
+.ai-submit-panel{margin:20px 0;display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+.ai-submit-copy{flex:1 1 350px}
+.ai-submit-copy h2{font-size:15px}
+.ai-submit-copy p{font-size:11px;color:#a5b9ca;max-width:670px;line-height:1.6;margin-top:6px}
+.ai-consent{display:flex;align-items:start;gap:8px;max-width:440px;color:#d3e3ee;font-size:11px;line-height:1.6}
+.ai-consent input{margin-top:2px;accent-color:#42dfb6;flex:none}
+.ai-result-bar{display:flex;justify-content:flex-end;margin:14px 0}
+.ai-results{padding:24px;margin-bottom:26px}
+.ai-result-heading{background:#1b3945;padding:18px;border:1px solid #39616b;border-radius:13px;margin-bottom:18px}
+.ai-result-heading h2{font-size:20px;color:#70edd0}
+.ai-result-heading p{font-size:12px;color:#c1d5e3;line-height:1.6;margin-top:5px}
+.ai-answer-section{border-top:1px solid #33485a;padding:14px 2px}
+.ai-answer-section h3{font-size:13px;font-weight:750;color:#e9f9f8;margin-bottom:10px}
+.ai-answer-section ul{padding-left:18px;display:grid;gap:6px}
+.ai-answer-section li,.ai-answer-section p{font-size:11px;color:#b8cbda;line-height:1.75}
+.ai-draft-text{white-space:pre-wrap;word-break:break-word;font:inherit;font-size:11px;color:#bdcfdd;line-height:1.75;background:#122539;border:1px solid #2d4b60;border-radius:9px;padding:14px;margin:0}
+.ai-disclaimer{border-top:1px solid #315669;color:#e3bd79;font-size:10px;line-height:1.6;padding-top:15px}
+@media(max-width:720px){.ai-intro,.ai-login-row{flex-wrap:wrap}.ai-intro .btn{width:100%}.ai-login-row .btn{width:100%}.ai-submit-panel .btn{width:100%}}
