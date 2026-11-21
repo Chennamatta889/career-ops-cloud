@@ -5,6 +5,7 @@ const vm=require("node:vm");
 const path=require("node:path");
 
 const source=fs.readFileSync(path.resolve(__dirname,"../app.js"),"utf8");
+const markup=fs.readFileSync(path.resolve(__dirname,"../index.html"),"utf8");
 const pageKeys=["overview","discover","applications","resume","ai","activity","settings"];
 function createHarness(initialHash="#overview"){
   const elements=new Map(),documentEvents=new Map(),windowEvents=new Map();
@@ -187,4 +188,53 @@ test("Escape closes the mobile drawer without changing the page or history",()=>
   ui.window.dispatchEvent({type:"keydown",key:"Escape"});
   assert.equal(ui.node("sidebar").classList.contains("open"),false);
   assert.equal(ui.urlWrites.length,before);
+});
+
+test("Workspace breadcrumb and sidebar workspace header navigate to Overview",()=>{
+  assert.match(markup,/<button class="workspace-select workspace-home"[^>]*data-nav="overview"/);
+  assert.match(markup,/<button class="breadcrumb breadcrumb-home"[^>]*data-nav="overview"/);
+  assert.match(markup,/id="currentCrumb"[^>]*>Overview<\/strong>/);
+  const ui=createHarness("#settings");
+  assert.equal(ui.active(),"settings");
+  // Both controls use the same delegated data-nav handler as the overview link.
+  ui.nav("overview");
+  assert.equal(ui.active(),"overview");
+  assert.equal(ui.location.hash,"#overview");
+  assert.equal(ui.pushes,1);
+  ui.history.back();
+  assert.equal(ui.active(),"settings");
+  ui.history.forward();
+  assert.equal(ui.active(),"overview");
+});
+test("Settings highlights account, privacy, and diagnostics; advanced tools start collapsed",()=>{
+  const start=markup.indexOf('id="page-settings"');
+  const end=markup.indexOf("</main>",start);
+  const settings=markup.slice(start,end);
+  assert.ok(start>0);
+  assert.match(settings,/id="settingsAccountHeading"/);
+  assert.match(settings,/id="settingsPrivacyHeading"/);
+  assert.match(settings,/id="settingsAccountStatus"/);
+  assert.match(settings,/id="runHealthChecks"/);
+  assert.match(settings,/<details class="panel settings-advanced" id="advancedTools">/);
+  assert.doesNotMatch(settings,/<details[^>]*id="advancedTools"[^>]*\bopen\b/);
+  const advanced=settings.slice(settings.indexOf('id="advancedTools"'));
+  for(const id of ["scanImport","importMessage","exportData","resetWorkspace"]){
+    assert.match(advanced,new RegExp('id="'+id+'"'),"Expected legacy tool within advanced section: "+id);
+  }
+  assert.match(settings,/data-nav="ai"/);
+  assert.match(settings,/data-nav="applications"/);
+  assert.ok(settings.indexOf("Account settings")<settings.indexOf("Advanced tools"));
+  assert.ok(settings.indexOf("Connection diagnostics")<settings.indexOf("Advanced tools"));
+});
+test("Settings account identity is derived from authenticated user and cleared on sign-out",()=>{
+  const ui=createHarness("#settings");
+  assert.equal(ui.node("settingsAccountStatus").textContent,"");
+  ui.window.dispatchEvent({type:"careerops:authenticated",detail:{
+    id:"11111111-1111-4111-8111-111111111111",email:"account-a@example.com"
+  }});
+  assert.equal(ui.node("settingsAccountStatus").textContent,"Signed in as account-a@example.com");
+  assert.equal(ui.node("settingsAccountStatus").dataset.state,"connected");
+  ui.window.dispatchEvent({type:"careerops:signed-out"});
+  assert.match(ui.node("settingsAccountStatus").textContent,/Sign in with Google/);
+  assert.equal(ui.node("settingsAccountStatus").dataset.state,"signed-out");
 });
