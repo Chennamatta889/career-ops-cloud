@@ -44,6 +44,14 @@ The browser now checks the authenticated Supabase Edge Function when AI Studio o
 
 **No live AI result has been verified yet:** it depends on your private Gemini secrets and an authenticated request. No application submission or email sending has been enabled.
 
+## Google Sign-In for Career-Ops (November 21, 2026)
+
+**Google is now the primary sign-in method for AI Studio**. The page opens `https://nnhzihcugvifhegsfmua.supabase.co/auth/v1/authorize?provider=google&redirect_to=...` from a direct user click. Supabase handles Google OAuth credentials and redirects to the allowlisted website `https://chennamatta889.github.io/career-ops-cloud/`. The static website stores only the returned Supabase session in tab-scoped sessionStorage and clears the token-bearing URL fragment. It never handles a Google OAuth client secret. Email magic links are retained under an optional collapsible fallback; signing in with Google does **not** consume Supabase's authentication-email quota.
+
+To enable in the existing dedicated Career-Ops project, Google must be switched on under **Authentication → Sign In / Providers → Google** with a valid Web Client ID and Client Secret. In Google Cloud, register the callback URI `https://nnhzihcugvifhegsfmua.supabase.co/auth/v1/callback`. In Supabase Auth URL Configuration, permit `https://chennamatta889.github.io/career-ops-cloud/` as a redirect. The client-side Google button is usable only on the expected Career-Ops site origin and path. The private AI Edge Function **still enforces a valid Supabase JWT and its configured ALLOWED_EMAIL**; using Google does not bypass that allowlist.
+
+CI tests the login URL construction, returned token handling, and error cases. The Pages workflow also performs a **read-only** Supabase Auth settings check for `external.google`. That check is nonblocking (an unavailable Auth settings endpoint will be reported rather than break the website deployment); a successful check only confirms the provider is enabled, not that the individual's login has succeeded. If Google returns an access-denied error, check the account is a Google OAuth test user (for apps in Testing mode) and the redirect URLs match exactly.
+
 ## Phase 3 — Private AI Studio (code ready, not yet activated)
 
 The public UI includes an AI Studio page and an **AI review** action on job cards. It supports passwordless email sign-in, session-only resume text extraction (PDF/DOCX/TXT or paste), official public employer job URL importing, job title/employer/description inputs, explicit consent to third-party AI processing, fit analysis, suggested resume rewrites, cover letter, recruiter email, screening answer drafts, and a local .txt export. It never submits an application, uploads resume files for parsing, or modifies the original document.
