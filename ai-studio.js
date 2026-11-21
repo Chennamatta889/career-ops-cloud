@@ -12,6 +12,9 @@
   let session = null;
   let activeResult = null;
   let reviewReady = false;
+  let authCallbackError = "";
+  const siteRedirect = "https://chennamatta889.github.io/career-ops-cloud/";
+  const siteOrigin = new URL(siteRedirect).origin;
   const text = (v,n=10000) => typeof v==="string" ? v.trim().slice(0,n) : "";
   const set = (id,message) => { byId(id).textContent = message; };
   const status = message => set("aiStatus",message);
@@ -114,15 +117,40 @@
     if(!ready)throw Error("Configure a dedicated Career-Ops Supabase project first.");
     return readResponse(await fetch(base+path,options));
   }
+  function googleOAuthUrl() {
+    if (!ready) throw Error("Career-Ops private authentication is not configured.");
+    if (location.origin !== siteOrigin || location.pathname !== new URL(siteRedirect).pathname) {
+      throw Error("Google Sign-In is available only on the official Career-Ops website.");
+    }
+    // Supabase's hosted OAuth endpoint handles Google Client ID and Secret.
+    // No Google OAuth secrets belong in the browser or public GitHub repository.
+    const url = new URL(base + "/auth/v1/authorize");
+    url.searchParams.set("provider","google");
+    url.searchParams.set("redirect_to",siteRedirect);
+    return url.toString();
+  }
   function readUrlSession() {
     const hash=location.hash.startsWith("#") ? new URLSearchParams(location.hash.slice(1)) : null;
+    const query=new URLSearchParams(location.search || "");
+    const authError=hash?.get("error") || hash?.get("error_code") || query.get("error") || query.get("error_code");
+    if (authError) {
+      const detail=hash?.get("error_description") || query.get("error_description") || authError;
+      authCallbackError="Google sign-in did not complete: "+text(detail,190)+". Check that Google is enabled in Career-Ops Supabase and your Gmail account is authorized.";
+      history.replaceState(null,"",location.pathname+"#ai"); // remove error parameters
+      document.querySelector('[data-nav="ai"]')?.click();
+      return;
+    }
     if(!hash || !hash.get("access_token"))return;
-    const expiry=Number(hash.get("expires_at")) || Math.floor(Date.now()/1000)+(Number(hash.get("expires_in"))||3600);
+    const expiresAt=Number(hash.get("expires_at"));
+    const expiresIn=Number(hash.get("expires_in"));
+    const expiry=Number.isFinite(expiresAt)&&expiresAt>0?expiresAt:
+      Math.floor(Date.now()/1000)+(Number.isFinite(expiresIn)&&expiresIn>0?expiresIn:3600);
     saveSession({
       access_token:hash.get("access_token"),
       refresh_token:hash.get("refresh_token") || "",
       expires_at:expiry
     });
+    // Remove credential-bearing fragment before showing the signed-in page.
     history.replaceState(null,"",location.pathname+location.search+"#ai");
     document.querySelector('[data-nav="ai"]')?.click();
   }
@@ -142,7 +170,7 @@
     if(!ready){byId("aiLogin").hidden=true;byId("aiWorkspace").hidden=true;status("Backend not connected. A dedicated Supabase project and server-side Gemini key are required.");return;}
     byId("aiLogin").hidden=false;
     const token=await getAccessToken();
-    if(!token){byId("aiWorkspace").hidden=true;byId("aiSignOut").hidden=true;status("Private backend configured. Sign in using your email to enable AI review.");return;}
+    if(!token){byId("aiWorkspace").hidden=true;byId("aiSignOut").hidden=true;status(authCallbackError || "Private backend connected. Continue with Google to sign in without an email link.");return;}
     try{
       const user=await api("/auth/v1/user",{headers:headers(token)});
       set("aiSignedUser",user.email || "Signed in");
@@ -217,6 +245,25 @@
     const a=document.createElement("a");a.href=u;a.download="career-ops-ai-review.txt";
     document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);
   }
+  byId("aiGoogleSignIn").addEventListener("click",function(){
+    if (this.disabled) return;
+    try {
+      const url=googleOAuthUrl();
+      this.disabled=true;
+      byId("aiGoogleHelp").textContent="Opening Google account selection. Return to Career-Ops after authorizing.";
+      status("Redirecting to Google sign-in…");
+      location.assign(url);
+    } catch(error) {
+      this.disabled=false;
+      const message=text(error?.message||error,220);
+      byId("aiGoogleHelp").textContent=message;
+      status("Unable to start Google Sign-In: "+message);
+    }
+  });
+  window.addEventListener("pageshow",()=>{
+    const button=byId("aiGoogleSignIn");
+    if(button)button.disabled=false;
+  });
   byId("aiSendLink").addEventListener("click",async function(){
     if(emailRequestInFlight)return;
     if(Date.now()<emailCooldownUntil){
