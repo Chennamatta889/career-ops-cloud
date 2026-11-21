@@ -10,7 +10,7 @@ const sql=fs.readFileSync(path.join(__dirname,"../supabase/migrations/20261121_p
 const uid="7fdc93a6-57f6-47a8-bce0-6d354ee7d0f8";
 const resume="Cloud DevOps Engineer with experience in AWS, Jenkins, Terraform and production support. ".repeat(6);
 const flush=()=>new Promise(r=>setImmediate(r));
-function harness({signedIn=true,tracked=[],responseForWrite}={}){
+function harness({signedIn=true,tracked=[],responseForWrite,responseForRead,onMerge}={}){
   const els=new Map(),events=new Map(),requests=[];
   const el=id=>{
     if(!els.has(id))els.set(id,{
@@ -26,14 +26,14 @@ function harness({signedIn=true,tracked=[],responseForWrite}={}){
       publishableKey:"sb_publishable_public_test_key_1234567890"
     },
     CareerOpsAuth:{getAccessToken:async()=>"fake-jwt-access-token"},
-    CareerOpsDashboard:{getTrackedJobs:()=>tracked,mergeRemoteTracking:(rows)=>rows.length},
+    CareerOpsDashboard:{getTrackedJobs:()=>tracked,mergeRemoteTracking:(rows)=>{onMerge?.(rows);return rows.length;}},
     confirm:()=>true,
     addEventListener(name,fn){events.set(name,fn)},
   };
   const document={getElementById:el};
   const fetch=async(url,options)=>{
     requests.push({url:String(url),method:options.method,body:options.body,headers:options.headers});
-    if(options.method==="GET")return {ok:true,status:200,json:async()=>[]};
+    if(options.method==="GET")return responseForRead ? responseForRead(url,options) : {ok:true,status:200,json:async()=>[]};
     if(responseForWrite)return responseForWrite(url,options);
     return {ok:true,status:204,json:async()=>({})};
   };
@@ -183,4 +183,57 @@ test("rapid Opened → Applied writes are serialized, preserving the user's conf
   assert.equal(writes().length,2);
   assert.equal(JSON.parse(writes()[1].body).stage,"Applied");
   assert.equal(JSON.parse(writes()[1].body).applied_on,"2026-11-21");
+});
+
+test("account switch discards a delayed old-account cloud tracking response",async()=>{
+  const other="e5ac55e1-0a6e-4a98-a271-11467cfb26a9";
+  let releaseOld;
+  const oldResponse=new Promise(resolve=>{releaseOld=resolve;});
+  let mergeCalls=0,readCount=0;
+  const h=harness({
+    signedIn:false,
+    onMerge:()=>{mergeCalls++;},
+    responseForRead:(url)=>{
+      if(url.includes("careerops_job_tracking") && ++readCount===1)return oldResponse;
+      return {ok:true,status:200,json:async()=>[]};
+    }
+  });
+  h.dispatch("careerops:authenticated",{id:uid});
+  await flush();
+  h.dispatch("careerops:authenticated",{id:other});
+  await flush();await flush();
+  const statusBefore=h.el("cloudTrackingStatus").textContent;
+  releaseOld({ok:true,status:200,json:async()=>[{
+    job_key:"https://example.com/old-user",title:"Old user's job",company:"Private"
+  }]});
+  await flush();await flush();
+  assert.equal(mergeCalls,1,"only the new account's empty feed may merge");
+  assert.equal(h.el("cloudTrackingStatus").textContent,statusBefore,
+    "old account's result must not replace new account status");
+});
+
+test("account switch rejects a delayed old-account resume without displaying it",async()=>{
+  const other="e5ac55e1-0a6e-4a98-a271-11467cfb26a9";
+  let releaseResume;
+  const pendingResume=new Promise(resolve=>{releaseResume=resolve;});
+  const h=harness({
+    signedIn:false,
+    responseForRead:(url)=>{
+      if(url.includes("select=resume_text"))return pendingResume;
+      return {ok:true,status:200,json:async()=>[]};
+    }
+  });
+  h.dispatch("careerops:authenticated",{id:uid});
+  await flush();
+  const loading=h.click("vaultLoad");
+  await flush();
+  h.dispatch("careerops:authenticated",{id:other});
+  await flush();
+  const before=h.el("vaultStatus").textContent;
+  releaseResume({ok:true,status:200,json:async()=>[{
+    resume_text:resume,source_filename:"old-account.pdf"
+  }]});
+  await loading;
+  assert.equal(h.el("aiResume").value,"","old account resume must never enter new account editor");
+  assert.equal(h.el("vaultStatus").textContent,before);
 });

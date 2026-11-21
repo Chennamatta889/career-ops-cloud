@@ -50,7 +50,7 @@
     {
       "number": 11,
       "title": "Security and account protection",
-      "status": "pending",
+      "status": "in_progress",
       "definition_of_done": "Audit auth, Supabase RLS and migrations, private resume isolation, quota/CORS, add non-destructive integration tests, remediate verified issues safely"
     },
     {
@@ -102,6 +102,19 @@
         44932696782,
         44932805024
       ]
+    },
+    {
+      "phase": 11,
+      "status": "in_progress",
+      "note": "Audited live career-ops-private Supabase RLS/grants; prepared account-switch isolation regression fix in PR #16. Awaiting PR CI, production deployment and live QA before advancement.",
+      "pr": "https://github.com/Chennamatta889/career-ops-cloud/pull/16",
+      "verified_live_controls": {
+        "resume_vault_rls": true,
+        "job_tracking_rls": true,
+        "owner_policies": 8,
+        "anonymous_select": false,
+        "private_ai_usage_select_for_anon_or_authenticated": false
+      }
     }
   ]
 }
