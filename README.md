@@ -13,13 +13,13 @@ A standalone experiment running the original [Career-Ops](https://github.com/car
 
 The public UI includes an AI Studio page and an **AI review** action on job cards. It supports passwordless email sign-in, session-only resume text entry (paste or .txt import), job title/employer/description inputs, explicit consent to third-party AI processing, fit analysis, suggested resume rewrites, cover letter, recruiter email, screening answer drafts, and a local .txt export. It never sends an application, uploads an entire PDF, or modifies an existing resume.
 
-**Important: This is a code-level implementation, not yet a live AI integration.** The only currently connected Supabase project belongs to DraftflowAI. Do NOT reuse or alter it. Create a separate Career-Ops project after the user selects an organization and approves any cost.
+**Project created:** Career-Ops has its own separate Supabase project, `career-ops-private` (`nnhzihcugvifhegsfmua`, ap-south-1, initially quoted at $0/month). DraftflowAI has not been altered. AI requests stay disabled until a provider key, allowlist and explicit AI_CALLS_ENABLED configuration are set.
 
 ### Activation checklist
 
-1. Create a new dedicated Supabase project for Career-Ops (only after explicit organization/cost approval).
+1. Dedicated Career-Ops Supabase project is created: https://supabase.com/dashboard/project/nnhzihcugvifhegsfmua .
 2. In its Authentication URL Configuration, allow the exact Site URL and redirect URL: https://chennamatta889.github.io/career-ops-cloud/ . Enable email sign-in.
-3. Deploy the source at supabase/functions/careerops-ai-review/index.ts as a Supabase Edge Function. The supabase/config.toml disables gateway JWT checks because modern publishable keys use application-level auth; the handler separately validates the bearer token against Supabase Auth and restricts the email address to an allowlist. Never remove these safeguards.
+3. Deploy the source at supabase/functions/careerops-ai-review/index.ts as a Supabase Edge Function. Gateway JWT verification remains **enabled** for user access tokens, while the handler also validates tokens with Supabase Auth and restricts the email to an allowlist. Never remove these safeguards.
 4. In **that separate project only**, configure function secrets: GEMINI_API_KEY (from Google AI Studio), ALLOWED_EMAIL (your approved sign-in email), AI_CALLS_ENABLED=true, APP_ORIGIN=https://chennamatta889.github.io . Optionally set GEMINI_MODEL (defaults to gemini-3.8-flash). Model availability, free-tier limits, and pricing depend on the AI provider; confirm them before activating billable traffic. **Never commit or paste API keys into the frontend, GitHub, or chat.**
 5. Configure public-only careerops-config.js using the separate Supabase project URL (https://YOUR_PROJECT_REF.supabase.co) and that project's **publishable** key (not a secret or service role key). Then publish GitHub Pages via the deployment workflow.
 6. Test one email sign-in, one real job review with full JD/resume text, downloaded draft, and sign-out. Confirm all private information is absent from the public Pages assets.
