@@ -9,6 +9,7 @@ on:
       - styles.css
       - app.js
       - scripts/export-scan-feed.mjs
+      - scripts/export-scan-feed.test.mjs
       - .github/workflows/deploy-ui.yml
   schedule:
     # 10:00 AM India Standard Time. GitHub schedules may run late.
@@ -21,7 +22,7 @@ permissions:
 
 concurrency:
   group: career-ops-ui-pages
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
@@ -97,6 +98,9 @@ jobs:
               enabled: true
           job_boards: []
           EOF
+
+      - name: Validate public-feed conversion
+        run: node --test scripts/export-scan-feed.test.mjs
 
       - name: Scan public job listings
         id: scan
