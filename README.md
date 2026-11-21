@@ -1,5 +1,13 @@
 # Career-Ops Cloud Sandbox
 
+## India graduate-hiring expansion: validated free ATS board leads
+
+An additional `scripts/india-early-career-candidates.json` catalog contains **15 employer-operated careers-page leads**, including graduate trainee and internship postings identified on official Greenhouse, Ashby and SmartRecruiters boards. This catalog is not a feed and does not assert the vacancies are currently open. Its boards join the scan's candidate queue, which publishes **only** recent (past 30 days), geographically verified India jobs with real employer application URLs. The prior curated boards, 254 general leads and 20 fresher leads remain configured.
+
+For very large SmartRecruiters employer boards, the scanner can use the provider's documented public `country=IN` query parameter when a source explicitly opts in via `indiaOnly:true` (see <https://developers.smartrecruiters.com/reference/v1listpostings>). This reduces global pagination workload without skipping India jobs whose public location is set to India. The final normalized location is still checked locally, and existing curated feeds retain their previous query behavior. Any source with an inaccessible or incomplete public API is excluded, never represented as active.
+
+The employer catalog is limited to anonymous public job postings and does not use Apify, paid APIs, credentials, captcha workarounds, or third-party job board scraping. The release still requires all existing automated tests, feed publication guard, last-30-day cutoff, India-only eligibility and live smoke validation.
+
 ## Free India fresher, internship and graduate hiring expansion (21 November 2026)
 
 Career-Ops still publishes **only employer postings verified in India within the last 30 days**. This expansion adds a second attributed source-lead catalog, `scripts/india-fresher-candidates.json`, of 20 employer board slugs observed on official employer vacancy pages advertising internships, graduate programmes, apprenticeships or related entry-level roles. They are **candidate boards, not imported vacancies** until the public Greenhouse, Ashby, Lever or SmartRecruiters API returns fresh India-based jobs. The original 254 speculative candidates and 80 curated boards remain intact. The new candidates are searched first with existing request/time budgets and failures never appear as valid postings. No payments, third-party scrapers, accounts or applicant data are needed.
