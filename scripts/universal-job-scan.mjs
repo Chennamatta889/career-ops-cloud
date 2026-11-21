@@ -21,7 +21,7 @@ function date(value){
   return Number.isFinite(parsed.getTime())?parsed.toISOString().slice(0,10):null;
 }
 function assertSource(source){
-  if(!source || !["greenhouse","ashby"].includes(source.provider) ||
+  if(!source || !["greenhouse","ashby","lever"].includes(source.provider) ||
     !/^[a-zA-Z0-9_-]{2,90}$/.test(source.slug) || !clean(source.name,120))
     throw Error("Invalid public employer board");
 }
@@ -30,30 +30,36 @@ function normalize(source,job){
   const rawId=String(job.id||"");
   if(source.provider==="greenhouse"?!/^\d{3,18}$/.test(rawId):
       !/^[A-Za-z0-9_-]{3,110}$/.test(rawId))return null;
-  const title=clean(plainText(job.title,160),160);
-  if(!title)return null;
   const gh=source.provider==="greenhouse";
+  const lever=source.provider==="lever";
+  const title=clean(plainText(lever?job.text:job.title,160),160);
+  if(!title)return null;
   const department=clean(plainText(gh?
     (Array.isArray(job.departments)?job.departments.map(x=>x?.name).filter(Boolean).join(" / "):""):
+    lever?(job.categories?.department||job.categories?.team||""):
     (job.department||job.team||job.jobDepartment||""),130),130);
-  const location=clean(plainText(gh?job.location?.name:(job.location||job.locationName||job.workplaceType),160),160)||"Not specified";
-  // Keep paragraph breaks and bullet points in the published excerpt.
-  // The browser applies the same sanitizer again to legacy saved listings.
-  const rawDescription=gh?job.content:(job.descriptionPlain||job.descriptionHtml||"");
+  const location=clean(plainText(gh?job.location?.name:
+    lever?(job.categories?.location||job.categories?.allLocations?.join(" / ")||job.workplaceType||""):
+    (job.location||job.locationName||job.workplaceType),160),160)||"Not specified";
+  const rawDescription=gh?job.content:
+    lever?(job.descriptionPlain||job.description||job.openingPlain||""):
+    (job.descriptionPlain||job.descriptionHtml||"");
   const desc=plainText(rawDescription,2500);
-  // Inspect a larger excerpt for employer-stated requirements, even when the
-  // short card excerpt ends before the qualifications section.
   const requirement=experienceRequirement(plainText(rawDescription,16000));
-  const published=date(gh?job.first_published||job.updated_at:job.publishedAt||job.updatedAt);
+  // Lever's createdAt is a creation timestamp, NOT a published-on date.
+  const published=date(gh?job.first_published||job.updated_at:
+    job.publishedAt||job.updatedAt);
   const publicUrl=gh?
     "https://job-boards.greenhouse.io/"+source.slug+"/jobs/"+rawId:
+    lever?"https://jobs.lever.co/"+source.slug+"/"+rawId:
     "https://jobs.ashbyhq.com/"+source.slug+"/"+rawId;
   return {
     id:"ats-"+createHash("sha256").update(source.provider+":"+source.slug+":"+rawId).digest("hex").slice(0,20),
     title,company:clean(source.name,120),location,department,
     category:classify(title,department),description:desc,
     url:publicUrl,skills:[],requiredExperience:requirement?.label||"",
-    posted_at:published,addedAt:published,source:gh?"Greenhouse public board":"Ashby public board"
+    posted_at:published,addedAt:published,
+    source:gh?"Greenhouse public board":lever?"Lever public board":"Ashby public board"
   };
 }
 async function limitedJson(url,fetchImpl){
@@ -82,10 +88,13 @@ export async function scanBoard(source,fetchImpl=fetch){
   assertSource(source);
   const url=source.provider==="greenhouse"?
     "https://boards-api.greenhouse.io/v1/boards/"+source.slug+"/jobs?content=true":
-    "https://api.ashbyhq.com/posting-api/job-board/"+source.slug;
+    source.provider==="lever"?
+      "https://api.lever.co/v0/postings/"+source.slug+"?mode=json":
+      "https://api.ashbyhq.com/posting-api/job-board/"+source.slug;
   const data=await limitedJson(url,fetchImpl);
-  if(!data||!Array.isArray(data.jobs))throw Error("Employer API response has no jobs array");
-  return data.jobs.map(job=>normalize(source,job)).filter(Boolean);
+  const jobs=source.provider==="lever"?data:data?.jobs;
+  if(!Array.isArray(jobs))throw Error("Employer API response has no valid postings array");
+  return jobs.map(job=>normalize(source,job)).filter(Boolean);
 }
 export function balanceJobs(all){
   // Diversify jobs without imposing an arbitrary publishing limit.
@@ -145,7 +154,7 @@ export async function runScan({sources,fetchImpl=fetch,concurrency=5}={}){
   const published=status==="failed"?[]:balanceJobs(jobs);
   return {
     schema:"careerops.public-jobs.v1",generated_at:new Date().toISOString(),
-    scope:"IT and non-IT roles at selected public Greenhouse/Ashby employers, worldwide. Not an exhaustive job search.",
+    scope:"IT and non-IT roles at selected public Greenhouse/Ashby/Lever employers, worldwide. Not an exhaustive job search.",
     scan:{status,date:new Date().toISOString().slice(0,10),scanned:sources.length,
       found,matched:published.length,error_count:errors.length,
       message:errors.length?"Some employers were unavailable; results may be incomplete.":
