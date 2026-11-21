@@ -171,6 +171,30 @@ export async function discoverIndiaCandidates({
 }
 export function mergeIndiaCandidates(feed,expansion,balanceJobs){
   const jobs=balanceJobs([...feed.jobs,...expansion.jobs]);
+  // These are measured AFTER deduplication and publication balancing. Board
+  // totals can double-count a vacancy shared across multiple employer feeds.
+  const normalizedUrl=job=>typeof job?.url==="string"?job.url.trim().toLowerCase():"";
+  const baseUrls=new Set(feed.jobs.map(normalizedUrl));
+  const candidateUrls=new Set(expansion.jobs.map(normalizedUrl));
+  const publishedCandidateJobs=jobs.filter(job=>candidateUrls.has(normalizedUrl(job))&&
+    !baseUrls.has(normalizedUrl(job)));
+  const entryJobs=publishedCandidateJobs.map(job=>({job,entry:entryOpportunity(job)}))
+    .filter(row=>row.entry.level==="fresher"||row.entry.level==="early");
+  const employers=new Map();
+  for(const {job} of entryJobs){
+    const name=clean(job.company).slice(0,120);
+    if(name)employers.set(name,(employers.get(name)||0)+1);
+  }
+  const publishedEvidence={
+    unique_candidate_jobs:publishedCandidateJobs.length,
+    unique_candidate_entry_positions:entryJobs.length,
+    unique_candidate_explicit_zero_experience:entryJobs.filter(row=>
+      row.entry.level==="fresher"&&row.entry.basis==="explicit").length,
+    employers_with_entry_positions:employers.size,
+    employer_breakdown:[...employers].sort((a,b)=>b[1]-a[1]||
+      a[0].localeCompare(b[0])).slice(0,20)
+      .map(([name,positions])=>({name,positions}))
+  };
   const category_counts={};
   for(const c of Object.keys(feed.category_counts||{}))category_counts[c]=0;
   for(const job of jobs)category_counts[job.category]??=0,category_counts[job.category]++;
@@ -181,6 +205,6 @@ export function mergeIndiaCandidates(feed,expansion,balanceJobs){
       undated_excluded:(feed.scan.undated_excluded||0)+(expansion.report.undated_excluded||0),
       outdated_excluded:(feed.scan.outdated_excluded||0)+(expansion.report.outdated_excluded||0),
       future_excluded:(feed.scan.future_excluded||0)+(expansion.report.future_excluded||0),
-      candidate_discovery:expansion.report,
+      candidate_discovery:{...expansion.report,published_evidence:publishedEvidence},
       candidate_health:expansion.history}};
 }
