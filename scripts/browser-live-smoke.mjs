@@ -53,6 +53,39 @@ try{
     .locator('select[data-stage-id]').inputValue()==="Applied");
   await context.close();
 
+  // Separate real-Chromium regression with a fixture feed intercepted in-memory.
+  // Never changes public jobs.json and never opens an employer application.
+  const searchContext=await browser.newContext({viewport:{width:1365,height:850}});
+  const searchPage=await searchContext.newPage();watch(searchPage);
+  const exampleFeed={
+    schema:"careerops.public-jobs.v1",generated_at:new Date().toISOString(),
+    scan:{status:"success",scanned:2,found:2,error_count:0},
+    jobs:[
+      {id:"test-servicenow",title:"ServiceNow Developer",company:"ITSM Example",
+        url:"https://example.org/jobs/servicenow",location:"Remote",
+        description:"Configure ITSM workflows and ServiceNow modules.",skills:[]},
+      {id:"test-salesforce",title:"Salesforce Developer",company:"CRM Example",
+        url:"https://example.org/jobs/salesforce",location:"Remote",
+        description:"Integrate Salesforce CRM with ServiceNow ticketing.",skills:[]}
+    ]
+  };
+  await searchPage.route("**/data/jobs.json*",route=>route.fulfill({
+    status:200,contentType:"application/json",body:JSON.stringify(exampleFeed)
+  }));
+  await searchPage.goto(website+"/?browser-qa=search-"+Date.now()+"#discover",
+    {waitUntil:"domcontentloaded",timeout:35000});
+  await searchPage.waitForFunction(()=>document.querySelector("#dataModeTag")?.textContent.includes("Published"),null,{timeout:20000});
+  await searchPage.locator("#jobSearch").fill("ServiceNow");
+  const titles=searchPage.locator("#jobsGrid .job-card h3");
+  assert.deepEqual(await titles.allTextContents(),["ServiceNow Developer"],
+    "ServiceNow must not match Salesforce description-only job by default");
+  await searchPage.locator("#searchDescriptions").check();
+  assert.deepEqual(await titles.allTextContents(),["ServiceNow Developer","Salesforce Developer"],
+    "description-only mentions must be opt-in and ranked below title");
+  await searchPage.locator("#resetDiscoverFilters").click();
+  assert.equal(await searchPage.locator("#searchDescriptions").isChecked(),false);
+  await searchContext.close();
+
   const mobile=await browser.newContext({viewport:{width:390,height:844},isMobile:true,deviceScaleFactor:1});
   const mpage=await mobile.newPage();watch(mpage);
   await mpage.goto(website+"/?browser-qa=mobile-"+Date.now()+"#discover",{waitUntil:"domcontentloaded",timeout:35000});
@@ -63,7 +96,7 @@ try{
   assert.ok(await mpage.locator("#experienceFilter").count()===1);
   await mobile.close();
   assert.deepEqual(failures,[],"unhandled browser JavaScript errors");
-  console.log("Phase 08 live Chrome desktop + mobile QA PASSED; only synthetic guest application tracking was tested.");
+  console.log("Career-Ops live Chromium QA PASSED: desktop, mobile, ServiceNow relevance and synthetic guest tracking.");
 }catch(e){
   console.error("Phase 08 live browser QA failed:",e?.stack||e);
   if(failures.length)console.error("Browser errors:",failures.slice(0,5));
