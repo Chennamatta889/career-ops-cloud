@@ -1,5 +1,27 @@
 # Career-Ops Cloud Sandbox
 
+## Phase 12 — evidence-based India graduate source discovery (22 November 2026)
+
+Employer candidate boards remain *leads*, not confirmed vacancies. The scanner now counts
+fresher/early-career jobs **only when an actual India-based posting within the last
+30 days** supplies a qualifying title or experience requirement. A board marked
+`focus: fresher` can contain senior roles; the focus label alone does not
+establish fresher eligibility. The scan records
+`candidate_discovery.entry_positions`,
+`candidate_discovery.explicit_zero_experience_positions`, and
+`candidate_discovery.fresher_focus_with_entry_jobs` separately from the
+number of focused boards activated. The corresponding per-board counts are
+included in source health.
+
+Previous successful boards with verified entry-level India vacancies receive
+priority in the next scan; newly discovered boards remain eligible and are
+scanned afterward, while Phase 10 quarantine and retry controls continue to
+apply. No jobs are synthesized, filtered out merely for being senior, or
+automatically applied to. Major enterprise employer links remain labeled as
+external portals until a permitted public ATS feed has been independently
+verified; links alone do not become job listings.
+
+
 ## Mobile navigation refresh (21 November 2026)
 
 Phones up to 760px wide use a five-item bottom navigation (Jobs, Saved, Resume, AI Studio and More), with the existing drawer holding Overview, Activity, Settings and public resource links. Each primary navigation tab and the drawer share the same page/history/Back-Forward flow, with keyboard Escape and backdrop closing. Desktop navigation and routes remain unchanged.
