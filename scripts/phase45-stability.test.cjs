@@ -40,7 +40,10 @@ function dashboardHarness({initialLocal={},feedPromise}={}){
     createElement:()=>({click(){},remove(){},setAttribute(){}}),
     body:{appendChild(){}}
   };
-  const win={CareerOpsMatch:{
+  const win={CareerOpsCategories:{
+    categories:["IT & Software","Sales & Business","Other"],
+    classify:(title)=>/sales/i.test(title)?"Sales & Business":"Other"
+  },CareerOpsMatch:{
     rank:()=>({score:65,quality:"Some evidence",role:{detail:"Role",points:35},location:{detail:"Location",points:20},
       skills:{detail:"Skills",points:10},experience:"Unknown",method:"rule-based"}),
     groups:()=>[]
