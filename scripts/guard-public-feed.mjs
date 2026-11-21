@@ -8,6 +8,7 @@ import {pathToFileURL} from "node:url";
 import path from "node:path";
 import {createRequire} from "node:module";
 const {isIndiaLocation}=createRequire(import.meta.url)("../india-jobs.js");
+import {MAX_JOB_AGE_DAYS,cutoffDay,hasRecentDate} from "./job-freshness.mjs";
 export function judgeFeed(next,previous){
   if(next?.schema!=="careerops.public-jobs.v1" || !Array.isArray(next?.jobs))
     return {ok:false,reason:"Invalid public job feed schema"};
@@ -16,6 +17,11 @@ export function judgeFeed(next,previous){
   if(!next.jobs.length)return {ok:false,reason:"Refusing to publish an empty job feed"};
   if(next.jobs.some(job=>!isIndiaLocation(job?.location)))
     return {ok:false,reason:"Public feed includes non-India or unverified job locations"};
+  if(next.scan?.max_job_age_days!==MAX_JOB_AGE_DAYS ||
+     next.scan?.date_cutoff_utc!==cutoffDay())
+    return {ok:false,reason:"Refusing to publish a feed without a current rolling 30-day cutoff"};
+  if(next.jobs.some(job=>!hasRecentDate(job)))
+    return {ok:false,reason:"Public feed contains old, undated or future-dated job postings"};
   if(next.scan?.status==="failed")return {ok:false,reason:"Every employer source failed"};
   const sources=Array.isArray(next.source_health)?next.source_health:[];
   if(sources.length>5){
@@ -25,9 +31,12 @@ export function judgeFeed(next,previous){
   }
   // During the one-time global-to-India transition compare only prior India
   // postings; the expected removal of overseas jobs is not source degradation.
+  // A policy migration is expected to drop undated and old positions.
+  // After the first 30-day release, compare only jobs that remain eligible.
   const previousIndiaCount=previous?.schema==="careerops.public-jobs.v1"&&
+    previous?.scan?.max_job_age_days===MAX_JOB_AGE_DAYS&&
     Array.isArray(previous.jobs) ?
-    previous.jobs.filter(job=>isIndiaLocation(job?.location)).length : 0;
+    previous.jobs.filter(job=>isIndiaLocation(job?.location)&&hasRecentDate(job)).length : 0;
   if(previousIndiaCount>=100&&next.jobs.length<previousIndiaCount*.20&&
     Number(next.scan?.error_count)>0)
       return {ok:false,reason:"Large India job-feed drop during a partial source outage"};
