@@ -152,7 +152,7 @@ jobs:
           mkdir -p public/data
           FEED_OUTPUT="public/data/jobs.json" node scripts/universal-job-scan.mjs
           node scripts/guard-public-feed.mjs public/data/jobs.json
-          node scripts/report-published-coverage.mjs public/data/jobs.json
+          COVERAGE_OUTPUT=public/data/coverage-evidence.json node scripts/report-published-coverage.mjs public/data/jobs.json
 
       - name: Prepare static site
         shell: bash
@@ -197,6 +197,7 @@ jobs:
           cp "$RUNNER_TEMP/career-ops-vendor/node_modules/pdfjs-dist/build/pdf.worker.min.mjs" public/vendor/
           cp "$RUNNER_TEMP/career-ops-vendor/node_modules/mammoth/mammoth.browser.min.js" public/vendor/
           test -s public/data/jobs.json
+          test -s public/data/coverage-evidence.json
           test -s public/data/enterprise-careers.json
           test -s public/vendor/pdf.min.mjs
           test -s public/vendor/pdf.worker.min.mjs
