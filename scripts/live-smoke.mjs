@@ -6,6 +6,9 @@ const site="https://chennamatta889.github.io/career-ops-cloud/";
 const supabase="https://nnhzihcugvifhegsfmua.supabase.co";
 const checks=[
   {path:"",contains:'id="runHealthChecks"'},
+  {path:"",contains:'id="advancedTools"'},
+  {path:"",contains:'class="breadcrumb breadcrumb-home"'},
+  {path:"",contains:'class="workspace-select workspace-home"'},
   {path:"app.js",contains:"ACCOUNT_STORAGE_PREFIX"},
   {path:"job-categories.js",contains:"CareerOpsCategories"},
   {path:"ai-studio.js",contains:"jobFetchVersion"},
