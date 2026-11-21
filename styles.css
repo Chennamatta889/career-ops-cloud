@@ -456,3 +456,128 @@ a:focus-visible,button:focus-visible,[role="button"]:focus-visible{outline:2px s
 .india-employer-directory p{color:var(--muted);font-size:12px;margin:10px 0}
 .india-employer-directory .india-portal-links{padding:7px 0 2px;justify-content:flex-start}
 @media(max-width:650px){.india-employer-directory{padding:14px}}
+
+
+/* Mobile-first Career-Ops navigation, uncluttered search and readable cards.
+   Desktop keeps the established left navigation and full filter toolbar. */
+.mobile-bottom-nav,.filter-advanced-toggle,.mobile-reset-filter{display:none}
+.toolbar .filter-field{display:flex;flex:0 1 165px;flex-direction:column;gap:5px;min-width:115px}
+.toolbar .filter-field>span{display:none}
+.toolbar .filter-field select{width:100%;max-width:none;min-width:0}
+.toolbar .filter-advanced,.toolbar .filter-advanced-fields{display:contents}
+@media(max-width:760px){
+  :root{--mobile-nav-height:68px}
+  .topbar{height:55px;padding:0 15px}
+  .topbar .mobile-menu,.topbar .breadcrumb,.topbar .breadcrumb-home,
+  .topbar .breadcrumb-divider{display:none}
+  #currentCrumb{font-size:15px;font-weight:800;max-width:min(55vw,240px)}
+  .topbar-actions .top-avatar{width:30px;height:30px}
+  .sync-pill{max-width:155px}
+  .page-content{padding:15px 13px calc(110px + env(safe-area-inset-bottom,0px))}
+  .page-heading{margin-bottom:13px}
+  .page-heading h1{font-size:clamp(24px,6vw,31px);margin:7px 0}
+  .page-heading p{font-size:12px;line-height:1.55}
+  .page-heading>.btn{padding:9px 12px;font-size:11px;min-height:40px}
+  .mobile-bottom-nav{
+    display:grid;grid-template-columns:repeat(5,minmax(0,1fr));
+    position:fixed;bottom:0;left:0;right:0;z-index:18;
+    gap:2px;padding:6px max(6px,env(safe-area-inset-left,0px))
+      calc(7px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-right,0px));
+    background:#0c1d2d;border-top:1px solid #345262;
+    box-shadow:0 -9px 30px #030c1a88;
+  }
+  .mobile-tab{
+    border:1px solid transparent;background:transparent;color:#c2d3df;
+    border-radius:12px;min-width:0;min-height:54px;
+    display:flex;flex-direction:column;justify-content:center;align-items:center;
+    gap:3px;padding:4px 0;font-size:10px;font-weight:750;line-height:1.15;
+  }
+  .mobile-tab>span:last-child{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mobile-tab-icon{font-size:21px;font-weight:400;line-height:1}
+  .mobile-tab.active,.mobile-tab.current-section{background:#173a37;color:#a5f3d9;border-color:#306961}
+  .mobile-tab:focus-visible{outline:2px solid #9bffe0;outline-offset:-1px}
+  .mobile-tab:active{background:#244b4a}
+  .toolbar{
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+    align-items:start;gap:10px;padding:12px;border-radius:14px
+  }
+  .toolbar .search-wrap{grid-column:1/-1;min-width:0;width:100%}
+  .toolbar .search-wrap input{min-height:48px;width:100%;font-size:16px}
+  .toolbar .filter-field{display:flex;flex:none;min-width:0;width:100%;gap:5px}
+  .toolbar .filter-field>span{display:block;font-size:11px;font-weight:750;color:#b3cdda}
+  .toolbar .filter-field select{font-size:13px;min-height:45px;padding:10px 7px;max-width:100%;min-width:0}
+  .toolbar #categoryFilter,.toolbar #experienceFilter{min-width:0;width:100%}
+  .toolbar .filter-advanced{display:block;grid-column:1/-1}
+  .filter-advanced-toggle{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    width:100%;min-height:46px;border:1px solid #3c6670;border-radius:10px;
+    padding:10px 13px;background:#193345;color:#d4efe8;
+    font-size:12px;font-weight:750;text-align:left
+  }
+  #advancedFilterCount{color:#a5efd3;font-size:11px}
+  .filter-chevron{font-size:18px;transition:transform .15s}
+  .filter-advanced.open .filter-chevron{transform:rotate(180deg)}
+  .toolbar .filter-advanced-fields{display:none}
+  .toolbar .filter-advanced.open .filter-advanced-fields{
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;margin-top:10px;padding:12px;
+    border:1px solid #31556a;border-radius:12px;background:#11283b
+  }
+  .toolbar .mobile-reset-filter{
+    display:flex;grid-column:1/-1;width:100%;min-height:43px;
+    font-size:12px;border-color:#46677d
+  }
+  .toolbar .mobile-reset-filter[hidden]{display:none!important}
+  .search-scope{margin:9px 0 6px;gap:9px}
+  .search-scope .fresher-shortcut{width:100%;min-height:44px}
+  .search-scope>span:first-of-type,.search-scope-tip{display:none}
+  .search-scope label{width:100%;min-height:40px;justify-content:center}
+  /* Help users see actual vacancies before long directories of external sites. */
+  #page-discover.active{display:flex;flex-direction:column}
+  #page-discover>.page-heading,#page-discover>.toolbar,
+  #page-discover>.search-scope{order:0}
+  #page-discover>.results-line,#page-discover>#jobsGrid,
+  #page-discover>.discover-pagination,#page-discover>.empty-state,
+  #page-discover>#feedFreshness,#page-discover>#discoverFeedStatus,
+  #page-discover>#retryDiscoverFeed{order:1}
+  #page-discover>.india-portal-search,#page-discover>.india-employer-directory,
+  #page-discover>.enterprise-directory,#page-discover>.priority-notice{order:3}
+  #page-discover>.india-portal-search{margin:12px 0}
+  #page-discover>.results-line{margin:12px 0 11px}
+  #page-discover>.job-grid{gap:10px}
+  .job-card{padding:15px;border-radius:14px;min-height:0}
+  .job-card h3{font-size:15px;margin-top:10px;line-height:1.4}
+  .job-card .company-line{font-size:12px;line-height:1.45}
+  .job-card .description{font-size:12px;margin:8px 0 11px}
+  .job-card .job-date{font-size:10px;line-height:1.5}
+  .job-card .card-action-group{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;gap:9px}
+  .job-card .card-action-group button[data-action="ai"]{display:none}
+  .job-card .card-action-group [data-action="details"],
+  .job-card .card-action-group a[data-action="open-listing"]{
+    display:flex;align-items:center;justify-content:center;text-align:center;
+    min-height:44px;padding:9px 7px;border:1px solid #3c6473;
+    border-radius:10px;font-size:12px;font-weight:750
+  }
+  .job-card .card-action-group a[data-action="open-listing"]{
+    background:#1e624f;border-color:#377d64;color:#e8fff4
+  }
+  .job-card .save-button{min-height:43px;padding:9px 13px}
+  .card-footer{gap:9px}
+  .board{grid-template-columns:1fr;overflow-x:visible;gap:12px;padding-bottom:0}
+  .board-column{min-height:0;padding:12px}
+  .board-card{margin-bottom:8px}
+  .application-followup{bottom:calc(78px + env(safe-area-inset-bottom,0px));max-height:calc(80dvh - 70px)}
+  .job-dialog{max-height:calc(100dvh - 86px);margin:auto}
+  .dialog-actions .btn{min-height:43px}
+  .toast{bottom:calc(80px + env(safe-area-inset-bottom,0px))}
+}
+@media(max-width:380px){
+  .page-content{padding-left:10px;padding-right:10px}
+  .toolbar .filter-advanced.open .filter-advanced-fields{grid-template-columns:1fr}
+  .mobile-tab{font-size:9px;gap:3px}
+  .mobile-tab-icon{font-size:19px}
+  .job-card .card-action-group{gap:6px}
+}
+@media(prefers-reduced-motion:reduce){
+  .filter-chevron{transition:none}
+}

@@ -134,6 +134,9 @@
   const hideMobileMenu = function () {
     $("sidebar").classList.remove("open"); $("mobileScrim").classList.remove("show");
     $("mobileMenu").setAttribute("aria-expanded", "false");
+    $("mobileMenu").setAttribute("aria-label", "Open navigation");
+    $("mobileMore").setAttribute("aria-expanded", "false");
+    $("mobileMore").setAttribute("aria-label", "More sections");
     document.body.classList.remove("nav-open");
   };
   const closeOpenDialogs = function(){
@@ -166,6 +169,17 @@
       if(active)el.setAttribute("aria-current","page");
       else el.removeAttribute("aria-current");
     });
+    for(const [name,id] of [
+      ["discover","mobileTabDiscover"],["applications","mobileTabApplications"],
+      ["resume","mobileTabResume"],["ai","mobileTabAi"]
+    ]){
+      const tab=$(id),active=name===route;
+      tab.classList.toggle("active",active);
+      if(active)tab.setAttribute("aria-current","page");
+      else tab.removeAttribute("aria-current");
+    }
+    $("mobileMore").classList.toggle("current-section",
+      !["discover","applications","resume","ai"].includes(route));
     $("currentCrumb").textContent=pageNames[route];
     document.title=pageNames[route]+" | Career-Ops";
     hideMobileMenu();
@@ -414,6 +428,12 @@
       state.mode === "live" && $("experienceFilter").value==="fresher" ?
         "Fresher opportunities" : state.mode === "live" ? "Published vacancies" : "Your job list";
     $("dataModeTag").classList.toggle("real", state.mode !== "demo");
+    const extraCount=[
+      ["sectorFilter",""],["categoryFilter",""],
+      ["sortFilter","variety"],["matchFilter","all"]
+    ].filter(([id,defaultValue])=>$(id).value!==defaultValue).length;
+    $("advancedFilterCount").textContent=extraCount?"("+extraCount+" active)":"";
+    $("quickResetFilters").hidden=$("resetDiscoverFilters").hidden;
   };
   const renderEmailReviewChoices=function(){
     const select=$("emailReviewJob");
@@ -763,6 +783,15 @@
   };
   $("clearFilters").addEventListener("click",resetDiscovery);
   $("resetDiscoverFilters").addEventListener("click",resetDiscovery);
+  $("quickResetFilters").addEventListener("click",function(){
+    $("jobAdvancedFilters").classList.remove("open");
+    $("toggleJobFilters").setAttribute("aria-expanded","false");
+    resetDiscovery();
+  });
+  $("toggleJobFilters").addEventListener("click",function(){
+    const expanded=$("jobAdvancedFilters").classList.toggle("open");
+    $("toggleJobFilters").setAttribute("aria-expanded",String(expanded));
+  });
   $("loadMoreJobs").addEventListener("click",function(){
     discoverVisibleCount+=DISCOVER_PAGE_SIZE;
     renderDiscover();
@@ -778,13 +807,17 @@
     },{rootMargin:"360px 0px"});
     moreObserver.observe($("loadMoreJobs"));
   }
-  $("mobileMenu").addEventListener("click", function () {
+  const toggleMobileMenu=function(){
     const open=$("sidebar").classList.toggle("open");
     $("mobileScrim").classList.toggle("show",open);
     document.body.classList.toggle("nav-open",open);
     $("mobileMenu").setAttribute("aria-expanded",String(open));
     $("mobileMenu").setAttribute("aria-label",open?"Close navigation":"Open navigation");
-  });
+    $("mobileMore").setAttribute("aria-expanded",String(open));
+    $("mobileMore").setAttribute("aria-label",open?"Close more sections":"More sections");
+  };
+  $("mobileMenu").addEventListener("click",toggleMobileMenu);
+  $("mobileMore").addEventListener("click",toggleMobileMenu);
   window.addEventListener("keydown",function(event){
     if(event.key==="Escape" && $("sidebar").classList.contains("open"))hideMobileMenu();
   });

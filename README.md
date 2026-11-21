@@ -1,5 +1,13 @@
 # Career-Ops Cloud Sandbox
 
+## Mobile navigation refresh (21 November 2026)
+
+Phones up to 760px wide use a five-item bottom navigation (Jobs, Saved, Resume, AI Studio and More), with the existing drawer holding Overview, Activity, Settings and public resource links. Each primary navigation tab and the drawer share the same page/history/Back-Forward flow, with keyboard Escape and backdrop closing. Desktop navigation and routes remain unchanged.
+
+The Discover Jobs toolbar now displays mobile **Search, Location and Experience** up front. Industry, Job category, Sort and Match priority live in **More filters** with an active-filter count and a readily available **Clear filters** control. The actual job listings appear before supplementary external career directories on mobile, without changing any search or source results. Cards have two full-width thumb-sized actions (Details and Open original listing); **Review with AI** remains available from job Details. The My Applications board stacks stages vertically on mobile rather than requiring horizontal swipes. CSS respects reduced-motion preferences and phone safe-area insets.
+
+No employer-source, 30-day freshness, India-only, account authentication, saved-job tracking or application-submission behavior is changed. The mobile changes have dedicated navigation, filter and safe-release tests.
+
 ## India graduate-hiring expansion: validated free ATS board leads
 
 An additional `scripts/india-early-career-candidates.json` catalog contains **19 employer-operated careers-page leads**, including graduate trainee and internship postings identified on official Greenhouse, Ashby and SmartRecruiters boards. This catalog is not a feed and does not assert the vacancies are currently open. Its boards join the scan's candidate queue, which publishes **only** recent (past 30 days), geographically verified India jobs with real employer application URLs. The prior curated boards, 254 general leads and 20 fresher leads remain configured.
