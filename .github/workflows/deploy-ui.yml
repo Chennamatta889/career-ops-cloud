@@ -153,7 +153,8 @@ jobs:
           cp index.html styles.css match-engine.js job-categories.js job-text.js job-search.js india-jobs.js external-job-search.js enterprise-careers.js application-email.js careerops-config.js app.js resume-parser.js ai-studio.js private-workspace.js health-check.js public/
           cp enterprise-careers.json public/data/enterprise-careers.json
           # Browser caches must not pair a previous dashboard script with new markup.
-          sed -i -e "s|?v=20261121-experience-filter-v1|?v=$GITHUB_RUN_ID|g" \
+          sed -i -e "s|?v=20261121-mobile-nav-v1|?v=$GITHUB_RUN_ID|g" \
+            -e "s|?v=20261121-experience-filter-v1|?v=$GITHUB_RUN_ID|g" \
             -e "s|?v=20261121-application-confirmation-v1|?v=$GITHUB_RUN_ID|g" \
             -e "s|?v=20261121-phase08-10-v1|?v=$GITHUB_RUN_ID|g" \
             -e "s|?v=20261121-search-relevance-v1|?v=$GITHUB_RUN_ID|g" \
@@ -169,6 +170,10 @@ jobs:
           grep -q 'id="enterpriseCareerCards"' public/index.html
           grep -q 'id="searchDescriptions"' public/index.html
           grep -q 'id="showFresherJobs"' public/index.html
+          grep -q 'id="mobileMore"' public/index.html
+          grep -q 'id="toggleJobFilters"' public/index.html
+          grep -q 'id="quickResetFilters"' public/index.html
+          grep -Fq "./styles.css?v=$GITHUB_RUN_ID" public/index.html
           grep -Fq "./application-email.js?v=$GITHUB_RUN_ID" public/index.html
           grep -q 'id="emailReviewPanel"' public/index.html
           grep -q 'id="applicationDuplicateWarning"' public/index.html
