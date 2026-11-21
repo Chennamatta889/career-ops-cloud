@@ -168,7 +168,7 @@
     const bits = String(company).split(/\s+/).filter(Boolean);
     return (bits.length >= 2 ? bits[0][0] + bits[1][0] : String(company).slice(0,2)).toUpperCase();
   };
-  const jobSource = function (j) { return j.demo ? "Illustrative job" : j.source === "cloud" ? "Public scanner result" : (j.url ? "Job URL attached" : "No source URL"); };
+  const jobSource = function (j) { return j.demo ? "Example listing" : j.source === "cloud" ? "Public employer posting" : (j.url ? "Original job link available" : "Manually added"); };
   const chips = function (skills) { return (skills || []).slice(0,5).map(function (s) { return '<span class="skill-chip">' + escapeHtml(s) + '</span>'; }).join(""); };
   const find = function (id) { return state.jobs.find(function (j) { return j.id === id; }); };
   const priorityBadge = function(j){
@@ -187,8 +187,8 @@
     const url = safeUrl(j.url);
     const fit = priority(j);
     const categoryName=jobCategory(j);
-    const details = '<button class="text-link secondary-link" type="button" data-action="details" data-id="' + escapeHtml(j.id) + '">Why this priority?</button>';
-    const aiReview = '<button class="text-link open-job-link" type="button" data-action="ai" data-id="' + escapeHtml(j.id) + '">AI review ✧</button>';
+    const details = '<button class="text-link secondary-link" type="button" data-action="details" data-id="' + escapeHtml(j.id) + '">View details</button>';
+    const aiReview = '<button class="text-link open-job-link" type="button" data-action="ai" data-id="' + escapeHtml(j.id) + '">Review with AI</button>';
     const open = url
       ? '<a class="text-link open-job-link" href="' + escapeHtml(url) + '" rel="noopener noreferrer" aria-label="Open job listing for ' + escapeHtml(j.title) + ' at ' + escapeHtml(j.company) + '">Open listing ↗</a>'
       : '<span class="no-url-label">' + (j.demo ? 'Sample job — no link' : 'Posting link unavailable') + '</span>';
@@ -209,11 +209,11 @@
     if (!total) $("pipelineChart").title = "No tracked opportunities yet";
     const notice = document.querySelector("#page-overview .notice");
     if (state.mode === "demo") {
-      notice.querySelector("div").innerHTML = '<strong>Demo workspace</strong> — sample listings are illustrative, not live job postings. Import scanner JSON or add a real opportunity to start tracking locally.';
+      notice.querySelector("div").innerHTML = '<strong>Example listings</strong> — these are illustrative roles, not published vacancies. Employer listings are loaded separately when available.';
     } else if (state.mode === "live") {
-      notice.querySelector("div").innerHTML = '<strong>Cloud scanner connected</strong> — job cards come from public career portals, not verified application availability. AI scoring, resume tailoring and automatic submissions are not enabled.';
+      notice.querySelector("div").innerHTML = '<strong>Employer job listings</strong> — openings are sourced from public career boards and updated on a schedule. Check the original posting before applying. No applications are submitted automatically.';
     } else {
-      notice.querySelector("div").innerHTML = '<strong>Local tracking mode</strong> — imported and manually added jobs are not verified live. No AI matching or application submission is connected.';
+      notice.querySelector("div").innerHTML = '<strong>Your saved job list</strong> — this view includes roles you added or imported. Verify details on the employer website before taking action.';
     }
   };
   const renderDiscover = function () {
@@ -221,7 +221,7 @@
     $("jobsGrid").innerHTML = jobs.map(card).join("");
     $("resultsCount").textContent = jobs.length + (jobs.length === 1 ? " opportunity" : " opportunities");
     $("emptyJobs").hidden = jobs.length !== 0;
-    $("dataModeTag").textContent = state.mode === "demo" ? "Sample listings" : state.mode === "live" ? "Cloud scanner" : "Local records";
+    $("dataModeTag").textContent = state.mode === "demo" ? "Examples" : state.mode === "live" ? "Published vacancies" : "Your job list";
     $("dataModeTag").classList.toggle("real", state.mode !== "demo");
   };
   const renderBoard = function () {
@@ -240,6 +240,8 @@
     }).join("") : '<div class="empty-state"><div class="empty-icon">◷</div><h3>No activity yet</h3><p>Your saved jobs, imports, and status changes will appear here.</p></div>';
   };
   const renderPreferences = function () {
+    // Background updates should never overwrite a form someone is editing.
+    if($("preferencesForm")?.contains?.(document.activeElement))return;
     $("targetRoles").value = str(state.prefs.roles);
     $("targetLocations").value = str(state.prefs.locations);
     $("targetExperience").value = str(state.prefs.experience);
@@ -254,14 +256,14 @@
   };
   const track = function (id) {
     const job = find(id); if (!job) return;
-    if (job.stage && job.stage !== "Saved") { toast("Already tracked as " + job.stage + ". Change it in Applications."); return; }
+    if (job.stage && job.stage !== "Saved") { toast("This job is marked " + job.stage + ". Update its status in My applications."); return; }
     job.stage = job.stage === "Saved" ? "" : "Saved";
     log(job.stage ? "Job saved" : "Job removed from shortlist", job.title + " · " + job.company);
-    save(); render(); broadcastStage(job); toast(job.stage ? "Job added to your pipeline" : "Job removed from shortlist");
+    save(); render(); broadcastStage(job); toast(job.stage ? "Job saved to My applications" : "Job removed from saved listings");
   };
   const openDetails = function (id) {
     const j = find(id); if (!j) return; activeJobId = id;
-    $("dialogEyebrow").textContent = j.demo ? "ILLUSTRATIVE OPPORTUNITY" : "YOUR OPPORTUNITY";
+    $("dialogEyebrow").textContent = j.demo ? "EXAMPLE LISTING" : "JOB DETAILS";
     $("dialogTitle").textContent = j.title;
     $("dialogMeta").textContent = j.company + " · " + j.location;
     $("dialogDescription").textContent = j.description || "No description provided. Review the original job listing for full requirements.";
