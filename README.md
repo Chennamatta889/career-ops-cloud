@@ -9,6 +9,28 @@ A standalone experiment running the original [Career-Ops](https://github.com/car
 - To preview locally, clone/download the repository and open index.html in a browser.
 - To enable hosting: open **Settings → Pages → Build and deployment → Source: GitHub Actions**. Then run **Publish Career-Ops dashboard** in the Actions tab, or push an edit to the UI. This is a one-time repository setting.
 
+## Phase 3 — Private AI Studio (code ready, not yet activated)
+
+The public UI includes an AI Studio page and an **AI review** action on job cards. It supports passwordless email sign-in, session-only resume text entry (paste or .txt import), job title/employer/description inputs, explicit consent to third-party AI processing, fit analysis, suggested resume rewrites, cover letter, recruiter email, screening answer drafts, and a local .txt export. It never sends an application, uploads an entire PDF, or modifies an existing resume.
+
+**Important: This is a code-level implementation, not yet a live AI integration.** The only currently connected Supabase project belongs to DraftflowAI. Do NOT reuse or alter it. Create a separate Career-Ops project after the user selects an organization and approves any cost.
+
+### Activation checklist
+
+1. Create a new dedicated Supabase project for Career-Ops (only after explicit organization/cost approval).
+2. In its Authentication URL Configuration, allow the exact Site URL and redirect URL: https://chennamatta889.github.io/career-ops-cloud/ . Enable email sign-in.
+3. Deploy the source at supabase/functions/careerops-ai-review/index.ts as a Supabase Edge Function. The supabase/config.toml disables gateway JWT checks because modern publishable keys use application-level auth; the handler separately validates the bearer token against Supabase Auth and restricts the email address to an allowlist. Never remove these safeguards.
+4. In **that separate project only**, configure function secrets: GEMINI_API_KEY (from Google AI Studio), ALLOWED_EMAIL (your approved sign-in email), AI_CALLS_ENABLED=true, APP_ORIGIN=https://chennamatta889.github.io . Optionally set GEMINI_MODEL (defaults to gemini-3.8-flash). Model availability, free-tier limits, and pricing depend on the AI provider; confirm them before activating billable traffic. **Never commit or paste API keys into the frontend, GitHub, or chat.**
+5. Configure public-only careerops-config.js using the separate Supabase project URL (https://YOUR_PROJECT_REF.supabase.co) and that project's **publishable** key (not a secret or service role key). Then publish GitHub Pages via the deployment workflow.
+6. Test one email sign-in, one real job review with full JD/resume text, downloaded draft, and sign-out. Confirm all private information is absent from the public Pages assets.
+
+### Security and privacy
+
+- Resume and job description are held in memory in the browser tab. They are sent only after explicit consent to the authenticated Edge Function and Gemini provider. Neither text nor generated drafts are persisted in database tables or GitHub.
+- Session tokens are stored only in browser sessionStorage; user should sign out on shared devices.
+- The backend requires an authenticated user and a configured allowlisted email, enforces input limits, and limits requests per function instance. This is NOT a global cost quota; configure provider billing limits.
+- No auto-apply, email sending, PDF/DOCX parsing or recruiter messaging is enabled. Generated content must be fact-checked by a human.
+
 ## Dashboard v2 — explainable matching and better resilience
 
 **Phase 2 is deployed to source control; GitHub Pages must successfully publish to see it.**
