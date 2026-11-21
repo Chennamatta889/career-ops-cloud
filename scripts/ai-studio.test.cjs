@@ -64,6 +64,22 @@ test("AI Studio explains missing resume, description and consent, and probes bac
   assert.match(ai,/before reviewing/i);
   assert.match(ai,/checkReviewConnection\(token\)/);
 });
+test("failed Gemini calls do not lock the user out for 60 seconds",()=>{
+  const fetchIndex=backend.indexOf('const api=await fetch("https://generativelanguage.googleapis.com');
+  const successIndex=backend.indexOf('recent.set(user.id,Date.now())');
+  assert.ok(fetchIndex>=0&&successIndex>fetchIndex,"Cooldown must only be set after provider succeeds");
+  assert.match(backend,/inFlight\.delete\(user\.id\)/);
+  assert.match(backend,/PROVIDER_TIMEOUT_MS\s*=\s*100_000/);
+  assert.match(backend,/AbortSignal\.timeout\(PROVIDER_TIMEOUT_MS\)/);
+  assert.doesNotMatch(backend,/AbortSignal\.timeout\(42000\)/);
+  assert.match(backend,/code:"PROVIDER_TIMEOUT"/);
+});
+test("AI Review uses fast default Gemini and shows request progress",()=>{
+  assert.match(backend,/gemini-3\.5-flash-lite/);
+  assert.match(backend,/thinkingConfig=\{thinkingLevel:"low"\}/);
+  assert.match(ai,/setInterval\(showProgress,1000\)/);
+  assert.match(ai,/clearInterval\(progressTimer\)/);
+});
 test("AI review does not send applications or persist resume text",()=>{
   assert.doesNotMatch(ai,/localStorage\.setItem\([^\n]*resume/i);
   assert.match(html,/Nothing is submitted automatically/);
