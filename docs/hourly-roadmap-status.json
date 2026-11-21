@@ -125,6 +125,16 @@
         44938248227,
         44938346422
       ]
+    },
+    {
+      "phase": 11,
+      "status": "in_progress",
+      "note": "Second live QA 44938627296 identified broader search matching skills/company; prior QA assumed title-only. Preserve actual search semantics and assert live filtering monotonicity; fixture still checks ServiceNow-vs-Salesforce relevance.",
+      "run_ids": [
+        44938443849,
+        44938495239,
+        44938627296
+      ]
     }
   ]
 }
