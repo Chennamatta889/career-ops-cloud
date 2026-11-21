@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
  * Public all-role ATS discovery. No user profile, keyword exclusions,
- * seniority restrictions, experience ceiling, or country filters.
- * Sources are selected employers, not all employers worldwide.
+ * seniority restrictions or experience ceiling. Only verified India-based
+ * locations are published; international/unknown locations are excluded.
+ * Sources are selected employers, not an exhaustive India job market.
  */
 import {readFileSync,mkdirSync,writeFileSync} from "node:fs";
 import {createRequire} from "node:module";
@@ -13,6 +14,7 @@ import {createHash} from "node:crypto";
 const require=createRequire(import.meta.url);
 const {classify,categories}=require("../job-categories.js");
 const {plainText,experienceRequirement}=require("../job-text.js");
+const {isIndiaLocation}=require("../india-jobs.js");
 const MAX_RESPONSE_BYTES=10*1024*1024;
 const clean=(value,n=200)=>typeof value==="string" ? value.replace(/[\u0000-\u001f\u007f]+/g," ").replace(/\s+/g," ").trim().slice(0,n):"";
 function date(value){
@@ -211,8 +213,11 @@ export async function runScan({sources,fetchImpl=fetch,concurrency=5}={}){
       const common={provider:source.provider,board:source.slug,name:source.name};
       try{
         const openings=await scanBoard(source,fetchImpl);
-        jobs.push(...openings);found+=openings.length;
-        health[sourceIndex]={...common,status:"ok",count:openings.length};
+        found+=openings.length;
+        const indiaJobs=openings.filter(job=>isIndiaLocation(job.location));
+        jobs.push(...indiaJobs);
+        health[sourceIndex]={...common,status:"ok",count:indiaJobs.length,
+          scanned_count:openings.length};
       }catch(e){
         errors.push({board:source.name,reason:clean(e?.message||"Source unavailable",140)});
         health[sourceIndex]={...common,status:"error",count:0};
@@ -223,11 +228,12 @@ export async function runScan({sources,fetchImpl=fetch,concurrency=5}={}){
   const published=status==="failed"?[]:balanceJobs(jobs);
   return {
     schema:"careerops.public-jobs.v1",generated_at:new Date().toISOString(),
-    scope:"IT and non-IT roles at selected public Greenhouse/Ashby/Lever/SmartRecruiters/Workable employers, worldwide. Not an exhaustive job search.",
+    market:"IN",
+    scope:"India-only IT and non-IT roles from selected public employer ATS boards. Global remote and unknown locations excluded; not an exhaustive job search.",
     scan:{status,date:new Date().toISOString().slice(0,10),scanned:sources.length,
-      found,matched:published.length,error_count:errors.length,
+      found,matched:published.length,india_only:true,error_count:errors.length,
       message:errors.length?"Some employers were unavailable; results may be incomplete.":
-        "All published roles scanned without title, country, experience or seniority exclusions."},
+        "Published only India-based jobs, without title, role, experience or seniority exclusions."},
     category_counts:Object.fromEntries(categories.map(c=>[c,published.filter(j=>j.category===c).length])),
     source_errors:errors.slice(0,30),source_health:health,jobs:published
   };
@@ -240,7 +246,7 @@ async function main(){
   mkdirSync(path.dirname(output),{recursive:true});
   writeFileSync(output,JSON.stringify(feed)+"\n",{mode:0o644});
   console.log(JSON.stringify({status:feed.scan.status,boards:feed.scan.scanned,
-    inspected:feed.scan.found,published:feed.jobs.length,
+    market:feed.market,inspected:feed.scan.found,india_published:feed.jobs.length,
     errors:feed.scan.error_count,categories:feed.category_counts},null,2));
   // Release diagnostics only: job counts and titles are never added to visible UI.
   const serviceNowJobs=feed.jobs.filter(j=>/\bservice[\s-]?now\b/i.test(j.title));
