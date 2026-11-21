@@ -243,3 +243,60 @@ test("large Lever employer feeds are paginated without silently skipping Service
   assert.ok(jobs.some(j=>j.title==="ServiceNow Developer"));
   assert.ok(jobs.every(j=>j.url.startsWith("https://jobs.lever.co/cgsfederal/")));
 });
+
+test("ServiceNow SmartRecruiters board exposes all India postings using safe, complete pagination",async()=>{
+  const board={provider:"smartrecruiters",slug:"ServiceNow",name:"ServiceNow"};
+  const visited=[];
+  const makeJob=i=>({
+    id:String(744000100000000+i),name:i===101?"Cloud Platform Engineer":"Software Engineer",
+    company:{identifier:"ServiceNow",name:"ServiceNow"},
+    department:{label:"Engineering"},
+    location:{city:"Hyderabad",region:"Telangana",country:"IN",remote:false},
+    releasedDate:"2026-11-20T09:00:00Z"
+  });
+  const jobs=await scanBoard(board,async(url,options)=>{
+    const u=new URL(url);
+    assert.equal(u.origin,"https://api.smartrecruiters.com");
+    assert.equal(u.pathname,"/v1/companies/ServiceNow/postings");
+    assert.equal(options.method,"GET");
+    assert.equal(options.redirect,"error");
+    assert.equal(options.headers.Accept,"application/json");
+    assert.equal(u.searchParams.get("limit"),"100");
+    const offset=Number(u.searchParams.get("offset"));
+    visited.push(offset);
+    return fakeResponse({totalFound:103,offset,limit:100,content:
+      Array.from({length:Math.max(0,Math.min(100,103-offset))},(_,i)=>makeJob(offset+i))});
+  });
+  assert.deepEqual(visited,[0,100]);
+  assert.equal(jobs.length,103);
+  assert.equal(jobs[0].company,"ServiceNow");
+  assert.equal(jobs[0].location,"Hyderabad, Telangana, India");
+  assert.equal(jobs[0].posted_at,"2026-11-20");
+  assert.equal(jobs[0].requiredExperience,"","list payload cannot prove years required");
+  assert.equal(jobs[0].source,"SmartRecruiters public board");
+  assert.equal(jobs[0].category,"IT & Software");
+  assert.equal(jobs[101].title,"Cloud Platform Engineer");
+  assert.ok(jobs.every(j=>/^https:\/\/jobs\.smartrecruiters\.com\/ServiceNow\/744000/.test(j.url)));
+  assert.equal(new Set(jobs.map(j=>j.url)).size,103);
+});
+test("SmartRecruiters fails closed on malformed, empty and truncated API pages",async()=>{
+  const board={provider:"smartrecruiters",slug:"ServiceNow",name:"ServiceNow"};
+  await assert.rejects(scanBoard(board,async()=>fakeResponse({jobs:[]})),/response is invalid/);
+  await assert.rejects(scanBoard(board,async()=>fakeResponse({content:[],totalFound:2})),/incomplete page/);
+  await assert.rejects(scanBoard(board,async()=>fakeResponse({
+    content:[{id:"744000123456789",name:"Software Engineer",location:{country:"IN"}}],
+    totalFound:200
+  })),/truncated page/);
+  const jobs=await scanBoard(board,async()=>fakeResponse({content:[
+    {id:"../invalid",name:"Fake India Role",location:{country:"IN"}},
+    {id:"744000123456789",name:"ITSM Administrator",location:{city:"Bengaluru",country:"IN"}},
+    {id:"744000123456790",name:"Unlisted",active:false}
+  ],totalFound:3}));
+  assert.equal(jobs.length,1);
+  assert.equal(jobs[0].location,"Bengaluru, India");
+});
+test("real ServiceNow company source is configured separately from ServiceNow consulting firms",()=>{
+  assert.ok(src.sources.some(x=>x.provider==="smartrecruiters" &&
+    x.slug==="ServiceNow" && x.name==="ServiceNow"));
+  assert.ok(src.sources.length>=74);
+});
