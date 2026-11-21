@@ -10,6 +10,7 @@ import {createRequire} from "node:module";
 import path from "node:path";
 import {pathToFileURL} from "node:url";
 import {createHash} from "node:crypto";
+import {discoverIndiaCandidates,mergeIndiaCandidates} from "./india-candidate-expansion.mjs";
 
 const require=createRequire(import.meta.url);
 const {classify,categories}=require("../job-categories.js");
@@ -242,7 +243,17 @@ async function main(){
   const sourceFile=process.env.JOB_SOURCES_FILE||"scripts/universal-job-sources.json";
   const output=process.env.FEED_OUTPUT||"public/data/jobs.json";
   const sources=JSON.parse(readFileSync(sourceFile,"utf8")).sources;
-  const feed=await runScan({sources});
+  let feed=await runScan({sources});
+  if(feed.scan.status!=="failed"&&process.env.DISABLE_INDIA_CANDIDATE_DISCOVERY!=="1"){
+    const candidateFile=process.env.JOB_CANDIDATES_FILE||"scripts/india-employer-candidates.json";
+    const candidates=JSON.parse(readFileSync(candidateFile,"utf8")).candidates;
+    const expansion=await discoverIndiaCandidates({candidates,curatedSources:sources,
+      scanBoard,isIndiaLocation});
+    feed=mergeIndiaCandidates(feed,expansion,balanceJobs);
+    console.log("India candidate discovery:",JSON.stringify(expansion.report));
+    if(expansion.errors.length)
+      console.warn("Sample unavailable candidate boards:",JSON.stringify(expansion.errors));
+  }
   mkdirSync(path.dirname(output),{recursive:true});
   writeFileSync(output,JSON.stringify(feed)+"\n",{mode:0o644});
   console.log(JSON.stringify({status:feed.scan.status,boards:feed.scan.scanned,
