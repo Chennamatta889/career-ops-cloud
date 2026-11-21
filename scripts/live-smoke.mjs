@@ -9,18 +9,22 @@ const checks=[
   {path:"",contains:'id="advancedTools"'},
   {path:"",contains:'id="applicationFollowup"'},
   {path:"",contains:'id="confirmAppliedDate"'},
+  {path:"",contains:'id="enterpriseCareerDirectory"'},
+  {path:"",contains:'id="enterpriseCareerCards"'},
   {path:"",contains:'class="breadcrumb breadcrumb-home"'},
   {path:"",contains:'class="workspace-select workspace-home"'},
   {path:"app.js",contains:"ACCOUNT_STORAGE_PREFIX"},
   {path:"app.js",contains:"recordEmployerOpen"},
   {path:"job-categories.js",contains:"CareerOpsCategories"},
   {path:"job-text.js",contains:"CareerOpsJobText"},
+  {path:"enterprise-careers.js",contains:"CareerOpsEnterpriseCareers"},
   {path:"ai-studio.js",contains:"jobFetchVersion"},
   {path:"private-workspace.js",contains:"accountVersion"},
   {path:"private-workspace.js",contains:"pendingTrackingWrites"},
   {path:"health-check.js",contains:"runHealthChecks"},
   {path:"resume-parser.js",contains:"CareerOpsResumeParser"},
   {path:"data/jobs.json",json:true},
+  {path:"data/enterprise-careers.json",portal:true},
   {path:"vendor/pdf.min.mjs",head:true},
   {path:"vendor/pdf.worker.min.mjs",head:true},
   {path:"vendor/mammoth.browser.min.js",head:true}
@@ -33,7 +37,14 @@ async function check(item){
   });
   if(!r.ok)throw Error((item.path||"index.html")+" returned HTTP "+r.status);
   if(item.head)return;
-  if(item.json){
+  if(item.portal){
+    const data=await r.json();
+    if(data.schema!=="careerops.enterprise-careers.v1"||
+      !Array.isArray(data.companies)||data.companies.length!==13||
+      data.companies.some(x=>x.method!=="official_portal"||!x.url.startsWith("https://")))
+      throw Error("Official career directory schema or entries invalid");
+    console.log("Official employer career portal links:",data.companies.length);
+  }else if(item.json){
     const data=await r.json();
     if(data.schema!=="careerops.public-jobs.v1" || !Array.isArray(data.jobs) || !data.category_counts)
       throw Error("Public feed JSON has invalid schema.");
