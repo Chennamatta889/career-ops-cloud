@@ -189,35 +189,61 @@
     saveSession(null);activeResult=null;byId("aiResume").value="";byId("aiJd").value="";byId("aiConsent").checked=false;byId("aiResult").replaceChildren();byId("aiResult").hidden=true;byId("aiDownload").hidden=true;
     await refreshAuth();
   });
-  async function loadResume(file) {
-    if(!file)return;
+  let resumeParseInProgress=false;
+  function showResumeFeedback() {
+    // Open the panel immediately, including for failures. Previously the
+    // Resume Lab event navigated only AFTER success, hiding all parse errors.
+    document.querySelector('[data-nav="ai"]')?.click();
+    byId("aiResumeParseStatus").scrollIntoView({behavior:"smooth",block:"center"});
+  }
+  function resumeFeedback(state,message) {
     const feedback=byId("aiResumeParseStatus");
-    feedback.textContent="Reading " + file.name.slice(0,100) + " locally. No file is being uploaded...";
-    try {
-      if(!rootParser())throw new Error("Browser resume parser is unavailable. Refresh the deployed site.");
-      const result=await rootParser().parseFile(file);
-      byId("aiResume").value=result.text;
-      prerequisites();
-      const notes=result.notes.length ? " " + result.notes.join(" ") : "";
-      feedback.textContent="Extracted " + result.text.length + " characters from " + result.filename + "." + notes + " Verify the text before AI Review.";
-      status("Resume text extracted locally. Review it, then fetch or paste the full job description.");
-      return true;
-    } catch(e) {
-      feedback.textContent="Could not parse resume: "+text(e?.message||e,260);
-      status("Resume parsing failed. You can paste your resume text manually.");
+    feedback.dataset.state=state;
+    feedback.textContent=message;
+  }
+  async function loadResume(file) {
+    if(!file) return false;
+    showResumeFeedback();
+    if(resumeParseInProgress) {
+      resumeFeedback("error","A resume is already being extracted. Finish the current file first.");
       return false;
     }
+    resumeParseInProgress=true;
+    const picker=byId("aiResumeTxtFile");
+    picker.disabled=true;
+    const displayName=text(file.name,100)||"selected resume";
+    resumeFeedback("loading","Processing "+displayName+" locally… PDF and DOCX extraction can take a little longer on mobile. No file is uploaded.");
+    status("Parsing the selected resume in your browser…");
+    try {
+      const parser=window.CareerOpsResumeParser;
+      if(!parser || typeof parser.parseFile!=="function") throw new Error("Resume parser did not load. Refresh the Career-Ops website and retry.");
+      const result=await parser.parseFile(file);
+      if(!result || typeof result.text!=="string") throw new Error("Parser did not return readable resume text.");
+      byId("aiResume").value=result.text;
+      prerequisites();
+      const notes=Array.isArray(result.notes) && result.notes.length?" "+result.notes.join(" "):"";
+      resumeFeedback("success","Resume extracted: "+result.text.length+" characters from "+text(result.filename,100)+"."+notes+" Review the text above before using AI.");
+      status("Resume ready. Extraction only filled the text field; to generate an AI review, select a job, confirm consent, then tap Review job with AI.");
+      window.dispatchEvent(new CustomEvent("careerops:resume-parse-result",{detail:{success:true,filename:displayName,characters:result.text.length}}));
+      return true;
+    } catch(e) {
+      const reason=text(e?.message||e,300);
+      resumeFeedback("error","Resume extraction failed: "+reason+" You can paste the resume text manually.");
+      status("Resume extraction failed. The reason is shown under the resume upload button.");
+      window.dispatchEvent(new CustomEvent("careerops:resume-parse-result",{detail:{success:false,filename:displayName,error:reason}}));
+      return false;
+    } finally {
+      resumeParseInProgress=false;
+      picker.disabled=false;
+    }
   }
-  function rootParser(){return window.CareerOpsResumeParser;}
   byId("aiResumeTxtFile").addEventListener("change",async function(){
     const selected=this.files?.[0];
-    this.value="";
-    await loadResume(selected);
+    try { await loadResume(selected); }
+    finally { this.value=""; }
   });
   window.addEventListener("careerops:resume-selected",async event=>{
-    const file=event.detail?.file;
-    const success=await loadResume(file);
-    if(success)document.querySelector('[data-nav="ai"]')?.click();
+    await loadResume(event.detail?.file);
   });
 
   byId("aiFetchJob").addEventListener("click",async function(){
