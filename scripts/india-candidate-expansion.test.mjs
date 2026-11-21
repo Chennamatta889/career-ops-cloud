@@ -151,14 +151,16 @@ test("freshers-focused SmartRecruiters candidate activates only for fresh, India
 });
 
 test("new official early-career employer leads are not enrolled as curated or existing candidates",()=>{
-  assert.equal(earlyRegistry.candidates.length,15);
+  assert.equal(earlyRegistry.candidates.length,19);
   assert.equal(checkCandidateCatalog([
     ...earlyRegistry.candidates,...fresherRegistry.candidates,...registry.candidates]),true);
   const active=new Set(curated.map(x=>x.provider+":"+x.slug.toLowerCase()));
   assert.ok(earlyRegistry.candidates.every(x=>x.focus==="fresher"));
   assert.ok(earlyRegistry.candidates.every(x=>!active.has(x.provider+":"+x.slug.toLowerCase())));
   assert.ok(earlyRegistry.candidates.every(x=>x.reference_url.startsWith("https://")));
-  assert.equal(earlyRegistry.candidates.filter(x=>x.indiaOnly===true).length,2);
+  assert.equal(earlyRegistry.candidates.filter(x=>x.indiaOnly===true).length,6);
+  for(const slug of ["Eurofins","CamiAI","Kredx","Connectionphase"])assert.ok(
+    earlyRegistry.candidates.some(x=>x.provider==="smartrecruiters"&&x.slug===slug&&x.indiaOnly===true),slug);
 });
 test("large global SmartRecruiters employer is queried with India server-side location filter",async()=>{
   const source=earlyRegistry.candidates.find(x=>x.slug==="AccorHotel");
