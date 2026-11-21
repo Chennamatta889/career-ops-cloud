@@ -534,6 +534,10 @@ test("ServiceNow keyword returns ServiceNow job, not Salesforce title mentioning
   assert.match(cards,/Mentioned in description/);
   assert.ok(cards.indexOf("ServiceNow Developer")<cards.indexOf("Salesforce Administrator"),
     "explicit job title matches must outrank description-only mentions");
+  h.el("experienceFilter").value="3-5";
+  h.el("experienceFilter").listeners.get("change")();
+  assert.match(h.el("emptyJobsHint").textContent,/combination.*Reset search & filters/,
+    "explain when an active experience filter excludes otherwise relevant roles");
   h.el("resetDiscoverFilters").listeners.get("click")();
   assert.equal(h.el("searchDescriptions").checked,false);
   assert.equal(h.el("jobSearch").value,"");
