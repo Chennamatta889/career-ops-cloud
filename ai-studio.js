@@ -148,7 +148,7 @@
   });
   byId("aiSignOut").addEventListener("click",async()=>{
     try{const jwt=await getAccessToken();if(jwt)await api("/auth/v1/logout",{method:"POST",headers:headers(jwt)});}catch(_){}
-    saveSession(null);activeResult=null;byId("aiResult").hidden=true;byId("aiDownload").hidden=true;
+    saveSession(null);activeResult=null;byId("aiResume").value="";byId("aiJd").value="";byId("aiConsent").checked=false;byId("aiResult").replaceChildren();byId("aiResult").hidden=true;byId("aiDownload").hidden=true;
     await refreshAuth();
   });
   byId("aiResumeTxtFile").addEventListener("change",async function(){
