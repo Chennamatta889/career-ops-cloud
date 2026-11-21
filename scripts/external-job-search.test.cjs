@@ -4,7 +4,7 @@ const {links}=require("../external-job-search.js");
 test("empty query links to official Indian portal landing pages",()=>{
   assert.deepEqual(links("",null),{
     naukri:"https://www.naukri.com/",
-    linkedin:"https://www.linkedin.com/jobs/",
+    linkedin:"https://www.linkedin.com/",
     indeed:"https://in.indeed.com/"
   });
 });
@@ -12,9 +12,10 @@ test("role and Indian location appear as encoded URL parameters on provider-owne
   const results=links("DevOps & Cloud", "hyderabad");
   const expected={
     naukri:{host:"www.naukri.com",param:"keyword",loc:"location"},
-    linkedin:{host:"www.linkedin.com",param:"keywords",loc:"location"},
     indeed:{host:"in.indeed.com",param:"q",loc:"l"}
   };
+  assert.equal(results.linkedin,"https://www.linkedin.com/",
+    "Do not link to LinkedIn jobs subpaths without written permission");
   for(const [provider,details] of Object.entries(expected)){
     const url=new URL(results[provider]);
     assert.equal(url.protocol,"https:");
@@ -29,7 +30,7 @@ test("unusual keywords cannot change the external destinations or add extra quer
     const url=new URL(results[provider]);
     assert.equal(url.hostname,target);
     assert.equal(url.hash,"");
-    assert.equal([...url.searchParams.keys()].length,2);
+    assert.equal([...url.searchParams.keys()].length,provider==="linkedin"?0:2);
     assert.match(url.href,/SRE/);
   }
 });
