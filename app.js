@@ -359,7 +359,7 @@
       const lastRun = runTime.toLocaleString(undefined,{dateStyle:"medium",timeStyle:"short"});
       const scan = feed.scan;
       const numErrors = Number(scan.error_count) || 0;
-      const summary = "Last run: " + lastRun + " · " + (Number(scan.found) || 0) + " scanned postings · " + numErrors + " source errors";
+      const summary = "Last run: " + lastRun + " · " + (Number(scan.scanned) || 0) + " career boards · " + (Number(scan.found) || 0) + " postings inspected · " + numErrors + " source errors";
       if (scan.status === "failed") {
         showFeedStatus("failed", "Cloud scan failed", summary + ". Existing browser records are preserved.");
         return;
