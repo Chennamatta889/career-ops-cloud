@@ -463,11 +463,68 @@
     }
     $("jobDialog").showModal();
   };
+  const showApplicationFollowup=function(job){
+    if(!job || job.demo)return;
+    pendingConfirmationId=job.id;
+    $("confirmApplicationJob").textContent=job.title+" · "+job.company;
+    $("confirmApplicationTitle").textContent=job.appliedOn?
+      "Update your application date":"Did you successfully submit an application?";
+    $("confirmAppliedDate").max=localToday();
+    $("confirmAppliedDate").value=job.appliedOn||localToday();
+    $("applicationFollowupError").textContent="";
+    $("applicationFollowup").hidden=false;
+  };
+  const closeApplicationFollowup=function(){
+    pendingConfirmationId=null;
+    $("applicationFollowup").hidden=true;
+    $("applicationFollowupError").textContent="";
+  };
+  const recordEmployerOpen=function(id){
+    const job=find(id);
+    if(!job || job.demo || !safeUrl(job.url))return;
+    job.openedAt=stamp();
+    job.trackingUpdatedAt=job.openedAt;
+    // Opening a link must never create a confirmed application.
+    if(!job.stage)job.stage="Opened";
+    log("Employer listing opened",job.title+" · "+job.company+" · application not confirmed");
+    save();render();broadcastStage(job);
+    if(!job.appliedOn && !["Applied","Interview","Offer","Rejected"].includes(job.stage))
+      showApplicationFollowup(job);
+    toast("Employer page opened. Only confirm after submitting your application.");
+  };
+  const confirmApplication=function(){
+    const job=find(pendingConfirmationId);
+    if(!job || job.demo){closeApplicationFollowup();return;}
+    const date=$("confirmAppliedDate").value;
+    if(!validApplicationDate(date)){
+      $("applicationFollowupError").textContent="Choose a valid application date (today or earlier).";
+      return;
+    }
+    const furtherAlong=["Interview","Offer","Rejected"].includes(job.stage);
+    job.stage=furtherAlong?job.stage:"Applied";
+    job.appliedOn=date;
+    job.trackingUpdatedAt=stamp();
+    log("Application confirmed by user",job.title+" · "+job.company+" · "+date);
+    closeApplicationFollowup();save();render();broadcastStage(job);
+    toast("Recorded as Applied on "+date+" (user-confirmed)");
+  };
+  const notYetApplied=function(){
+    const job=find(pendingConfirmationId);
+    closeApplicationFollowup();
+    if(job)toast("Not marked as applied. Confirm later in My applications.");
+  };
   const setStage = function (id, stage) {
     const j = find(id); if (!j) return;
     if (stage && !STAGES.some(function (s) { return s.name === stage; })) return;
+    if(stage==="Applied" && !j.appliedOn){
+      showApplicationFollowup(j);
+      renderBoard(); // Revert the menu until the user confirms submission.
+      return;
+    }
     const previous = j.stage;
     j.stage = stage;
+    j.trackingUpdatedAt=stamp();
+    if(!stage){j.openedAt="";j.appliedOn="";}
     log("Application status changed", j.title + " · " + (previous || "Not tracking") + " → " + (stage || "Not tracking"));
     save(); render(); broadcastStage(j); toast("Status updated — syncing when signed in");
   };
@@ -546,6 +603,15 @@
     const action = e.target.closest("[data-action]");
     if (action) {
       const id = action.getAttribute("data-id");
+      if (action.getAttribute("data-action")==="open-listing"){
+        // Let the browser open the employer's page; record only the click.
+        if(!e.defaultPrevented){
+          if($("jobDialog")?.open)$("jobDialog").close();
+          recordEmployerOpen(id);
+        }
+      }
+      if (["confirm-applied","edit-applied-date"].includes(action.getAttribute("data-action")))
+        showApplicationFollowup(find(id));
       if (action.getAttribute("data-action") === "details") openDetails(id);
       if (action.getAttribute("data-action") === "save") track(id);
       if (action.getAttribute("data-action") === "ai") {
@@ -616,6 +682,14 @@
   $("closeAddDialog").addEventListener("click", function () { $("addDialog").close(); });
   $("dialogAI").addEventListener("click", function () { const job=find(activeJobId); $("jobDialog").close(); if(job) window.dispatchEvent(new CustomEvent("careerops:job-selected",{detail:{title:job.title,company:job.company,url:job.url,description:readableJobText(job.description,6000)}})); });
   $("dialogSave").addEventListener("click", function () { if (activeJobId) { track(activeJobId); const j = find(activeJobId); $("dialogSave").textContent = j && j.stage ? "✓ Tracking" : "+ Save job"; } });
+  $("dialogConfirmApplied").addEventListener("click",function(){
+    const job=find(activeJobId);
+    if($("jobDialog")?.open)$("jobDialog").close();
+    showApplicationFollowup(job);
+  });
+  $("confirmApplied").addEventListener("click",confirmApplication);
+  $("confirmNotYet").addEventListener("click",notYetApplied);
+  $("closeApplicationFollowup").addEventListener("click",notYetApplied);
   $("addJobForm").addEventListener("submit", function (e) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
