@@ -13,12 +13,12 @@
   <meta name="description" content="Discover IT and non-IT opportunities, manage your applications, and prepare tailored documents in one secure career workspace.">
   <title>Overview | Career-Ops</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='17' fill='%230b1425'/%3E%3Cpath d='m17 34 11 11 20-26' fill='none' stroke='%2342dfb6' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=20261121-jobcards-recovery-v1">
   <script defer src="./match-engine.js"></script>
   <script defer src="./job-categories.js"></script>
   <script defer src="./job-text.js"></script>
   <script defer src="./careerops-config.js"></script>
-  <script defer src="./app.js"></script>
+  <script defer src="./app.js?v=20261121-jobcards-recovery-v1"></script>
   <script defer src="./resume-parser.js"></script>
   <script defer src="./ai-studio.js"></script>
   <script defer src="./private-workspace.js"></script>
@@ -35,7 +35,7 @@
     <div class="nav-label">WORKSPACE</div>
     <nav class="nav-list" id="mainNav">
       <button class="nav-link active" data-nav="overview"><span class="nav-icon">◫</span><span>Overview</span></button>
-      <button class="nav-link" data-nav="discover"><span class="nav-icon">⌕</span><span>Find jobs</span></button>
+      <button class="nav-link" data-nav="discover"><span class="nav-icon">⌕</span><span>Find jobs</span><span id="navJobsCount" hidden aria-hidden="true"></span></button>
       <button class="nav-link" data-nav="applications"><span class="nav-icon">▥</span><span>My applications</span></button>
       <button class="nav-link" data-nav="resume"><span class="nav-icon">▤</span><span>Resume &amp; preferences</span></button>
       <button class="nav-link" data-nav="ai"><span class="nav-icon">✧</span><span>AI Studio</span></button>
@@ -63,7 +63,7 @@
         <div class="notice" role="status"><span class="notice-icon">ⓘ</span><div><strong>Example listings</strong> — illustrative roles are shown while the public job feed loads. Examples are not actual vacancies.</div><button class="notice-link" data-nav="settings">Import data →</button></div>
         <div class="section-top"><div><div class="eyebrow">YOUR DASHBOARD</div><h2>Application overview</h2></div><span class="muted small">Saved to your account when signed in</span></div>
         <div class="stats-grid">
-          <article class="stat-card"><div class="stat-icon stat-teal">⌕</div><div class="stat-word">Find your next role</div><strong>All industries</strong><p>Browse employer opportunities</p></article>
+          <article class="stat-card"><div class="stat-icon stat-teal">⌕</div><div id="statDiscovered" hidden aria-hidden="true"></div><div class="stat-word">Find your next role</div><strong>All industries</strong><p>Browse employer opportunities</p></article>
           <article class="stat-card"><div class="stat-icon stat-blue">✧</div><div class="stat-number" id="statSaved">0</div><strong>Saved jobs</strong><p>Worth a closer look</p></article>
           <article class="stat-card"><div class="stat-icon stat-violet">▤</div><div class="stat-number" id="statApplied">0</div><strong>Applications sent</strong><p>Manually recorded</p></article>
           <article class="stat-card"><div class="stat-icon stat-amber">◷</div><div class="stat-number" id="statInterviews">0</div><strong>Interviews</strong><p>Next conversations</p></article>
@@ -78,8 +78,8 @@
         <div class="page-heading"><div><div class="eyebrow">JOB DISCOVERY</div><h1>Explore <span>job opportunities.</span></h1><p>Search published roles across IT and non-IT sectors. Filter by location or job category, then save roles you want to pursue.</p></div><button class="btn btn-primary" id="openAddJob">+ Add a job</button></div>
         <div class="toolbar"><label class="search-wrap"><span>⌕</span><input id="jobSearch" type="search" placeholder="Search roles, companies, skills..." aria-label="Search jobs"></label><select id="sectorFilter" aria-label="Filter IT or non-IT jobs"><option value="">All IT + non-IT jobs</option><option value="it">IT jobs</option><option value="non-it">Non-IT jobs</option></select><select id="categoryFilter" aria-label="Filter by job category"><option value="">All job categories</option><option value="IT & Software">IT & Software</option><option value="Sales & Business">Sales & Business</option><option value="Marketing & Creative">Marketing & Creative</option><option value="Finance & Accounting">Finance & Accounting</option><option value="HR & Recruitment">HR & Recruitment</option><option value="Operations & Logistics">Operations & Logistics</option><option value="Customer Support">Customer Support</option><option value="Healthcare & Life Sciences">Healthcare & Life Sciences</option><option value="Education & Training">Education & Training</option><option value="Manufacturing & Engineering">Manufacturing & Engineering</option><option value="Hospitality & Retail">Hospitality & Retail</option><option value="Legal & Compliance">Legal & Compliance</option><option value="Other">Other</option></select><select id="locationFilter" aria-label="Filter by location"><option value="">All locations worldwide</option><option value="india">India (any location)</option><option value="remote">Remote</option><option value="hyderabad">Hyderabad</option><option value="bengaluru">Bengaluru</option><option value="mumbai">Mumbai</option><option value="delhi">Delhi</option><option value="pune">Pune</option><option value="chennai">Chennai</option></select><select id="matchFilter" aria-label="Filter by priority"><option value="all">Any priority</option><option value="75">Priority 75+</option><option value="50">Priority 50+</option><option value="below">Below 50</option></select><select id="sortFilter" aria-label="Sort jobs"><option value="variety">Explore all industries</option><option value="newest">Newest first</option><option value="priority">Personal priority</option><option value="company">Company A–Z</option><option value="role">Role A–Z</option></select></div>
         <p class="priority-notice">Browse all public IT and non-IT openings from selected employer career boards, worldwide. Use categories, location and search to narrow results. The site shows all unique public postings found on its selected employer boards, not every job on the internet. Personal priority is optional and rule-based, not an AI/ATS score.</p>
-        <p class="feed-freshness-warning" id="feedFreshness" role="status" hidden></p>
-        <div class="results-line"><span class="sample-tag" id="dataModeTag">Sample data</span><button class="btn btn-outline discover-reset" id="resetDiscoverFilters" type="button" hidden>Reset search &amp; filters</button></div>
+        <p class="feed-freshness-warning" id="feedFreshness" role="status" hidden></p><p class="discover-feed-status" id="discoverFeedStatus" role="status" hidden></p>
+        <div class="results-line"><strong id="resultsCount" hidden aria-hidden="true"></strong><span class="sample-tag" id="dataModeTag">Sample data</span><button class="btn btn-outline discover-reset" id="resetDiscoverFilters" type="button" hidden>Reset search &amp; filters</button></div>
         <div class="job-grid" id="jobsGrid"></div>
         <div class="discover-pagination"><button class="btn btn-outline" id="loadMoreJobs" type="button" hidden>Show more jobs</button></div>
         <div class="empty-state" id="emptyJobs" hidden><div class="empty-icon">⌕</div><h3>No jobs found</h3><p>Try another filter, or add an opportunity from a career portal.</p><button class="btn btn-outline" id="clearFilters">Clear filters</button></div>
