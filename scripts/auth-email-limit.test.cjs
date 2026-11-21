@@ -44,7 +44,8 @@ function harness(response,sharedStore) {
   history:{replaceState(){}},
   // no real timers; cooldown UI still renders immediately
   setTimeout:()=>1,clearTimeout(){},setInterval:()=>1,clearInterval(){},
-  Date, URL, URLSearchParams
+  Date, URL, URLSearchParams,
+  CustomEvent:class CustomEvent{constructor(type,init){this.type=type;this.detail=init?.detail}}
   };
   vm.runInNewContext(script,ctx,{filename:"ai-studio.js"});
   const button=element("aiSendLink");
