@@ -178,6 +178,14 @@
       "merge_commit": "d42d5944161139098a902232d52183faac87465a",
       "pr_ci_run": "44943567503",
       "deployment_run": "44943592547"
+    },
+    {
+      "phase": 12,
+      "status": "in_progress",
+      "note": "Phase 12 PR #19 production deployment 44943592547 and Chromium QA 44943664793 passed. Follow-up PR #20 adds post-dedup unique published entry-role/employer evidence to avoid overcounting board-level postings. PR #20 CI pending; no merge, no phase advance. Live public jobs feed could not be independently fetched from this runtime; new verified MNC employer coverage still unproven.",
+      "pr": "https://github.com/Chennamatta889/career-ops-cloud/pull/20",
+      "prior_deployment_run": "44943592547",
+      "prior_browser_qa_run": "44943664793"
     }
   ]
 }
