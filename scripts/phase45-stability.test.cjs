@@ -40,7 +40,7 @@ function dashboardHarness({initialLocal={},feedPromise}={}){
     createElement:()=>({click(){},remove(){},setAttribute(){}}),
     body:{appendChild(){},classList:{add(){},remove(){},toggle(){},contains(){return false}}}
   };
-  const win={CareerOpsJobText:require("../job-text.js"),CareerOpsCategories:{
+  const win={CareerOpsJobText:require("../job-text.js"),CareerOpsApplicationEmail:require("../application-email.js"),CareerOpsCategories:{
     categories:["IT & Software","Sales & Business","Other"],
     classify:(title)=>/software|developer|devops/i.test(title)?"IT & Software":/sales/i.test(title)?"Sales & Business":"Other"
   },CareerOpsMatch:{
@@ -417,4 +417,93 @@ test("application confirmation data remains isolated when Google accounts switch
   assert.equal(h.window.CareerOpsDashboard.getTrackedJobs().length,0);
   h.auth(USER_A);
   assert.equal(h.window.CareerOpsDashboard.getTrackedJobs()[0].applied_on,"2026-11-21");
+});
+
+test("Phase 09 Gmail acknowledgement review is opt-in and never changes Applied status",()=>{
+  const h=dashboardHarness();
+  h.auth(USER_A);
+  h.window.CareerOpsDashboard.mergeRemoteTracking([{
+    job_key:"https://example.com/jobs/sampleemail",job_url:"https://example.com/jobs/sampleemail",
+    title:"Cloud Engineer",company:"Acme",location:"India",stage:"Opened"
+  }]);
+  const job=JSON.parse(h.session.getItem("career-ops-session-account-v1-"+USER_A)).jobs[0];
+  h.el("emailReviewJob").value=job.id;
+  h.el("emailReviewSender").value="recruiting@acme.example";
+  h.el("emailReviewSubject").value="We received your application";
+  h.el("emailReviewBody").value="We have received your application for Cloud Engineer at Acme.";
+  h.clickButton("emailReviewAnalyze");
+  assert.equal(h.el("emailReviewAttach").disabled,false);
+  assert.match(h.el("emailReviewResult").textContent,/not been independently verified/);
+  h.clickButton("emailReviewAttach");
+  const saved=JSON.parse(h.session.getItem("career-ops-session-account-v1-"+USER_A)).jobs[0];
+  assert.ok(saved.emailEvidenceAt);
+  assert.equal(saved.stage,"Opened","email review must not change application status");
+  assert.equal(saved.appliedOn,"");
+  assert.equal(h.el("emailReviewBody").value,"","email contents cleared after review");
+  assert.doesNotMatch(h.session.getItem("career-ops-session-account-v1-"+USER_A),/recruiting@acme|We have received/);
+  assert.match(h.el("applicationsBoard").innerHTML,/Email reviewed/);
+});
+test("Phase 09 unrelated or ambiguous email cannot attach false application evidence",()=>{
+  const h=dashboardHarness();h.auth(USER_A);
+  h.window.CareerOpsDashboard.mergeRemoteTracking([{
+    job_key:"https://example.com/jobs/samplemail2",job_url:"https://example.com/jobs/samplemail2",
+    title:"Sales Associate",company:"Acme",location:"India",stage:"Saved"
+  }]);
+  const job=JSON.parse(h.session.getItem("career-ops-session-account-v1-"+USER_A)).jobs[0];
+  h.el("emailReviewJob").value=job.id;
+  h.el("emailReviewSender").value="notifications@other.example";
+  h.el("emailReviewSubject").value="Job alert";
+  h.el("emailReviewBody").value="Please apply for your next sales job at Acme";
+  h.clickButton("emailReviewAnalyze");
+  assert.equal(h.el("emailReviewAttach").disabled,true);
+  assert.match(h.el("emailReviewResult").textContent,/No clear/);
+  h.el("emailReviewBody").value="We received your application for Sales Associate at Another Company.";
+  h.el("emailReviewSubject").value="Application received";
+  h.clickButton("emailReviewAnalyze");
+  assert.equal(h.el("emailReviewAttach").disabled,true,"must match the tracked employer");
+  assert.equal(h.window.CareerOpsDashboard.getTrackedJobs()[0].stage,"Saved");
+});
+test("Phase 08 repeat company/role confirmation warns before recording another application",()=>{
+  const h=dashboardHarness();h.auth(USER_A);
+  h.window.CareerOpsDashboard.mergeRemoteTracking([
+    {job_key:"https://example.com/other123",job_url:"https://example.com/other123",
+      title:"Cloud Engineer",company:"ACME",location:"India",stage:"Applied",applied_on:"2026-11-20"},
+    {job_key:"https://example.com/new123",job_url:"https://example.com/new123",
+      title:"Cloud Engineer",company:"Acme",location:"Remote",stage:"Opened"}
+  ]);
+  const record=JSON.parse(h.session.getItem("career-ops-session-account-v1-"+USER_A)).jobs.find(x=>x.stage==="Opened");
+  h.changeStage(record.id,"Applied");
+  assert.equal(h.el("applicationDuplicateWarning").hidden,false);
+  assert.match(h.el("applicationDuplicateWarning").textContent,/Possible duplicate/);
+  assert.equal(h.window.CareerOpsDashboard.getTrackedJobs().find(x=>x.job_key==="https://example.com/new123").stage,"Opened");
+  h.clickButton("confirmNotYet");
+});
+test("Phase 10 missing tracked jobs are flagged only when employer board was rechecked",async()=>{
+  for(const [status,message] of [["ok","Not in the latest employer feed"],["error","Employer board unavailable"]]){
+    const feed={schema:"careerops.public-jobs.v1",generated_at:"2026-11-21T10:00:00Z",
+      scan:{status:status==="error"?"partial":"success",scanned:2,found:1,error_count:status==="error"?1:0},
+      source_health:[{provider:"greenhouse",board:"sampleboard",status}],
+      jobs:[{title:"Operations Executive",company:"Different Employer",location:"India",
+        url:"https://job-boards.greenhouse.io/different/jobs/123456",posted_at:"2026-11-21"}]};
+    const h=dashboardHarness({feedPromise:Promise.resolve({ok:true,json:async()=>feed})});
+    h.auth(USER_A);
+    h.window.CareerOpsDashboard.mergeRemoteTracking([{
+      job_key:"https://job-boards.greenhouse.io/sampleboard/jobs/999999",
+      job_url:"https://job-boards.greenhouse.io/sampleboard/jobs/999999",
+      title:"Cloud Engineer",company:"Sample Board",location:"India",stage:"Saved"
+    }]);
+    await tick();await tick();
+    assert.match(h.el("jobsGrid").innerHTML,new RegExp(message));
+    assert.equal(h.window.CareerOpsDashboard.getTrackedJobs()[0].stage,"Saved");
+  }
+});
+test("Phase 08 email and listing warnings have stable HTML targets, no Gmail permissions",()=>{
+  const html=fs.readFileSync(path.resolve(__dirname,"../index.html"),"utf8");
+  for(const id of ["emailReviewPanel","emailReviewJob","emailReviewSender","emailReviewSubject",
+    "emailReviewBody","emailReviewAnalyze","emailReviewAttach","emailReviewClear",
+    "emailReviewResult","applicationDuplicateWarning","dialogAvailability"])
+    assert.ok(html.includes('id="'+id+'"'),id);
+  assert.ok(html.includes("application-email.js?v=20261121-phase08-10-v1"));
+  assert.match(html,/aria-live="polite"/);
+  assert.doesNotMatch(html,/gmail\.readonly|gmail\.modify/);
 });
