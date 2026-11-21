@@ -139,3 +139,26 @@ test("scheduled employer scan includes experience only when stated in the employ
   assert.equal(jobs[1].requiredExperience,"No experience required");
   assert.equal(jobs[2].requiredExperience,"","seniority alone must not invent minimum years");
 });
+
+test("Phase 10 source-health retains successful and failed board identity without inventing jobs",async()=>{
+  const sources=[
+    {name:"Board One",provider:"greenhouse",slug:"boardone"},
+    {name:"Board Two",provider:"ashby",slug:"boardtwo"}
+  ];
+  const feed=await runScan({sources,fetchImpl:async url=>{
+    if(url.includes("boardtwo"))throw Error("HTTP 404");
+    return fakeResponse({jobs:[{id:122334,title:"Operations Assistant",updated_at:"2026-11-20T00:00:00Z"}]});
+  }});
+  assert.equal(feed.scan.status,"partial");
+  assert.equal(feed.jobs.length,1);
+  assert.deepEqual(feed.source_health.map(x=>x.status),["ok","error"]);
+  assert.deepEqual(feed.source_health.map(x=>x.board),["boardone","boardtwo"]);
+  assert.deepEqual(feed.source_health.map(x=>x.count),[1,0]);
+  assert.doesNotMatch(JSON.stringify(feed),/applicant_email|resume_text|access_token/);
+});
+test("Phase 10 expands only known, unique public employer boards",()=>{
+  for(const slug of ["ashby","ramp","linear"]){
+    assert.ok(src.sources.some(x=>x.provider==="ashby"&&x.slug===slug),slug);
+  }
+  assert.ok(src.sources.length>=60);
+});
