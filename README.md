@@ -1,5 +1,16 @@
 # Career-Ops Cloud Sandbox
 
+## Verified multi-user access (November 21, 2026)
+
+Career-Ops no longer enforces a single-email ALLOWED_EMAIL allowlist. Any verified Supabase Auth account may fetch public supported employer job descriptions and request an AI Review. The Edge Function checks the authenticated user's email confirmation status. Existing Row Level Security isolates each user's private resume and application tracking records.
+
+AI Review attempts are restricted to **2 per account per UTC day** and **20 per UTC day across the project**. A service-role-only database RPC reserves usage atomically before each Gemini request. Failed provider requests count; if quota validation is unavailable, the function makes no provider call. The service role key never enters the public website. These are limits on provider requests, not a guarantee of zero charges; verify provider billing caps.
+
+If Google Cloud OAuth **Audience** remains External + **Testing**, Google itself restricts sign-in to test users. Switch to **In production** to permit other Google accounts, subject to Google's verification requirements. The GitHub Pages public website itself cannot change this console setting.
+
+Schema: supabase/migrations/20261121_phase4_verified_multiuser_ai_quota.sql.
+
+
 A standalone experiment running the original [Career-Ops](https://github.com/career-ops-hq/career-ops) scanner through GitHub Actions, plus a responsive **Career-Ops job-search dashboard** with a DraftflowAI-inspired style. This repository remains independent from DraftflowAI: no code, accounts, credentials, secrets, resumes, or databases are shared.
 
 ## Open the dashboard
@@ -39,20 +50,20 @@ The dashboard now provides **local resume text extraction** and **public externa
 - **Image/scanned PDF:** OCR is **not provided**; an image-only PDF will show a plain-language extraction error. Multi-column text and special characters may be imperfect. Verify every field before reviewing.
 - **External job URL:** paste a published official job URL from Greenhouse, Ashby, or Lever and choose **Fetch job description**. If the public employer API returns a matching posting, AI Studio fills the job title and editable full JD. The signed-in account's backend calls only official public ATS endpoints (no arbitrary URLs, redirects, login bypass, resume transfer, job application or external form submission).
 - **Other sites:** LinkedIn, Indeed, Workday, custom career pages, logins, and blocked/removed listings are not scraped or bypassed. Copy and paste the job description when the fetch button reports unsupported or unavailable.
-- **Privacy:** employer job descriptions are public data, while resumes are processed locally and AI reviews require consent. The external job-fetch endpoint is JWT protected and checks the same account allowlist as AI review. Imported JD remains in browser memory until explicitly reviewed. No database writes were added.
+- **Privacy:** employer job descriptions are public data, while resumes are processed locally and AI reviews require consent. The external job-fetch endpoint requires an authenticated account with a verified email; private resume and tracking records are isolated by RLS. Imported JD remains in browser memory until explicitly reviewed. No database writes were added.
 
 New source: resume-parser.js, scripts/resume-parser.test.cjs, supabase/functions/careerops-ai-review/job-fetch.mjs, scripts/job-fetch.test.mjs. The GitHub Actions Pages workflow installs and bundles the pinned parser assets, and runs security/unit checks before publishing. When working with a new resume, use a private browser tab and review the extracted result before requesting AI processing.
 
 ## AI Review troubleshooting (November 21, 2026)
 
-The browser now checks the authenticated Supabase Edge Function when AI Studio opens and when **Check AI connection** is selected. The function returns readiness information **only to the email allowlisted account**, never exposing secret values.
+The browser now checks the authenticated Supabase Edge Function when AI Studio opens and when **Check AI connection** is selected. The function returns readiness information **only to an authenticated verified user**, never exposing secret values.
 
-- If you see **AI connection check failed: Career-Ops account allowlist is not configured**, add `ALLOWED_EMAIL` in the separate Career-Ops project's **Edge Functions → Secrets**. The signed-in account email must match this value.
+- Single-email ALLOWED_EMAIL is no longer enforced; verified Google/Supabase users may use the AI function with daily usage caps.
 - If the response says **Missing private settings: GEMINI_API_KEY, AI_CALLS_ENABLED**, configure `GEMINI_API_KEY` in the *private* project and set `AI_CALLS_ENABLED=true` only after verifying provider pricing and quotas.
-- If the function says **Signed-in email is not authorized**, review `ALLOWED_EMAIL`. Do not place that setting in GitHub.
+- If you see EMAIL_UNVERIFIED, verify the sign-in address; missing usage controls must be repaired on Supabase, not in GitHub.
 - If connection succeeds but review cannot start, paste at least **250 characters of resume text**, **200 characters of the complete job description**, include the job title, and select the consent checkbox. Choosing a public job card often supplies a title but **not its full job description**.
 - If the browser says **Failed to fetch**, verify GitHub Pages published the latest frontend and that the Edge Function's APP_ORIGIN matches the site origin, `https://chennamatta889.github.io`. The function now also accepts a configured full Pages URL by extracting its origin.
-- Authentication is still required. The function has gateway `verify_jwt=true` and independently validates the user token and email allowlist.
+- Authentication is still required. The function has gateway `verify_jwt=true` and independently validates the user token and verified email.
 - The publishable key parsing bug was corrected: Supabase's `SUPABASE_PUBLISHABLE_KEYS` environment variable is JSON with **key values**, not the names of other environment variables.
 - The service now allows larger Gemini JSON outputs to reduce truncation. This does not remove provider rate limits or usage costs.
 
@@ -62,7 +73,7 @@ The browser now checks the authenticated Supabase Edge Function when AI Studio o
 
 **Google is now the primary sign-in method for AI Studio**. The page opens `https://nnhzihcugvifhegsfmua.supabase.co/auth/v1/authorize?provider=google&redirect_to=...` from a direct user click. Supabase handles Google OAuth credentials and redirects to the allowlisted website `https://chennamatta889.github.io/career-ops-cloud/`. The static website stores only the returned Supabase session in tab-scoped sessionStorage and clears the token-bearing URL fragment. It never handles a Google OAuth client secret. Email magic links are retained under an optional collapsible fallback; signing in with Google does **not** consume Supabase's authentication-email quota.
 
-To enable in the existing dedicated Career-Ops project, Google must be switched on under **Authentication → Sign In / Providers → Google** with a valid Web Client ID and Client Secret. In Google Cloud, register the callback URI `https://nnhzihcugvifhegsfmua.supabase.co/auth/v1/callback`. In Supabase Auth URL Configuration, permit `https://chennamatta889.github.io/career-ops-cloud/` as a redirect. The client-side Google button is usable only on the expected Career-Ops site origin and path. The private AI Edge Function **still enforces a valid Supabase JWT and its configured ALLOWED_EMAIL**; using Google does not bypass that allowlist.
+To enable in the existing dedicated Career-Ops project, Google must be switched on under **Authentication → Sign In / Providers → Google** with a valid Web Client ID and Client Secret. In Google Cloud, register the callback URI `https://nnhzihcugvifhegsfmua.supabase.co/auth/v1/callback`. In Supabase Auth URL Configuration, permit `https://chennamatta889.github.io/career-ops-cloud/` as a redirect. The client-side Google button is usable only on the expected Career-Ops site origin and path. The private AI Edge Function **still enforces a valid Supabase JWT and a verified email address**; using Google does not bypass that allowlist.
 
 CI tests the login URL construction, returned token handling, and error cases. The Pages workflow also performs a **read-only** Supabase Auth settings check for `external.google`. That check is nonblocking (an unavailable Auth settings endpoint will be reported rather than break the website deployment); a successful check only confirms the provider is enabled, not that the individual's login has succeeded. If Google returns an access-denied error, check the account is a Google OAuth test user (for apps in Testing mode) and the redirect URLs match exactly.
 
@@ -70,14 +81,14 @@ CI tests the login URL construction, returned token handling, and error cases. T
 
 The public UI includes an AI Studio page and an **AI review** action on job cards. It supports passwordless email sign-in, session-only resume text extraction (PDF/DOCX/TXT or paste), official public employer job URL importing, job title/employer/description inputs, explicit consent to third-party AI processing, fit analysis, suggested resume rewrites, cover letter, recruiter email, screening answer drafts, and a local .txt export. It never submits an application, uploads resume files for parsing, or modifies the original document.
 
-**Backend created and deployed:** Career-Ops has its own separate Supabase project, `career-ops-private` (`nnhzihcugvifhegsfmua`, ap-south-1, initially quoted at $0/month), with the `careerops-ai-review` Edge Function ACTIVE and `verify_jwt=true`. Its browser-safe project URL and publishable key are in `careerops-config.js`. DraftflowAI has not been altered. AI requests remain intentionally disabled until the Gemini provider key, account allowlist and `AI_CALLS_ENABLED=true` secrets are configured.
+**Backend created and deployed:** Career-Ops has its own separate Supabase project, `career-ops-private` (`nnhzihcugvifhegsfmua`, ap-south-1, initially quoted at $0/month), with the `careerops-ai-review` Edge Function ACTIVE and `verify_jwt=true`. Its browser-safe project URL and publishable key are in `careerops-config.js`. DraftflowAI has not been altered. AI requests remain intentionally disabled until the Gemini provider key, Gemini key, quota protection, and AI_CALLS_ENABLED=true are configured.
 
 ### Activation checklist
 
 1. Dedicated Career-Ops Supabase project is created: https://supabase.com/dashboard/project/nnhzihcugvifhegsfmua .
 2. **Action still required in Supabase Dashboard:** On the new project, open Authentication → URL Configuration, set Site URL and an exact allowed Redirect URL to `https://chennamatta889.github.io/career-ops-cloud/`. Enable email sign-in. The connected management tools cannot change these Auth URL settings.
-3. Deploy the source at supabase/functions/careerops-ai-review/index.ts as a Supabase Edge Function. Gateway JWT verification remains **enabled** for user access tokens, while the handler also validates tokens with Supabase Auth and restricts the email to an allowlist. Never remove these safeguards.
-4. In **that separate project only**, configure function secrets: GEMINI_API_KEY (from Google AI Studio), ALLOWED_EMAIL (your approved sign-in email), AI_CALLS_ENABLED=true, APP_ORIGIN=https://chennamatta889.github.io . Optionally set GEMINI_MODEL (defaults to gemini-3.8-flash). Model availability, free-tier limits, and pricing depend on the AI provider; confirm them before activating billable traffic. **Never commit or paste API keys into the frontend, GitHub, or chat.**
+3. Deploy the source at supabase/functions/careerops-ai-review/index.ts as a Supabase Edge Function. Gateway JWT verification remains **enabled** for user access tokens, while the handler also validates tokens with Supabase Auth and requires a verified email and server-reserved AI quota. Never remove these safeguards.
+4. In **that separate project only**, configure function secrets: GEMINI_API_KEY (from Google AI Studio), AI_CALLS_ENABLED=true, APP_ORIGIN=https://chennamatta889.github.io . Optionally set GEMINI_MODEL (defaults to gemini-3.5-flash-lite). Model availability, free-tier limits, and pricing depend on the AI provider; confirm them before activating billable traffic. **Never commit or paste API keys into the frontend, GitHub, or chat.**
 5. **Done:** Public-only `careerops-config.js` now uses the new project's URL and its browser-safe **publishable** key. No secret or service-role key has been stored in the repository. GitHub Pages must still successfully publish via the workflow; live availability is not confirmed.
 6. Test one email sign-in, one real job review with full JD/resume text, downloaded draft, and sign-out. Confirm all private information is absent from the public Pages assets.
 
@@ -85,7 +96,7 @@ The public UI includes an AI Studio page and an **AI review** action on job card
 
 - Resume and job description are held in memory in the browser tab. They are sent only after explicit consent to the authenticated Edge Function and Gemini provider. Neither text nor generated drafts are persisted in database tables or GitHub.
 - Session tokens are stored only in browser sessionStorage; user should sign out on shared devices.
-- The backend requires an authenticated user and a configured allowlisted email, enforces input limits, and limits requests per function instance. This is NOT a global cost quota; configure provider billing limits.
+- The backend requires a verified authenticated user. Gemini calls are limited to 2 attempts per user and 20 total attempts per UTC day through an atomic database quota, including failed provider calls. Review provider-side spending limits too.
 - No auto-apply, email sending, PDF/DOCX parsing or recruiter messaging is enabled. Generated content must be fact-checked by a human.
 
 ## Dashboard v2 — explainable matching and better resilience
