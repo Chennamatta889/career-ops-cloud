@@ -475,6 +475,12 @@
       "provider": "ashby",
       "slug": "Crusoe",
       "sector": "Cloud and AI Infrastructure"
+    },
+    {
+      "name": "ServiceNow",
+      "provider": "smartrecruiters",
+      "slug": "ServiceNow",
+      "sector": "Software Products"
     }
   ]
 }
