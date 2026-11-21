@@ -283,6 +283,66 @@
       "provider": "greenhouse",
       "slug": "afresh",
       "sector": "Food & Retail"
+    },
+    {
+      "name": "Per Scholas",
+      "provider": "greenhouse",
+      "slug": "perscholashires",
+      "sector": "Education"
+    },
+    {
+      "name": "Correlation One",
+      "provider": "greenhouse",
+      "slug": "correlationone",
+      "sector": "Education"
+    },
+    {
+      "name": "Think Academy USA",
+      "provider": "greenhouse",
+      "slug": "thinkacademyus",
+      "sector": "Education"
+    },
+    {
+      "name": "ACI Learning",
+      "provider": "greenhouse",
+      "slug": "acilearning",
+      "sector": "Education"
+    },
+    {
+      "name": "Gallup",
+      "provider": "greenhouse",
+      "slug": "gallup",
+      "sector": "Education & Services"
+    },
+    {
+      "name": "Fictiv",
+      "provider": "greenhouse",
+      "slug": "fictiv",
+      "sector": "Manufacturing"
+    },
+    {
+      "name": "Xometry",
+      "provider": "greenhouse",
+      "slug": "xometry",
+      "sector": "Manufacturing"
+    },
+    {
+      "name": "Kasa",
+      "provider": "greenhouse",
+      "slug": "kasa",
+      "sector": "Hospitality"
+    },
+    {
+      "name": "Cloudbeds",
+      "provider": "greenhouse",
+      "slug": "cloudbeds",
+      "sector": "Hospitality"
+    },
+    {
+      "name": "Lighthouse Hospitality",
+      "provider": "greenhouse",
+      "slug": "lighthouse",
+      "sector": "Hospitality"
     }
   ]
 }
