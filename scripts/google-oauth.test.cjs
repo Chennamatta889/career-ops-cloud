@@ -6,9 +6,9 @@ const path=require("node:path");
 const code=fs.readFileSync(path.join(__dirname,"../ai-studio.js"),"utf8");
 const markup=fs.readFileSync(path.join(__dirname,"../index.html"),"utf8");
 const app=fs.readFileSync(path.join(__dirname,"../app.js"),"utf8");
-const site="https://chennamatta889.github.io/career-ops-cloud/";
+const site="https://chennamatta889.github.io/";
 
-function harness({hash="",search="",pathname="/career-ops-cloud/",origin="https://chennamatta889.github.io",connected=true}={}){
+function harness({hash="",search="",pathname="/",origin="https://chennamatta889.github.io",connected=true}={}){
   const els=new Map(),store=new Map(),historyUrls=[],redirects=[],requests=[];
   let navigations=0;
   const element=id=>{
@@ -96,7 +96,7 @@ test("Implicit OAuth callback stores only Supabase session data and strips URL t
   assert.equal(stored.access_token,"fake-test-jwt");
   assert.equal(stored.refresh_token,"fake-refresh");
   assert.ok(stored.expires_at>Math.floor(Date.now()/1000));
-  assert.equal(h.historyUrls[0],"/career-ops-cloud/#ai");
+  assert.equal(h.historyUrls[0],"/#ai");
   assert.ok(h.navigations>=1);
   assert.ok(h.requests.some(r=>r.endsWith("/auth/v1/user")),"Session must be validated with Supabase");
 });
@@ -105,7 +105,7 @@ test("OAuth denial displays error and removes OAuth parameters instead of silent
   await flush();
   assert.match(h.el("aiStatus").textContent,/Google sign-in did not complete/);
   assert.match(h.el("aiStatus").textContent,/User cancelled/);
-  assert.equal(h.historyUrls[0],"/career-ops-cloud/#ai");
+  assert.equal(h.historyUrls[0],"/#ai");
   assert.equal(h.redirects.length,0);
 });
 test("Google sign-in disabled by Supabase is visible and prevents redirect",async()=>{
