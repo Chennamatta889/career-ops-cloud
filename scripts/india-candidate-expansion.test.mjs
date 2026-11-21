@@ -8,6 +8,7 @@ import {discoverIndiaCandidates,checkCandidateCatalog,mergeIndiaCandidates}
 const require=createRequire(import.meta.url);
 const {isIndiaLocation}=require("../india-jobs.js");
 const registry=JSON.parse(readFileSync("scripts/india-employer-candidates.json","utf8"));
+const fresherRegistry=JSON.parse(readFileSync("scripts/india-fresher-candidates.json","utf8"));
 const curated=JSON.parse(readFileSync("scripts/universal-job-sources.json","utf8")).sources;
 const fakeResponse=obj=>{
   const bytes=new TextEncoder().encode(JSON.stringify(obj));let done=false;
@@ -108,4 +109,42 @@ test("candidate jobs merge without deleting curated jobs, duplicates or India pu
   assert.equal(merged.scan.candidate_discovery.checked,254);
   assert.ok(merged.jobs.every(j=>isIndiaLocation(j.location)));
   assert.equal(merged.scan.status,"success","candidate failures do not mark curated feeds unavailable");
+});
+
+test("twenty freshers-focused employer leads are unique and not falsely counted as active sources",()=>{
+  assert.equal(fresherRegistry.candidates.length,20);
+  const all=[...registry.candidates,...fresherRegistry.candidates];
+  assert.equal(checkCandidateCatalog(all),true);
+  assert.ok(fresherRegistry.candidates.every(s=>s.focus==="fresher"));
+  assert.ok(fresherRegistry.candidates.every(s=>s.reference_url?.startsWith("https://")));
+  assert.ok(fresherRegistry.candidates.some(s=>s.provider==="smartrecruiters"));
+  assert.ok(fresherRegistry.candidates.some(s=>s.provider==="lever"));
+  assert.ok(fresherRegistry.candidates.some(s=>s.provider==="greenhouse"));
+  assert.ok(fresherRegistry.candidates.some(s=>s.provider==="ashby"));
+  const current=new Set(curated.map(s=>s.provider+":"+s.slug.toLowerCase()));
+  assert.ok(fresherRegistry.candidates.every(s=>!current.has(s.provider+":"+s.slug.toLowerCase())));
+});
+test("freshers-focused SmartRecruiters candidate activates only for fresh, India-based real postings",async()=>{
+  const fresher=fresherRegistry.candidates.find(s=>s.provider==="smartrecruiters");
+  const out=await discoverIndiaCandidates({
+    candidates:[fresher],curatedSources:[],scanBoard,isIndiaLocation,
+    now:new Date("2026-11-21T10:00:00Z"),fetchImpl:async(url,opts)=>{
+      assert.match(url,/api\.smartrecruiters\.com\/v1\/companies\//);
+      assert.equal(opts.method,"GET");
+      return fakeResponse({totalFound:3,content:[
+        {id:"744000145000001",name:"Graduate Engineer Trainee",
+          location:{city:"Bengaluru",country:"IN"},releasedDate:"2026-11-20T00:00:00Z"},
+        {id:"744000145000002",name:"Summer Internship",
+          location:{city:"Austin",country:"US"},releasedDate:"2026-11-20T00:00:00Z"},
+        {id:"744000145000003",name:"Old India Apprentice",
+          location:{city:"Hyderabad",country:"IN"},releasedDate:"2026-08-01T00:00:00Z"}
+      ]});
+    }
+  });
+  assert.equal(out.report.fresher_focus_checked,1);
+  assert.equal(out.report.fresher_focus_activated,1);
+  assert.equal(out.report.outdated_excluded,1);
+  assert.equal(out.jobs.length,1);
+  assert.equal(out.jobs[0].entry_level,"fresher");
+  assert.equal(out.health[0].focus,"fresher");
 });
