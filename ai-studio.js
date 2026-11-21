@@ -40,7 +40,8 @@
       });
       reviewReady = result.ok===true && result.ready===true;
       const missing = Array.isArray(result.missing) ? result.missing.join(", ") : "";
-      status(reviewReady ? "AI endpoint ready. Complete your resume and job description to generate drafts."
+      const modelName=text(result.model,75);
+      status(reviewReady ? "AI endpoint ready" + (modelName ? " · model: "+modelName : "") + ". Complete your resume and job description to generate drafts."
         : "AI backend is connected but not enabled. Missing private settings: " + (missing || "unknown") +
           ". Configure these in Career-Ops Supabase → Edge Functions → Secrets.");
       return reviewReady;
