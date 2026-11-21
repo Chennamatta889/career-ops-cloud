@@ -162,3 +162,73 @@
 }
 .toolbar #categoryFilter{min-width:185px}
 @media(max-width:740px){.toolbar #categoryFilter{min-width:0;width:100%}}
+
+/* Career-Ops product finish — stable navigation and professional desktop/mobile UI. */
+html{scroll-behavior:auto;scroll-padding-top:86px}
+body{min-height:100dvh}
+.app-shell{min-height:100dvh}
+.main-shell{min-height:100dvh}
+.page{animation:none!important;min-height:calc(100dvh - 185px)}
+.page.active{display:block}
+.topbar{
+  position:sticky;top:0;z-index:15;
+  background:rgba(12,23,40,.94);backdrop-filter:blur(15px);
+  -webkit-backdrop-filter:blur(15px);
+  box-shadow:0 5px 18px rgba(2,10,24,.12)
+}
+.topbar-left{min-width:0}
+#currentCrumb{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sync-pill{max-width:222px;min-height:30px}
+.sync-pill>span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sync-pill[data-state="partial"]{border-color:#8a6a39;color:#f3d59f;background:#2d271c}
+.sync-pill[data-state="partial"]>span:first-child{background:#f2c986}
+.sync-pill[data-state="failed"]{border-color:#87505b;color:#ffd0cc;background:#321e29}
+.sync-pill[data-state="failed"]>span:first-child{background:#ff9ba0}
+.sync-pill[data-state="loading"]{border-color:#38576b;color:#b9d3e2;background:#192c3d}
+.sync-pill[data-state="loading"]>span:first-child{background:#84b7d9}
+.nav-link{transition:background-color .12s ease,border-color .12s ease,color .12s ease}
+.nav-link.active{box-shadow:inset 3px 0 0 var(--teal)}
+.nav-link:active,.btn:active{transform:none}
+button:disabled,.btn:disabled{opacity:.55;cursor:not-allowed;transform:none!important}
+.page-content{width:100%;max-width:1500px}
+.panel,.stat-card,.job-card{box-shadow:0 10px 26px rgba(2,12,28,.09)}
+.job-card{min-width:0;overflow-wrap:break-word}
+.job-card h3{line-height:1.35;overflow-wrap:anywhere}
+.card-footer{flex-wrap:wrap;gap:10px}
+.card-action-group{flex-wrap:wrap;gap:13px}
+.results-line{flex-wrap:wrap;gap:10px}
+#jobsGrid:empty{min-height:200px}
+.welcome-head h1{letter-spacing:-.055em;max-width:560px}
+.welcome-head p{max-width:530px}
+.ranking-not-configured{padding:17px;border:1px solid var(--line);background:#14283b;border-radius:12px}
+.ranking-not-configured strong{font-size:13px;color:#dfefef}
+.ranking-not-configured p{font-size:12px;color:#aabfd1;margin-top:8px;line-height:1.7}
+a:focus-visible,button:focus-visible,[role="button"]:focus-visible{outline:2px solid var(--teal);outline-offset:3px}
+#toast{max-width:min(430px,calc(100vw - 28px));overflow-wrap:anywhere}
+.sidebar{overflow-y:auto;overscroll-behavior:contain}
+.workspace-select{cursor:default}
+@media(max-width:760px){
+  body.nav-open{overflow:hidden}
+  .topbar{padding:0 15px}
+  .topbar .breadcrumb,.topbar .breadcrumb-divider{display:none}
+  .topbar-left{gap:9px}
+  .topbar-actions .icon-button{display:none}
+  .sync-pill{display:flex;max-width:142px;padding:6px 9px;font-size:10px}
+  .sidebar{height:100dvh;min-height:0}
+  .page{min-height:calc(100dvh - 125px)}
+  .welcome-head{min-height:245px;padding:25px 24px}
+  .welcome-head h1{font-size:clamp(26px,7.2vw,36px)}
+  .hero-art{pointer-events:none}
+  .page-content{padding-top:23px}
+}
+@media(max-width:420px){
+  .topbar-actions{gap:7px}
+  .topbar .top-avatar{display:none}
+  .sync-pill{max-width:130px}
+  .card-action-group{gap:12px}
+  .notice{padding:12px}
+}
+@media(prefers-reduced-motion:reduce){
+  .nav-link,.btn,.job-card{transition:none!important}
+  .job-card:hover{transform:none}
+}
