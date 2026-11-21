@@ -34,6 +34,7 @@ on:
       - scripts/universal-job-scan.test.mjs
       - scripts/universal-job-sources.json
       - scripts/india-employer-candidates.json
+      - scripts/india-fresher-candidates.json
       - scripts/india-candidate-expansion.mjs
       - scripts/india-candidate-expansion.test.mjs
       - job-categories.js
@@ -166,6 +167,7 @@ jobs:
           grep -q 'id="enterpriseCareerDirectory"' public/index.html
           grep -q 'id="enterpriseCareerCards"' public/index.html
           grep -q 'id="searchDescriptions"' public/index.html
+          grep -q 'id="showFresherJobs"' public/index.html
           grep -Fq "./application-email.js?v=$GITHUB_RUN_ID" public/index.html
           grep -q 'id="emailReviewPanel"' public/index.html
           grep -q 'id="applicationDuplicateWarning"' public/index.html
