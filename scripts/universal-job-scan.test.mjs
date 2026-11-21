@@ -300,3 +300,55 @@ test("real ServiceNow company source is configured separately from ServiceNow co
     x.slug==="ServiceNow" && x.name==="ServiceNow"));
   assert.ok(src.sources.length>=74);
 });
+
+test("Workable public employer feed imports published India roles using official links",async()=>{
+  const source={provider:"workable",slug:"mercari-india",name:"Mercari India"};
+  const result=await scanBoard(source,async(url,opts)=>{
+    assert.equal(url,"https://www.workable.com/api/accounts/mercari-india?details=true");
+    assert.equal(opts.method,"GET");assert.equal(opts.redirect,"error");
+    return fakeResponse({name:"Mercari, Inc. (India)",jobs:[
+      {shortcode:"3C538C2CA4",title:"Software Engineer, Platform Engineering",
+       city:"Bengaluru",state:"Karnataka",country:"India",
+       department:"Engineering",published_on:"2026-11-20T12:00:00Z",
+       description:"<p>Platform reliability and engineering.</p>",
+       requirements:"3–5 years of relevant engineering experience."},
+      {shortcode:"1C9B45B4E9",title:"Software Engineer, Backend",
+       city:"Bengaluru",country:"India",workplace_type:"hybrid"},
+      {shortcode:"../invalid",title:"Broken path",city:"Hyderabad",country:"India"}
+    ]});
+  });
+  assert.equal(result.length,2);
+  assert.equal(result[0].company,"Mercari India");
+  assert.equal(result[0].location,"Bengaluru, Karnataka, India");
+  assert.equal(result[0].requiredExperience,"3–5 years");
+  assert.equal(result[0].posted_at,"2026-11-20");
+  assert.equal(result[0].source,"Workable public board");
+  assert.equal(result[0].url,"https://apply.workable.com/mercari-india/j/3C538C2CA4/");
+  assert.equal(result[1].requiredExperience,"","no invented years without evidence");
+  assert.equal(new Set(result.map(x=>x.url)).size,2);
+});
+test("Workable country and remote fields are explicitly represented without inference",async()=>{
+  const jobs=await scanBoard({provider:"workable",slug:"teleport-careers",name:"Teleport"},
+    async()=>fakeResponse({jobs:[
+      {shortcode:"878A07AD45",title:"System Reliability Engineer",country:"IN",
+       city:"Gurugram",state:"Haryana",telecommuting:false},
+      {shortcode:"879A07AD45",title:"Remote Platform Engineer",country:"India",
+       workplace_type:"remote"},
+      {shortcode:"870A07AD45",title:"Unspecified place"}
+    ]}));
+  assert.deepEqual(jobs.map(j=>j.location),[
+    "Gurugram, Haryana, India","Remote, India","Not specified"
+  ]);
+});
+test("Workable invalid and closed API endpoints cannot create fake postings",async()=>{
+  const source={provider:"workable",slug:"unisonGroup",name:"Unison Group"};
+  await assert.rejects(scanBoard(source,async()=>fakeResponse({content:[]})),/Workable public employer response is invalid/);
+  await assert.rejects(scanBoard(source,async()=>({ok:false,status:403})),/HTTP 403/);
+});
+test("India-focused Workable sources represent verified employer career sites",()=>{
+  const names=["mercari-india","capgemini-insurance","unisongroup","prox-works",
+    "teleport-careers","updraft","youtrip","zyte"];
+  for(const slug of names)
+    assert.ok(src.sources.some(s=>s.provider==="workable"&&s.slug===slug),slug);
+  assert.ok(src.sources.length>=88);
+});
