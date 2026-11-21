@@ -9,6 +9,19 @@ A standalone experiment running the original [Career-Ops](https://github.com/car
 - To preview locally, clone/download the repository and open index.html in a browser.
 - To enable hosting: open **Settings → Pages → Build and deployment → Source: GitHub Actions**. Then run **Publish Career-Ops dashboard** in the Actions tab, or push an edit to the UI. This is a one-time repository setting.
 
+## Dashboard v2 — explainable matching and better resilience
+
+**Phase 2 is deployed to source control; GitHub Pages must successfully publish to see it.**
+
+- **Transparent priority indicator (0–100):** role alignment 50 points, preferred location 30 points, and matching advertised skills 20 points. This uses simple local rules, **not AI, not a resume parser, and not an ATS or eligibility prediction**.
+- **Evidence quality:** the interface distinguishes limited scan metadata from more informative job descriptions. Unknown requirements are not assumed to be satisfied.
+- **Why this priority?** Each card opens a breakdown of matched role, location, available skills, and the public posting's experience label when supplied.
+- **Sort and filter** by priority while still supporting newest-first and other search filters; changing Resume Lab preferences recalculates priorities on the device.
+- **Resilience:** when upstream scanner checkout or dependency installation fails, the GitHub Pages build can still publish with a failure-status feed, instead of failing before the website is deployed. Pages account/repository settings still have to allow deployment.
+- **Privacy:** preferences, tracking and selected resume files stay local to the browser; only public job data is published by GitHub Actions.
+
+The public posting feed now includes a stated years-of-experience label (if present), used for warnings about roles above the selected range. No automated application submissions or AI tailoring are activated.
+
 ## Dashboard v1
 
 - Responsive overview, sample opportunity cards, and pipeline visualization.
@@ -24,7 +37,7 @@ The dashboard automatically reads the public-only `data/jobs.json` feed generate
 
 ### Not yet implemented
 
-This is a UI prototype, not a production application agent. Sample jobs are fictional and not confirmed vacancies. No AI job scoring, resume tailoring, account login, email monitoring, automatic submission, or real-time employer status is connected. **Public job discovery is connected via a scheduled GitHub Action, not by an on-demand browser scan.** Setting Applied manually records a personal tracking status, not proof of submission.
+This is a UI prototype, not a production application agent. Sample jobs are fictional and not confirmed vacancies. No AI resume matching, AI resume tailoring, account login, email monitoring, automatic submission, or real-time employer status is connected. **Public job discovery is connected via a scheduled GitHub Action, not by an on-demand browser scan.** Setting Applied manually records a personal tracking status, not proof of submission.
 
 ## Scanner
 
