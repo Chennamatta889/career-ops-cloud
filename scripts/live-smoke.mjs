@@ -11,6 +11,7 @@ const checks=[
   {path:"",contains:'class="workspace-select workspace-home"'},
   {path:"app.js",contains:"ACCOUNT_STORAGE_PREFIX"},
   {path:"job-categories.js",contains:"CareerOpsCategories"},
+  {path:"job-text.js",contains:"CareerOpsJobText"},
   {path:"ai-studio.js",contains:"jobFetchVersion"},
   {path:"private-workspace.js",contains:"accountVersion"},
   {path:"health-check.js",contains:"runHealthChecks"},
