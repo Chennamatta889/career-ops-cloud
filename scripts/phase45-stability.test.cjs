@@ -42,7 +42,7 @@ function dashboardHarness({initialLocal={},feedPromise}={}){
   };
   const win={CareerOpsCategories:{
     categories:["IT & Software","Sales & Business","Other"],
-    classify:(title)=>/sales/i.test(title)?"Sales & Business":"Other"
+    classify:(title)=>/software|developer|devops/i.test(title)?"IT & Software":/sales/i.test(title)?"Sales & Business":"Other"
   },CareerOpsMatch:{
     rank:()=>({score:65,quality:"Some evidence",role:{detail:"Role",points:35},location:{detail:"Location",points:20},
       skills:{detail:"Skills",points:10},experience:"Unknown",method:"rule-based"}),
@@ -155,4 +155,28 @@ test("external ATS lookup refuses to overwrite edited or newer job detail forms"
   assert.match(studio,/requestId!==jobFetchVersion/);
   assert.match(studio,/byId\("aiJd"\)\.value!==initialDescription/);
   assert.match(studio,/jobFetchVersion\+\+/);
+});
+
+test("IT and non-IT discovery filters keep unrelated categories discoverable",async()=>{
+  const h=dashboardHarness();
+  h.auth(USER_A);
+  h.window.CareerOpsDashboard.mergeRemoteTracking([
+    {job_key:"https://example.com/it",title:"Software Developer",company:"IT Co",
+      location:"India",job_url:"https://example.com/it",stage:"Saved"},
+    {job_key:"https://example.com/sales",title:"Sales Executive",company:"Retail Co",
+      location:"India",job_url:"https://example.com/sales",stage:"Saved"}
+  ]);
+  const sector=h.el("sectorFilter");
+  sector.value="non-it";
+  sector.listeners.get("change")();
+  assert.match(h.el("jobsGrid").innerHTML,/Sales Executive/);
+  assert.doesNotMatch(h.el("jobsGrid").innerHTML,/Software Developer/);
+  sector.value="it";
+  sector.listeners.get("change")();
+  assert.match(h.el("jobsGrid").innerHTML,/Software Developer/);
+  assert.doesNotMatch(h.el("jobsGrid").innerHTML,/Sales Executive/);
+  sector.value="";
+  sector.listeners.get("change")();
+  assert.match(h.el("jobsGrid").innerHTML,/Software Developer/);
+  assert.match(h.el("jobsGrid").innerHTML,/Sales Executive/);
 });
