@@ -1,7 +1,13 @@
 /* Career-Ops dashboard: public read-only job feed + local rule-based priorities. No AI or automatic submissions. */
 (function () {
   "use strict";
-  const STORAGE_KEY = "career-ops-workspace-v1";
+  // Old browser-wide storage is legacy only and requires explicit import.
+  // Never automatically display it after a different Google account signs in.
+  const LEGACY_STORAGE_KEY = "career-ops-workspace-v1";
+  const GUEST_STORAGE_KEY = "career-ops-session-guest-v1";
+  const ACCOUNT_STORAGE_PREFIX = "career-ops-session-account-v1-";
+  let activeAccountId=null;
+  let accountEpoch=0;
   const STAGES = [
     { name: "Saved", color: "#42dfb6" },
     { name: "Review", color: "#8cd9ff" },
@@ -32,9 +38,9 @@
   const newId = function () { return "job-" + Date.now() + "-" + Math.random().toString(36).slice(2,9); };
   let memoryOnly = false;
   const defaultState = function () { return { mode: "demo", jobs: copy(SAMPLE), prefs: copy(DEFAULT_PREFS), activity: [], importedAt: null, feedGeneratedAt: null }; };
-  const load = function () {
+  const load = function (storageKey,storage=sessionStorage) {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = storage.getItem(storageKey);
       if (!raw) return defaultState();
       const x = JSON.parse(raw);
       if (!x || !Array.isArray(x.jobs)) return defaultState();
@@ -50,10 +56,12 @@
       };
     } catch (_) { memoryOnly = true; return defaultState(); }
   };
-  let state = load();
+  let state = load(GUEST_STORAGE_KEY);
   let activeJobId = null;
   const save = function () {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) { memoryOnly = true; }
+    try {
+      sessionStorage.setItem(activeAccountId?ACCOUNT_STORAGE_PREFIX+activeAccountId:GUEST_STORAGE_KEY,JSON.stringify(state));
+    } catch (_) { memoryOnly = true; }
   };
   const stamp = function () { return new Date().toISOString(); };
   const log = function (title, detail) {
@@ -186,7 +194,7 @@
   const broadcastStage = function(job) {
     if(!job || job.demo) return;
     window.dispatchEvent(new CustomEvent("careerops:tracking-changed",{detail:{job:{
-      title:job.title,company:job.company,location:job.location,url:job.url,stage:job.stage
+      job_key:privateJobKey(job),title:job.title,company:job.company,location:job.location,url:job.url,stage:job.stage
     }}}));
   };
   const track = function (id) {
@@ -396,12 +404,15 @@
     $("feedText").textContent = description;
   };
   const syncCloudFeed = async function (requestedByUser) {
+    const startingEpoch=accountEpoch;
     $("refreshCloud").disabled = true;
     showFeedStatus("loading", "Checking cloud scanner...", "Reading the latest published public-job feed");
     try {
       const response = await fetch("./data/jobs.json?v=" + Date.now(), {cache:"no-store"});
       if (!response.ok) throw new Error("HTTP " + response.status);
       const feed = await response.json();
+      // A previous account's in-flight fetch must not overwrite the new account.
+      if(startingEpoch!==accountEpoch)return;
       if (!feed || feed.schema !== "careerops.public-jobs.v1" || !Array.isArray(feed.jobs)
         || !feed.scan || !["success","partial","failed"].includes(feed.scan.status)) {
         throw new Error("Unsupported scanner feed format");
@@ -469,12 +480,30 @@
     if(url)return url.slice(0,1500);
     return ("manual:"+[j.company,j.title,j.location].map(x=>str(x).toLowerCase().trim()).join("|")).slice(0,1500);
   };
+  const trackable = function(j) {
+    return {job_key:privateJobKey(j),title:j.title,company:j.company,
+      location:j.location,job_url:j.url,stage:j.stage};
+  };
+  function oldDeviceJobs(){
+    // Data stored by earlier Career-Ops versions is unassigned to any account.
+    // Only show/import it after the user's explicit migration confirmation.
+    const old=load(LEGACY_STORAGE_KEY,localStorage);
+    const guest=load(GUEST_STORAGE_KEY,sessionStorage);
+    const duplicates=new Map();
+    for(const j of old.jobs.concat(guest.jobs)){
+      if(!j.demo && j.stage)duplicates.set(privateJobKey(j),trackable(j));
+    }
+    return [...duplicates.values()].slice(0,300);
+  }
+  function forgetOldDeviceJobs(){
+    try{localStorage.removeItem(LEGACY_STORAGE_KEY);}catch(_){}
+    try{sessionStorage.removeItem(GUEST_STORAGE_KEY);}catch(_){}
+  }
   window.CareerOpsDashboard=Object.freeze({
+    getLegacyTrackedJobs:oldDeviceJobs,
+    clearLegacyTrackedJobs:forgetOldDeviceJobs,
     getTrackedJobs:function(){
-      return state.jobs.filter(j=>!j.demo && !!j.stage).map(j=>({
-        job_key:privateJobKey(j),title:j.title,company:j.company,location:j.location,
-        job_url:j.url,stage:j.stage
-      }));
+      return state.jobs.filter(j=>!j.demo && !!j.stage).map(trackable);
     },
     mergeRemoteTracking:function(rows){
       if(!Array.isArray(rows))return 0;
@@ -511,6 +540,29 @@
     }
   });
 
+  // Job status and application history are session-scoped to the CURRENT
+  // account; this prevents old browser data from appearing for another user.
+  window.addEventListener("careerops:authenticated",function(event){
+    const id=str(event.detail?.id);
+    if(!/^[0-9a-fA-F-]{36}$/.test(id))return;
+    if(activeAccountId===id)return;
+    activeAccountId=id;
+    accountEpoch++;
+    state=load(ACCOUNT_STORAGE_PREFIX+id);
+    activeJobId=null;
+    if($("jobDialog")?.open)$("jobDialog").close();
+    render();
+    syncCloudFeed(false);
+  });
+  window.addEventListener("careerops:signed-out",function(){
+    activeAccountId=null;
+    accountEpoch++;
+    state=load(GUEST_STORAGE_KEY);
+    activeJobId=null;
+    if($("jobDialog")?.open)$("jobDialog").close();
+    render();
+    syncCloudFeed(false);
+  });
   if (memoryOnly) toast("Local storage unavailable; changes may not persist.");
   render();
   showPage(location.hash.replace("#","") || "overview");
