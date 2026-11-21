@@ -1,0 +1,36 @@
+name: Validate job discovery (no deployment)
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/universal-job-scan.mjs'
+      - 'scripts/universal-job-scan.test.mjs'
+      - 'scripts/universal-job-sources.json'
+      - 'job-search.js'
+      - 'scripts/job-search.test.cjs'
+      - 'job-categories.js'
+      - 'job-text.js'
+      - '.github/workflows/job-discovery-ci.yml'
+  push:
+    branches:
+      - 'fix/servicenow-smartrecruiters-india-20261121'
+
+permissions:
+  contents: read
+
+jobs:
+  test-public-discovery:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax and public ATS test suite
+        run: |
+          node --check scripts/universal-job-scan.mjs
+          node --check scripts/universal-job-scan.test.mjs
+          node --check job-search.js
+          node --check scripts/job-search.test.cjs
+          node --test scripts/universal-job-scan.test.mjs scripts/job-search.test.cjs
