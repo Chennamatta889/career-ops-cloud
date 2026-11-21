@@ -499,7 +499,14 @@
         });
         merged++;
       }
-      if(merged){save();render();}
+      if(merged){
+        if(state.mode==="demo"){
+          // Restored real private jobs should not be mixed with fictional samples.
+          state.jobs=state.jobs.filter(j=>!j.demo);
+          state.mode="manual";
+        }
+        save();render();
+      }
       return merged;
     }
   });
