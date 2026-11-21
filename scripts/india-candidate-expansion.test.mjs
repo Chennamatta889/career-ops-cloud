@@ -112,6 +112,35 @@ test("candidate jobs merge without deleting curated jobs, duplicates or India pu
   assert.equal(merged.scan.status,"success","candidate failures do not mark curated feeds unavailable");
 });
 
+test("phase 12 reports unique published fresher roles and employers after deduplication",()=>{
+  const make=(url,title,company,description="")=>({
+    url,title,company,description,location:"Hyderabad, India",category:"IT & Software"
+  });
+  const old=make("https://jobs.example.org/old","Graduate Trainee","Example Alpha");
+  const grad=make("https://jobs.example.org/new","Graduate Engineer Trainee","Example Alpha");
+  const explicit=make("https://jobs.example.org/zero","Software Engineer","Example Beta",
+    "No prior experience required");
+  const senior=make("https://jobs.example.org/senior","Senior Engineer","Example Beta",
+    "Minimum 5 years experience");
+  const base={jobs:[old],category_counts:{"IT & Software":1},source_health:[],
+    scan:{scanned:1,found:1,matched:1}};
+  const expansion={jobs:[old,grad,grad,explicit,senior],health:[],
+    report:{inspected_positions:5,entry_positions:4,explicit_zero_experience_positions:1},
+    history:{}};
+  const unique=jobs=>[...new Map(jobs.map(j=>[j.url,j])).values()];
+  const out=mergeIndiaCandidates(base,expansion,unique);
+  const published=out.scan.candidate_discovery.published_evidence;
+  assert.equal(published.unique_candidate_jobs,3);
+  assert.equal(published.unique_candidate_entry_positions,2);
+  assert.equal(published.unique_candidate_explicit_zero_experience,1);
+  assert.equal(published.employers_with_entry_positions,2);
+  assert.deepEqual(published.employer_breakdown,[
+    {name:"Example Alpha",positions:1},{name:"Example Beta",positions:1}
+  ]);
+  assert.equal(out.jobs.length,4);
+  assert.equal(base.jobs.length,1);
+});
+
 test("twenty freshers-focused employer leads are unique and not falsely counted as active sources",()=>{
   assert.equal(fresherRegistry.candidates.length,20);
   const all=[...registry.candidates,...fresherRegistry.candidates];
