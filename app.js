@@ -342,11 +342,34 @@
     $("dataModeTag").classList.toggle("real", state.mode !== "demo");
   };
   const renderBoard = function () {
-    $("applicationsBoard").innerHTML = STAGES.map(function (s) {
-      const jobs = state.jobs.filter(function (j) { return j.stage === s.name; });
-      return '<section class="board-column"><div class="board-heading"><i style="background:' + s.color + '"></i><strong>' + s.name + '</strong><b>' + jobs.length + '</b></div>' + (jobs.length ? jobs.map(function (j) {
-        return '<article class="board-card"><strong>' + escapeHtml(j.title) + '</strong><p>' + escapeHtml(j.company) + '</p><label><span class="muted small">Update status</span><select data-stage-id="' + escapeHtml(j.id) + '" aria-label="Change status for ' + escapeHtml(j.title) + '">' + ['Not tracking'].concat(STAGES.map(function (x) { return x.name; })).map(function (name) { const val = name === "Not tracking" ? "" : name; return '<option value="' + escapeHtml(val) + '"' + (val === j.stage ? ' selected' : '') + '>' + escapeHtml(name) + '</option>'; }).join("") + '</select></label></article>';
-      }).join("") : '<div class="board-empty">No jobs in this stage</div>') + '</section>';
+    $("applicationsBoard").innerHTML=STAGES.map(function(stage){
+      const jobs=state.jobs.filter(function(j){return j.stage===stage.name;});
+      const cards=jobs.map(function(job){
+        const timeline=trackingSummary(job).map(function(item){
+          return '<span>'+escapeHtml(item)+'</span>';
+        }).join("");
+        const applied=!!job.appliedOn||["Applied","Interview","Offer","Rejected"].includes(job.stage);
+        const confirm='<button type="button" class="btn btn-outline board-confirm-button" data-action="'+
+          (applied?'edit-applied-date':'confirm-applied')+'" data-id="'+escapeHtml(job.id)+'">'+
+          (applied?'Edit application date':'Yes, I applied')+'</button>';
+        const url=safeUrl(job.url);
+        const link=url?'<a class="text-link" data-action="open-listing" data-id="'+escapeHtml(job.id)+
+          '" href="'+escapeHtml(url)+'" target="_blank" rel="noopener noreferrer">Open employer listing ↗</a>':"";
+        const stages=['Not tracking'].concat(STAGES.map(function(x){return x.name;}));
+        const options=stages.map(function(name){
+          const value=name==='Not tracking'?'':name;
+          return '<option value="'+escapeHtml(value)+'"'+(value===job.stage?' selected':'')+'>'+
+            escapeHtml(name)+'</option>';
+        }).join("");
+        return '<article class="board-card"><strong>'+escapeHtml(job.title)+'</strong><p>'+
+          escapeHtml(job.company)+'</p><div class="board-timeline">'+timeline+'</div>'+
+          '<div class="board-followup-actions">'+confirm+link+'</div>'+
+          '<label><span class="muted small">Update status</span><select data-stage-id="'+escapeHtml(job.id)+
+          '" aria-label="Change status for '+escapeHtml(job.title)+'">'+options+'</select></label></article>';
+      }).join("");
+      return '<section class="board-column"><div class="board-heading"><i style="background:'+stage.color+
+        '"></i><strong>'+stage.name+'</strong><b>'+jobs.length+'</b></div>'+
+        (cards||'<div class="board-empty">No jobs in this stage</div>')+'</section>';
     }).join("");
   };
   const renderActivity = function () {
