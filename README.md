@@ -1,5 +1,13 @@
 # Career-Ops Cloud Sandbox
 
+## Free India employer expansion (November 21, 2026)
+
+Career-Ops now evaluates **254 additional candidate employer ATS board slugs** collected from the MIT-licensed [career-ops-india employer directory](https://github.com/AnojSKunte/career-ops-india/blob/main/portals/india.yml) (the 255 entries in that source include one already covered by our 80 curated employers). A candidate is **not** an active board or an actual vacancy until its public ATS feed responds with real India-eligible jobs. The registry lives separately in `scripts/india-employer-candidates.json`; no candidates are blindly added to `scripts/universal-job-sources.json`.
+
+Each scheduled scan preserves the established 80-source pipeline and then validates the candidate leads using only read-only, anonymous Greenhouse/Lever/Ashby job APIs. It limits candidate scans to eight concurrent boards, 12 seconds per candidate and eight requests per candidate. Failed, non-India and empty candidate boards are **excluded**, not shown as active, and cannot degrade curated source health or trigger false jobs. Verified candidate results are normalized, deduplicated with the curated feed and filtered through the existing India-only publication guard. The feed records `scan.candidate_discovery` with checked, activated, unavailable and no-India counts. These counts will vary by day and are not a guarantee that all 254 are valid today.
+
+The scanner also supports an **anonymous Recruitee careers-site API** and now uses Workable's direct public widget URL rather than the legacy redirecting address; both features have fixture tests. Recruitee has no unverified accounts enabled automatically, and the eight historically unreachable Workable accounts stay disabled until a live runner confirms reliable feed access and permitted use. Source APIs may still impose their own conditions on use and reproduction. This code does **not** require Apify, Adzuna, proxies, paid API keys, login credentials, or automated applications. GitHub Actions may set `DISABLE_INDIA_CANDIDATE_DISCOVERY=1` for troubleshooting without affecting the existing curated scan.
+
 ## India-only discovery mode (November 21, 2026)
 
 The scheduled public employer scanner now publishes **India-based vacancies only**. It does not limit jobs by title, skill, employer or seniority; it includes IT and non-IT roles in India. Locations explicitly marked India or using recognized Indian cities/states qualify. Global-remote jobs, overseas-only roles and jobs with unknown locations are excluded until their India eligibility can be confirmed. Country filtering is performed before publication even where an ATS requires fetching an unfiltered public employer board.
