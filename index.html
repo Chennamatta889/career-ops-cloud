@@ -11,6 +11,7 @@
   <script defer src="./match-engine.js"></script>
   <script defer src="./careerops-config.js"></script>
   <script defer src="./app.js"></script>
+  <script defer src="./resume-parser.js"></script>
   <script defer src="./ai-studio.js"></script>
 </head>
 <body>
@@ -75,7 +76,7 @@
       </section>
       <section class="page" id="page-resume">
         <div class="page-heading"><div><div class="eyebrow">YOUR PROFILE</div><h1>Resume & <span>preferences.</span></h1><p>Define your target roles and keep your application strategy consistent.</p></div></div>
-        <div class="form-grid"><section class="panel"><div class="panel-heading"><div><div class="eyebrow">RESUME</div><h2>Your document</h2></div></div><div class="upload-drop"><div class="upload-symbol">⇧</div><strong>Choose a resume to reference</strong><p>PDF or DOCX. Selection stays on this device; nothing is uploaded, analyzed, or saved to a server.</p><label class="btn btn-outline upload-btn" for="resumeFile">Choose file</label><input id="resumeFile" type="file" accept=".pdf,.docx" hidden><span class="muted small" id="resumeFileLabel">No file selected</span></div><p class="inline-note">AI tailoring and secure resume storage are planned integrations—not active in this preview.</p></section><section class="panel"><div class="panel-heading"><div><div class="eyebrow">ROLE PREFERENCES</div><h2>What you're targeting</h2></div></div><form id="preferencesForm" class="form-stack"><label>Target job titles<textarea id="targetRoles" rows="3" placeholder="DevOps Engineer, Cloud Engineer..."></textarea></label><label>Preferred locations<input id="targetLocations" placeholder="Hyderabad, Remote India..."></label><label>Experience level<input id="targetExperience" placeholder="2–4 years"></label><label>Key skills<textarea id="targetSkills" rows="3" placeholder="AWS, Jenkins, Kubernetes..."></textarea></label><button type="submit" class="btn btn-primary">Save preferences</button></form></section></div>
+        <div class="form-grid"><section class="panel"><div class="panel-heading"><div><div class="eyebrow">RESUME</div><h2>Your document</h2></div></div><div class="upload-drop"><div class="upload-symbol">⇧</div><strong>Choose a resume to extract</strong><p>PDF, DOCX or TXT. Text is extracted in this browser and prepared for AI Studio; it is not uploaded until you request AI analysis.</p><label class="btn btn-outline upload-btn" for="resumeFile">Choose file</label><input id="resumeFile" type="file" accept=".pdf,.docx,.txt,text/plain" hidden><span class="muted small" id="resumeFileLabel">No file selected</span></div><p class="inline-note">PDF/DOCX/TXT extraction is available; AI review requires your signed-in consent. Scanned/image-only PDFs are not OCR-supported.</p></section><section class="panel"><div class="panel-heading"><div><div class="eyebrow">ROLE PREFERENCES</div><h2>What you're targeting</h2></div></div><form id="preferencesForm" class="form-stack"><label>Target job titles<textarea id="targetRoles" rows="3" placeholder="DevOps Engineer, Cloud Engineer..."></textarea></label><label>Preferred locations<input id="targetLocations" placeholder="Hyderabad, Remote India..."></label><label>Experience level<input id="targetExperience" placeholder="2–4 years"></label><label>Key skills<textarea id="targetSkills" rows="3" placeholder="AWS, Jenkins, Kubernetes..."></textarea></label><button type="submit" class="btn btn-primary">Save preferences</button></form></section></div>
       </section>
       <section class="page" id="page-ai">
         <div class="page-heading">
@@ -100,20 +101,20 @@
           <div class="form-grid ai-workflow">
             <section class="panel ai-form-panel">
               <div class="panel-heading"><div><div class="eyebrow">STEP 01</div><h2>Resume evidence</h2></div></div>
-              <p class="panel-desc">Paste your resume text. For PDFs and DOCX, copy the text here; automatic PDF parsing is not enabled. You can also select a plain-text .txt file. No upload occurs at this step.</p>
+              <p class="panel-desc">Upload a PDF, DOCX or TXT resume to extract text locally, or paste text manually. Review the extracted text before AI analysis; scanned PDFs without selectable text require OCR elsewhere.</p>
               <div class="form-stack">
                 <label>Your resume text<textarea id="aiResume" rows="14" maxlength="16000" spellcheck="false" placeholder="Paste your actual resume content. Do not add or invent skills, experience, or metrics."></textarea></label><p id="aiResumeCount" class="ai-field-count" aria-live="polite">0 / 250 characters minimum</p>
-                <label class="btn btn-outline upload-btn" for="aiResumeTxtFile">Load .txt locally</label><input id="aiResumeTxtFile" type="file" accept=".txt,text/plain" hidden>
+                <label class="btn btn-outline upload-btn" for="aiResumeTxtFile">Upload PDF / DOCX / TXT</label><input id="aiResumeTxtFile" type="file" accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain" hidden><p id="aiResumeParseStatus" class="ai-field-count" role="status">Files are read in your browser and are not sent to a resume-parsing service.</p>
               </div>
             </section>
             <section class="panel ai-form-panel">
               <div class="panel-heading"><div><div class="eyebrow">STEP 02</div><h2>Target job</h2></div></div>
-              <p class="panel-desc">Choose <strong>AI review</strong> on a job card to prefill details, then paste the full employer job description. The scanner feed may not include the description.</p>
+              <p class="panel-desc">Select <strong>AI review</strong> on a job card or paste an employer link below. Use <strong>Fetch job description</strong> for public Ashby, Greenhouse and Lever posts. Other sites still support manual text entry.</p>
               <div class="form-stack">
                 <label>Job title<input type="text" id="aiRole" maxlength="160" placeholder="DevOps Engineer"></label>
                 <label>Company<input type="text" id="aiCompany" maxlength="130" placeholder="Employer"></label>
-                <label>Job posting link (reference only)<input type="url" id="aiJobUrl" readonly placeholder="Select from Discover Jobs"></label>
-                <label>Full job description<textarea id="aiJd" rows="12" maxlength="16000" spellcheck="false" placeholder="Paste the job requirements, responsibilities and qualifications here."></textarea></label><p id="aiJdCount" class="ai-field-count" aria-live="polite">0 / 200 characters minimum · required even when a job card is selected</p>
+                <label>External job posting URL<input type="url" id="aiJobUrl" maxlength="1500" inputmode="url" placeholder="https://jobs.ashbyhq.com/company/job-id"></label><button class="btn btn-outline" id="aiFetchJob" type="button">Fetch job description</button><p id="aiJobFetchStatus" class="ai-field-count" role="status">Supports public Greenhouse, Ashby and Lever postings. No logins are bypassed.</p>
+                <label>Full job description<textarea id="aiJd" rows="12" maxlength="16000" spellcheck="false" placeholder="Paste the job requirements, responsibilities and qualifications here."></textarea></label><p id="aiJdCount" class="ai-field-count" aria-live="polite">0 / 200 characters minimum · use the fetch button or paste manually</p>
               </div>
             </section>
           </div>
