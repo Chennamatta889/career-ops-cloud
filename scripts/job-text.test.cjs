@@ -2,7 +2,7 @@ const test=require("node:test");
 const assert=require("node:assert/strict");
 const fs=require("node:fs");
 const path=require("node:path");
-const {plainText,decodeEntities,experienceRequirement,experienceMatches}=require("../job-text.js");
+const {plainText,decodeEntities,experienceRequirement,experienceMatches,entryOpportunity}=require("../job-text.js");
 const repoFile=p=>fs.readFileSync(path.resolve(__dirname,"..",p),"utf8");
 
 test("Cohere Health-style rich job descriptions become readable paragraphs and bullets",()=>{
@@ -101,4 +101,41 @@ test("experience levels filter explicit minimums and isolate unspecified require
   assert.equal(experienceMatches("","unspecified"),true);
   assert.equal(experienceMatches("","3-5"),false);
   assert.equal(experienceMatches("", ""),true);
+});
+
+test("fresher filter recognizes internships, apprenticeships and campus graduate roles without inventing zero-years",()=>{
+  const sample=[
+    [{title:"Graduate Engineer Trainee"}, "fresher","title"],
+    [{title:"HR Intern"}, "fresher","title"],
+    [{title:"Software Engineering Internship"}, "fresher","title"],
+    [{title:"Apprentice - Finance"}, "fresher","title"],
+    [{title:"New Graduate Developer"}, "fresher","title"],
+    [{title:"Campus Graduate Program"}, "fresher","title"],
+    [{title:"Junior Accountant"}, "early","title"],
+    [{title:"Software Engineer I"}, "early","title"],
+    [{title:"Cloud Engineer",requiredExperience:"1–2 years"}, "early","explicit"],
+    [{title:"Customer Support",requiredExperience:"No experience required"}, "fresher","explicit"],
+    [{title:"Sales Associate",requiredExperience:"3+ years"}, "unknown",""],
+    [{title:"Senior Associate Engineer",requiredExperience:"1–2 years"}, "unknown",""],
+    [{title:"Lead Intern",requiredExperience:"No experience required"}, "unknown",""],
+    [{title:"AI Researcher Intern",requiredExperience:"2–3 years"}, "early","explicit"],
+    [{title:"Software Engineer",description:"Working with Linux."},"unknown",""],
+    [{title:"Recruitment Intern",requiredExperience:"5 years"}, "unknown",""]
+  ];
+  for(const [job,expected,basis] of sample){
+    const signal=entryOpportunity(job);
+    assert.equal(signal.level,expected,job.title);
+    assert.equal(signal.basis,basis,job.title);
+    assert.equal(job.requiredExperience||"",job.requiredExperience||"");
+  }
+});
+test("entry-level UI is opt-in, and published job metadata labels cannot override explicit senior experience",()=>{
+  const ui=repoFile("app.js"),html=repoFile("index.html");
+  assert.match(html,/id="showFresherJobs"/);
+  assert.match(html,/value="fresher">Freshers, interns/);
+  assert.match(html,/value="entry">Early career/);
+  assert.match(ui,/window\.CareerOpsJobText\?\.entryOpportunity\?\.\(job\)/);
+  assert.match(ui,/\$\("showFresherJobs"\)\.addEventListener/);
+  assert.match(ui,/Fresher \/ intern pathway/);
+  assert.equal(entryOpportunity({title:"Graduate Trainee",entry_level:"fresher",requiredExperience:"10+ years"}).level,"unknown");
 });

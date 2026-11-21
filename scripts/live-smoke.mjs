@@ -21,6 +21,8 @@ const checks=[
   {path:"job-categories.js",contains:"CareerOpsCategories"},
   {path:"india-jobs.js",contains:"CareerOpsIndiaJobs"},
   {path:"job-text.js",contains:"CareerOpsJobText"},
+  {path:"job-text.js",contains:"entryOpportunity"},
+  {path:"",contains:'id="showFresherJobs"'},
   {path:"enterprise-careers.js",contains:"CareerOpsEnterpriseCareers"},
   {path:"ai-studio.js",contains:"jobFetchVersion"},
   {path:"private-workspace.js",contains:"accountVersion"},
@@ -59,6 +61,13 @@ async function check(item){
        data.scan?.date_cutoff_utc!==cutoffDay() ||
        data.jobs.some(job=>!hasRecentDate(job)))
       throw Error("Published job feed contains old, future or unverified job ages.");
+    const levels=data.scan?.entry_opportunities;
+    if(!levels||!Number.isSafeInteger(levels.fresher)||
+       !Number.isSafeInteger(levels.early_career)||
+       !Number.isSafeInteger(levels.unspecified_or_other)||
+       levels.fresher+levels.early_career+levels.unspecified_or_other!==data.jobs.length)
+      throw Error("Fresher and early-career evidence counts are inconsistent with live job feed");
+    console.log("Fresher opportunities:",levels.fresher,"early-career:",levels.early_career);
     console.log("India-only postings:",data.jobs.length,"employer boards:",data.scan?.scanned,"categories:",JSON.stringify(data.category_counts),"scan:",data.scan?.status);
   }else{
     const source=await r.text();

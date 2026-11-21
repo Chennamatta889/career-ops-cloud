@@ -362,6 +362,10 @@ a:focus-visible,button:focus-visible,[role="button"]:focus-visible{outline:2px s
 
 /* Explicit employer experience requirement; missing values are not guessed. */
 .job-experience-badge{display:inline-flex;align-items:center;background:#20334a;color:#d3e4f4;border:1px solid #3a5770;border-radius:9px;padding:5px 9px;font-size:11px;font-weight:700;line-height:1.4}
+.fresher-entry-badge{border-color:#3b846f;background:#173f34;color:#a6f1cf;font-weight:700}
+.fresher-shortcut{border-color:#3b846f;color:#a6f1cf;font-size:12px;white-space:normal;text-align:center}
+.fresher-shortcut:focus-visible{outline:2px solid #8fffc4;outline-offset:3px}
+
 .dialog-experience{margin:10px 0 15px;color:#b9e9d9;background:#17342f;border:1px solid #335c51;border-radius:10px;padding:9px 12px;font-size:12px;font-weight:700}
 #experienceFilter{min-width:155px}
 

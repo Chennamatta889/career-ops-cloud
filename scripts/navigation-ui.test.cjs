@@ -299,3 +299,24 @@ test("Discover defaults to India and never reveals previously imported overseas-
   assert.doesNotMatch(ui.node("jobsGrid").innerHTML,/Overseas Example|Unknown Example/,
     "Clearing filters cannot re-enable international job discovery");
 });
+
+test("Find fresher jobs shortcut applies India-wide fresher-only search without altering saved applications",()=>{
+  const ui=createHarness("#discover");
+  assert.match(markup,/id="showFresherJobs"/);
+  const click=ui.node("showFresherJobs").listeners.get("click");
+  assert.equal(typeof click,"function");
+  ui.node("jobSearch").value="Cloud";
+  ui.node("locationFilter").value="mumbai";
+  ui.node("sectorFilter").value="it";
+  ui.node("categoryFilter").value="IT & Software";
+  click();
+  assert.equal(ui.node("jobSearch").value,"");
+  assert.equal(ui.node("locationFilter").value,"india");
+  assert.equal(ui.node("sectorFilter").value,"");
+  assert.equal(ui.node("experienceFilter").value,"fresher");
+  assert.equal(ui.node("sortFilter").value,"fresher");
+  assert.equal(ui.node("resetDiscoverFilters").hidden,false);
+  ui.node("resetDiscoverFilters").listeners.get("click")();
+  assert.equal(ui.node("experienceFilter").value,"");
+  assert.equal(ui.node("sortFilter").value,"variety");
+});
