@@ -117,3 +117,41 @@ test("loading a saved resume from REST fills the editor only when requested",asy
   assert.ok(!h.requests.some(r=>r.url.includes("select=resume_text")));
   assert.match(script,/async function loadVault\(onlyIfEmpty=false\)/);
 });
+
+test("application tracking migration adds private opened and submitted dates without changing RLS",()=>{
+  const migration=fs.readFileSync(path.join(__dirname,
+    "../supabase/migrations/20261121_phase6_application_confirmation_tracking.sql"),"utf8");
+  assert.match(migration,/add column if not exists opened_at timestamptz/);
+  assert.match(migration,/add column if not exists applied_on date/);
+  assert.match(migration,/stage in \('Opened','Saved','Review','Applied','Interview','Offer','Rejected'\)/);
+  assert.doesNotMatch(migration,/disable row level security|grant .* to anon|service_role/);
+});
+test("opening a job syncs Opened with timestamp without claiming a submission",async()=>{
+  const h=harness();await flush();h.requests.length=0;
+  h.dispatch("careerops:tracking-changed",{job:{
+    title:"DevOps Engineer",company:"Example Corp",location:"India",
+    url:"https://example.com/jobs/100",stage:"Opened",
+    openedAt:"2026-11-21T07:00:00.000Z",appliedOn:""
+  }});
+  await flush();
+  const request=h.requests.find(x=>x.method==="POST"&&x.url.includes("careerops_job_tracking"));
+  assert.ok(request);
+  const value=JSON.parse(request.body);
+  assert.equal(value.stage,"Opened");
+  assert.equal(value.opened_at,"2026-11-21T07:00:00.000Z");
+  assert.equal(value.applied_on,null);
+});
+test("user-confirmed date is persisted only after an explicit Applied status event",async()=>{
+  const h=harness();await flush();h.requests.length=0;
+  h.dispatch("careerops:tracking-changed",{job:{
+    job_key:"https://example.com/jobs/applied",title:"Cloud Engineer",company:"Example",location:"India",
+    url:"https://example.com/jobs/applied",stage:"Applied",openedAt:"2026-11-20T07:00:00Z",
+    appliedOn:"2026-11-21"
+  }});
+  await flush();
+  const value=JSON.parse(h.requests.find(x=>x.method==="POST"&&x.url.includes("careerops_job_tracking")).body);
+  assert.equal(value.stage,"Applied");
+  assert.equal(value.applied_on,"2026-11-21");
+  assert.equal(value.opened_at,"2026-11-20T07:00:00.000Z");
+  assert.equal(Object.hasOwn(value,"resume_text"),false);
+});
