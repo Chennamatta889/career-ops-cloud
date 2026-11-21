@@ -320,3 +320,79 @@ test("Find fresher jobs shortcut applies India-wide fresher-only search without 
   assert.equal(ui.node("experienceFilter").value,"");
   assert.equal(ui.node("sortFilter").value,"variety");
 });
+
+
+test("mobile bottom navigation follows all primary routes and browser Back without creating extra history",()=>{
+  const ui=createHarness();
+  for(const [route,id] of [
+    ["discover","mobileTabDiscover"],["applications","mobileTabApplications"],
+    ["resume","mobileTabResume"],["ai","mobileTabAi"]
+  ]){
+    ui.nav(route);
+    assert.equal(ui.node(id).classList.contains("active"),true,route);
+    assert.equal(ui.node(id).getAttribute("aria-current"),"page",route);
+    for(const other of ["mobileTabDiscover","mobileTabApplications","mobileTabResume","mobileTabAi"].filter(x=>x!==id))
+      assert.equal(ui.node(other).getAttribute("aria-current"),null);
+  }
+  const before=ui.pushes;
+  ui.history.back();
+  assert.equal(ui.active(),"resume");
+  assert.equal(ui.node("mobileTabResume").getAttribute("aria-current"),"page");
+  assert.equal(ui.pushes,before);
+  ui.nav("overview");
+  assert.equal(ui.node("mobileMore").classList.contains("current-section"),true);
+});
+test("mobile More menu opens and closes the existing sidebar using Escape, scrim and navigation",()=>{
+  const ui=createHarness("#discover");
+  const toggle=ui.node("mobileMore").listeners.get("click");
+  assert.equal(typeof toggle,"function");
+  toggle();
+  assert.equal(ui.node("sidebar").classList.contains("open"),true);
+  assert.equal(ui.node("mobileMore").getAttribute("aria-expanded"),"true");
+  assert.equal(ui.node("mobileMenu").getAttribute("aria-expanded"),"true");
+  ui.window.dispatchEvent({type:"keydown",key:"Escape"});
+  assert.equal(ui.node("sidebar").classList.contains("open"),false);
+  assert.equal(ui.node("mobileMore").getAttribute("aria-expanded"),"false");
+  toggle();ui.node("mobileScrim").listeners.get("click")();
+  assert.equal(ui.node("sidebar").classList.contains("open"),false);
+  toggle();ui.nav("applications");
+  assert.equal(ui.node("sidebar").classList.contains("open"),false);
+  assert.equal(ui.node("mobileMore").getAttribute("aria-expanded"),"false");
+});
+test("advanced job filters expand and show an active count with a clear-all shortcut",()=>{
+  const ui=createHarness("#discover");
+  const expanded=ui.node("toggleJobFilters");
+  const advance=ui.node("jobAdvancedFilters");
+  assert.equal(expanded.getAttribute("aria-expanded"),null);
+  expanded.listeners.get("click")();
+  assert.equal(expanded.getAttribute("aria-expanded"),"true");
+  assert.equal(advance.classList.contains("open"),true);
+  ui.node("categoryFilter").value="IT & Software";
+  ui.node("sortFilter").value="newest";
+  ui.node("categoryFilter").listeners.get("change")();
+  assert.equal(ui.node("advancedFilterCount").textContent,"(2 active)");
+  assert.equal(ui.node("quickResetFilters").hidden,false);
+  ui.node("quickResetFilters").listeners.get("click")();
+  assert.equal(ui.node("categoryFilter").value,"");
+  assert.equal(ui.node("sortFilter").value,"variety");
+  assert.equal(ui.node("quickResetFilters").hidden,true);
+  assert.equal(expanded.getAttribute("aria-expanded"),"false");
+  assert.equal(advance.classList.contains("open"),false);
+});
+test("phone markup keeps original filter IDs, primary tabs and screen reader labels",()=>{
+  for(const id of ["jobSearch","locationFilter","experienceFilter","sectorFilter",
+    "categoryFilter","sortFilter","matchFilter"]){
+    assert.equal((markup.match(new RegExp('id="'+id+'"',"g"))||[]).length,1,id);
+  }
+  for(const id of ["mobileTabDiscover","mobileTabApplications","mobileTabResume",
+    "mobileTabAi","mobileMore","toggleJobFilters","quickResetFilters"]){
+    assert.match(markup,new RegExp('id="'+id+'"'),id);
+  }
+  assert.match(markup,/aria-label="Quick mobile navigation"/);
+  assert.match(markup,/aria-controls="jobAdvancedFields"/);
+  assert.match(markup,/aria-controls="sidebar"/);
+  const styles=fs.readFileSync(path.resolve(__dirname,"../styles.css"),"utf8");
+  assert.match(styles,/@media\(max-width:760px\)\{[\s\S]*\.mobile-bottom-nav\{/);
+  assert.match(styles,/\.board\{grid-template-columns:1fr;overflow-x:visible/);
+  assert.match(styles,/#page-discover>\.india-portal-search,[\s\S]*order:3/);
+});
