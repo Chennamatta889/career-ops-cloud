@@ -20,6 +20,8 @@
   const siteRedirect = "https://chennamatta889.github.io/career-ops-cloud/";
   const siteOrigin = new URL(siteRedirect).origin;
   const text = (v,n=10000) => typeof v==="string" ? v.trim().slice(0,n) : "";
+  const cleanJobDescription=(value,max=16000)=>
+    window.CareerOpsJobText?.plainText?.(value,max)||text(value,max);
   const set = (id,message) => { byId(id).textContent = message; };
   const status = message => set("aiStatus",message);
 
@@ -455,7 +457,7 @@
       if(!job || typeof job.description!=="string" || job.description.length<120) {
         throw new Error("The employer API did not provide enough job-description text.");
       }
-      byId("aiJd").value=job.description.slice(0,16000);
+      byId("aiJd").value=cleanJobDescription(job.description,16000);
       if(job.title)byId("aiRole").value=job.title.slice(0,160);
       if(!byId("aiCompany").value.trim() && job.company)byId("aiCompany").value=job.company.slice(0,130);
       prerequisites();
@@ -471,7 +473,12 @@
   byId("aiCheckConnection").addEventListener("click",()=>checkReviewConnection());
   byId("aiAnalyze").addEventListener("click",async function(){
     const resume=byId("aiResume").value.trim();
-    const jobDescription=byId("aiJd").value.trim();
+    // A pasted employer HTML snippet is converted to readable text before
+    // consent-based Gemini review; never send raw HTML markup to the provider.
+    const jobDescription=cleanJobDescription(byId("aiJd").value,16000);
+    if(jobDescription!==byId("aiJd").value){
+      byId("aiJd").value=jobDescription;
+    }
     const jobTitle=byId("aiRole").value.trim();
     const employer=byId("aiCompany").value.trim();
     const missing = prerequisites();
@@ -514,7 +521,7 @@
     byId("aiRole").value=text(j.title,170);
     byId("aiCompany").value=text(j.company,130);
     byId("aiJobUrl").value=text(j.url,1000);
-    byId("aiJd").value=text(j.description,15000);
+    byId("aiJd").value=cleanJobDescription(j.description,15000);
     jobFetchVersion++;
     byId("aiResult").hidden=true;byId("aiDownload").hidden=true;byId("aiPrint").hidden=true;activeResult=null;
     prerequisites();
