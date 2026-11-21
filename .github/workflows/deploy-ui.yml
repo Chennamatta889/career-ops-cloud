@@ -24,9 +24,13 @@ on:
       - scripts/check-google-provider.mjs
       - scripts/resume-parser.test.cjs
       - scripts/resume-upload-ui.test.cjs
-      - scripts/job-fetch.test.mjs
+      - scripts/job-fetch.test.mjs scripts/universal-job-scan.test.mjs
       - scripts/match-engine.test.cjs
       - scripts/export-scan-feed.mjs
+      - scripts/universal-job-scan.mjs
+      - scripts/universal-job-scan.test.mjs
+      - scripts/universal-job-sources.json
+      - job-categories.js
       - scripts/export-scan-feed.test.mjs
       - .github/workflows/deploy-ui.yml
   schedule:
@@ -58,157 +62,9 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Checkout pinned public Career-Ops scanner
-        id: upstream
-        continue-on-error: true
-        uses: actions/checkout@v4
-        with:
-          repository: career-ops-hq/career-ops
-          ref: 87996a80abac26e39862117a79496952c83b5741
-          path: upstream
-          persist-credentials: false
-
-      - name: Install scanner dependencies
-        id: scanner_dependencies
-        if: steps.upstream.outcome == 'success'
-        continue-on-error: true
-        working-directory: upstream
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci --ignore-scripts --no-audit --no-fund
-          else
-            npm install --ignore-scripts --no-audit --no-fund
-          fi
-
-      - name: Configure isolated public-job scan
-        shell: bash
-        run: |
-          echo "CAREER_OPS_ROOT=$RUNNER_TEMP/career-ops-data" >> "$GITHUB_ENV"
-          mkdir -p "$RUNNER_TEMP/career-ops-data"/{config,data,reports,output,jds,batch/tracker-additions}
-          cat > "$RUNNER_TEMP/career-ops-data/config/profile.yml" <<'EOF'
-          candidate:
-            years_of_experience: 3
-          target_roles:
-            primary: [DevOps Engineer, Cloud Engineer, Site Reliability Engineer, Platform Engineer]
-          location:
-            country: India
-            city: Hyderabad
-            timezone: Asia/Kolkata
-          spend_tier: economy
-          EOF
-          cat > "$RUNNER_TEMP/career-ops-data/portals.yml" <<'EOF'
-          title_filter:
-            positive: [DevOps, Cloud Engineer, Site Reliability, SRE, Platform Engineer, Infrastructure Engineer, Build Engineer, Release Engineer]
-            negative: ["word:Intern", Internship, "word:Director", "word:Principal", "word:Staff", "word:Senior", "word:Manager"]
-          location_filter:
-            strict: true
-            allow: [India, Hyderabad, Bengaluru, Bangalore, Pune, Mumbai, Chennai, Gurugram, Gurgaon, Noida, Delhi, Remote India]
-          experience_filter:
-            enabled: true
-            stretch_years: 1
-            action: label
-          tracked_companies:
-            - name: Glean
-              careers_url: https://job-boards.greenhouse.io/gleanwork
-              api: https://boards-api.greenhouse.io/v1/boards/gleanwork/jobs
-              enabled: true
-            - name: RZR
-              careers_url: https://job-boards.greenhouse.io/rzr
-              api: https://boards-api.greenhouse.io/v1/boards/rzr/jobs
-              enabled: true
-            - name: Temporal
-              careers_url: https://jobs.ashbyhq.com/temporal
-              enabled: true
-            - name: Cohere Health
-              careers_url: https://job-boards.greenhouse.io/coherehealth
-              enabled: true
-            - name: Ivanti
-              careers_url: https://job-boards.greenhouse.io/a3c41b8b71eff8c4
-              enabled: true
-            - name: HackerRank
-              careers_url: https://job-boards.greenhouse.io/hackerrank
-              enabled: true
-            - name: CrashPlan
-              careers_url: https://job-boards.greenhouse.io/crashplan
-              enabled: true
-            - name: Motive
-              careers_url: https://job-boards.greenhouse.io/gomotive
-              enabled: true
-            - name: DataHub
-              careers_url: https://job-boards.greenhouse.io/acryldata
-              enabled: true
-            - name: RhythmX AI
-              careers_url: https://job-boards.greenhouse.io/rhythmx-ai
-              enabled: true
-            - name: Zenoti
-              careers_url: https://job-boards.greenhouse.io/zenoti
-              enabled: true
-            - name: Momentum Financial Services
-              careers_url: https://job-boards.greenhouse.io/momentumfinancialservicesgroup
-              enabled: true
-            - name: BusPatrol
-              careers_url: https://jobs.ashbyhq.com/buspatrol
-              enabled: true
-            - name: Neuphonic
-              careers_url: https://jobs.ashbyhq.com/neuphonic
-              enabled: true
-            - name: Outmarket AI
-              careers_url: https://jobs.ashbyhq.com/outmarket
-              enabled: true
-            - name: Ema
-              careers_url: https://jobs.ashbyhq.com/ema
-              enabled: true
-            - name: Demandbase
-              careers_url: https://jobs.ashbyhq.com/demandbase
-              enabled: true
-            - name: Encord
-              careers_url: https://jobs.ashbyhq.com/encord
-              enabled: true
-            - name: Plane Software
-              careers_url: https://jobs.ashbyhq.com/plane
-              enabled: true
-            - name: UptimeAI
-              careers_url: https://jobs.ashbyhq.com/uptimeai
-              enabled: true
-            - name: Triomics
-              careers_url: https://jobs.ashbyhq.com/triomics
-              enabled: true
-            - name: New Era Technology
-              careers_url: https://job-boards.greenhouse.io/neweratech
-              enabled: true
-            - name: Arcana Analytics
-              careers_url: https://job-boards.greenhouse.io/arcanaanalytics
-              enabled: true
-            - name: Instawork
-              careers_url: https://job-boards.greenhouse.io/instawork
-              enabled: true
-            - name: Teikametrics
-              careers_url: https://job-boards.greenhouse.io/teikametrics
-              enabled: true
-            - name: WPP
-              careers_url: https://job-boards.greenhouse.io/wpp
-              enabled: true
-            - name: MerQube
-              careers_url: https://job-boards.greenhouse.io/merqube
-              enabled: true
-            - name: Sarvam
-              careers_url: https://jobs.ashbyhq.com/sarvam
-              enabled: true
-            - name: OpenObserve
-              careers_url: https://jobs.ashbyhq.com/openobserve-careers
-              enabled: true
-            - name: ScienceLogic
-              careers_url: https://jobs.ashbyhq.com/sciencelogic
-              enabled: true
-            - name: Arkose Labs
-              careers_url: https://jobs.ashbyhq.com/arkoselabs
-              enabled: true
-            - name: Lyric
-              careers_url: https://jobs.ashbyhq.com/lyric
-              enabled: true
-          job_boards: []
-          EOF
-
+      # All-role discovery uses the maintained read-only ATS importer in
+      # this repository. No applicant profile, role exclusions or region cap.
+      # The prior upstream profile filtered out almost every non-IT opening.
       - name: Install pinned, browser-only resume parsing libraries
         shell: bash
         run: |
@@ -221,6 +77,8 @@ jobs:
         run: |
           node --check app.js
           node --check match-engine.js
+          node --check job-categories.js
+          node --check scripts/universal-job-scan.mjs
           node --check ai-studio.js
           node --check private-workspace.js
           node --check health-check.js
@@ -236,35 +94,17 @@ jobs:
         continue-on-error: true
         run: node scripts/check-google-provider.mjs
 
-      - name: Scan public job listings
-        if: steps.upstream.outcome == 'success' && steps.scanner_dependencies.outcome == 'success'
-        id: scan
-        working-directory: upstream
+      - name: Scan all IT and non-IT public employer jobs
         shell: bash
         run: |
-          set +e
-          node scan.mjs --json --quiet > "$RUNNER_TEMP/career-ops-scan.json"
-          scan_exit=$?
-          set -e
-          echo "SCAN_EXIT_CODE=$scan_exit" >> "$GITHUB_ENV"
-          echo "Scanner exit: $scan_exit (2 may mean partial source failures)"
-          test -s "$RUNNER_TEMP/career-ops-scan.json" || echo "Scanner returned no receipt"
-
-      - name: Build public-only job feed
-        shell: bash
-        run: |
-          node --check app.js
-          node --check match-engine.js
-          node --check scripts/export-scan-feed.mjs
-          SCAN_RECEIPT="$RUNNER_TEMP/career-ops-scan.json" \
-          FEED_OUTPUT="public/data/jobs.json" \
-          node scripts/export-scan-feed.mjs
+          mkdir -p public/data
+          FEED_OUTPUT="public/data/jobs.json" node scripts/universal-job-scan.mjs
 
       - name: Prepare static site
         shell: bash
         run: |
           mkdir -p public
-          cp index.html styles.css match-engine.js careerops-config.js app.js resume-parser.js ai-studio.js private-workspace.js health-check.js public/
+          cp index.html styles.css match-engine.js job-categories.js careerops-config.js app.js resume-parser.js ai-studio.js private-workspace.js health-check.js public/
           mkdir -p public/vendor
           cp "$RUNNER_TEMP/career-ops-vendor/node_modules/pdfjs-dist/build/pdf.min.mjs" public/vendor/
           cp "$RUNNER_TEMP/career-ops-vendor/node_modules/pdfjs-dist/build/pdf.worker.min.mjs" public/vendor/
