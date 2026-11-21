@@ -75,23 +75,64 @@
     if (toastTimer) clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { el.classList.remove("show"); }, 3500);
   };
-  const pageNames = { overview:"Overview", discover:"Discover jobs", applications:"Applications", resume:"Resume lab", ai:"AI Studio", activity:"Activity", settings:"Settings & data" };
+  const pageNames = {
+    overview:"Overview",discover:"Find jobs",applications:"My applications",
+    resume:"Resume & preferences",ai:"AI Studio",activity:"Activity",settings:"Settings"
+  };
+  let currentPage="";
+  const authFragment = function() {
+    return /^#(?:access_token=|refresh_token=|error=|error_code=)/.test(location.hash);
+  };
+  const pageFromLocation = function() {
+    // OAuth fragment must remain untouched until ai-studio.js consumes it.
+    if(authFragment())return "ai";
+    const route=String(location.hash||"").slice(1);
+    return Object.prototype.hasOwnProperty.call(pageNames,route)?route:"overview";
+  };
   const hideMobileMenu = function () {
     $("sidebar").classList.remove("open"); $("mobileScrim").classList.remove("show");
     $("mobileMenu").setAttribute("aria-expanded", "false");
   };
-  const showPage = function (name) {
-    if (!pageNames[name]) name = "overview";
-    document.querySelectorAll(".page").forEach(function (el) { el.classList.toggle("active", el.id === "page-" + name); });
-    document.querySelectorAll(".nav-link").forEach(function (el) {
-      const current = el.getAttribute("data-nav") === name;
-      el.classList.toggle("active", current);
-      if (current) el.setAttribute("aria-current", "page"); else el.removeAttribute("aria-current");
+  const closeOpenDialogs = function(){
+    for(const id of ["jobDialog","addDialog"]){
+      const dialog=$(id);
+      if(dialog?.open)dialog.close();
+    }
+  };
+  const showPage = function (name, options) {
+    const opts=options||{};
+    const route=Object.prototype.hasOwnProperty.call(pageNames,name)?name:"overview";
+    const changed=currentPage!==route;
+    // Every deliberate navigation is a browser history entry. Rendering a
+    // Back/Forward route must never rewrite history or create a navigation loop.
+    const hash="#"+route;
+    if(!authFragment() && location.hash!==hash){
+      const url=location.pathname+location.search+hash;
+      if(opts.history==="replace")history.replaceState({careeropsPage:route},"",url);
+      else if(opts.history!=="none")history.pushState({careeropsPage:route},"",url);
+    }
+    currentPage=route;
+    document.querySelectorAll(".page").forEach(function (el) {
+      const active=el.id==="page-"+route;
+      el.classList.toggle("active",active);
+      el.setAttribute("aria-hidden",active?"false":"true");
     });
-    $("currentCrumb").textContent = pageNames[name];
-    if (location.hash !== "#" + name && !/^#(?:access_token=|error=|error_code=)/.test(location.hash)) history.replaceState(null, "", "#" + name);
+    document.querySelectorAll(".nav-link").forEach(function (el) {
+      const active=el.getAttribute("data-nav")===route;
+      el.classList.toggle("active",active);
+      if(active)el.setAttribute("aria-current","page");
+      else el.removeAttribute("aria-current");
+    });
+    $("currentCrumb").textContent=pageNames[route];
+    document.title=pageNames[route]+" | Career-Ops";
     hideMobileMenu();
-    window.scrollTo({ top: 0, behavior: "instant" });
+    if(changed){
+      closeOpenDialogs();
+      if(opts.scroll!==false)window.scrollTo({top:0,behavior:"instant"});
+    }
+  };
+  const syncHistoryRoute = function(){
+    showPage(pageFromLocation(),{history:"none",scroll:false});
   };
   const priority = function (job) { return window.CareerOpsMatch.rank(job,state.prefs); };
   const visibleJobs = function () {
@@ -343,7 +384,13 @@
   $("clearFilters").addEventListener("click", function () { $("jobSearch").value = ""; $("categoryFilter").value = ""; $("sectorFilter").value = ""; $("locationFilter").value = ""; $("matchFilter").value = "all"; renderDiscover(); });
   $("mobileMenu").addEventListener("click", function () { const open = $("sidebar").classList.toggle("open"); $("mobileScrim").classList.toggle("show",open); $("mobileMenu").setAttribute("aria-expanded", String(open)); });
   $("mobileScrim").addEventListener("click", hideMobileMenu);
-  window.addEventListener("hashchange", function () { showPage(location.hash.replace("#","")); });
+  // popstate handles history.pushState entries; hashchange also handles links
+  // or manual URL edits. Idempotent rendering prevents duplicate transitions.
+  window.addEventListener("popstate",syncHistoryRoute);
+  window.addEventListener("hashchange",syncHistoryRoute);
+  window.addEventListener("pageshow",function(event){
+    if(event.persisted)syncHistoryRoute(); // browser back-forward cache
+  });
   $("openAddJob").addEventListener("click", function () { $("addDialog").showModal(); });
   $("closeDialog").addEventListener("click", function () { $("jobDialog").close(); });
   $("closeAddDialog").addEventListener("click", function () { $("addDialog").close(); });
@@ -581,6 +628,11 @@
   });
   if (memoryOnly) toast("Local storage unavailable; changes may not persist.");
   render();
-  showPage(location.hash.replace("#","") || "overview");
+  // Preserve the OAuth fragment. Replace only invalid/empty initial routes.
+  const initiallyValid=Object.prototype.hasOwnProperty.call(pageNames,String(location.hash||"").slice(1));
+  showPage(pageFromLocation(),{
+    history:authFragment()||initiallyValid?"none":"replace",
+    scroll:false
+  });
   syncCloudFeed(false);
 })();
