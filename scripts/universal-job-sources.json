@@ -481,6 +481,54 @@
       "provider": "smartrecruiters",
       "slug": "ServiceNow",
       "sector": "Software Products"
+    },
+    {
+      "provider": "workable",
+      "slug": "mercari-india",
+      "name": "Mercari India",
+      "sector": "Software Products"
+    },
+    {
+      "provider": "workable",
+      "slug": "capgemini-insurance",
+      "name": "Capgemini Insurance",
+      "sector": "IT Services"
+    },
+    {
+      "provider": "workable",
+      "slug": "unisongroup",
+      "name": "Unison Group",
+      "sector": "IT Services"
+    },
+    {
+      "provider": "workable",
+      "slug": "prox-works",
+      "name": "Proximity Works",
+      "sector": "IT Services"
+    },
+    {
+      "provider": "workable",
+      "slug": "teleport-careers",
+      "name": "Teleport",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "workable",
+      "slug": "updraft",
+      "name": "Updraft",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "workable",
+      "slug": "youtrip",
+      "name": "YouTrip",
+      "sector": "Financial Technology"
+    },
+    {
+      "provider": "workable",
+      "slug": "zyte",
+      "name": "Zyte",
+      "sector": "Technology & Services"
     }
   ]
 }
