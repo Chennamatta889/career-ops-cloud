@@ -240,7 +240,25 @@
   $("vaultDelete").addEventListener("click",perform(deleteVault,"vaultStatus"));
   $("cloudRefreshTracking").addEventListener("click",perform(syncRemote,"cloudTrackingStatus"));
   $("cloudImportTracking").addEventListener("click",perform(importLocal,"cloudTrackingStatus"));
-  window.addEventListener("careerops:tracking-changed",event=>{sendTrackingChange(event);});
+  // Serialize updates per account/job: a quick Opened → Applied sequence must
+  // never arrive at the database in reverse order and erase confirmation.
+  const pendingTrackingWrites=new Map();
+  function queueTrackingChange(event){
+    const job=event.detail?.job;
+    if(!currentUser || !job)return;
+    const userId=currentUser.id;
+    const jobKey=safe(job.job_key||job.url,1500);
+    if(!jobKey)return;
+    const key=userId+"|"+jobKey;
+    const previous=pendingTrackingWrites.get(key)||Promise.resolve();
+    const next=previous.catch(()=>{}).then(()=>{
+      if(currentUser?.id!==userId)return;
+      return sendTrackingChange({detail:{job}});
+    });
+    pendingTrackingWrites.set(key,next);
+    next.finally(()=>{if(pendingTrackingWrites.get(key)===next)pendingTrackingWrites.delete(key);});
+  }
+  window.addEventListener("careerops:tracking-changed",queueTrackingChange);
   window.addEventListener("careerops:authenticated",event=>{
     const info=event.detail||{};
     if(!/^[0-9a-fA-F-]{36}$/.test(String(info.id||"")))return;
