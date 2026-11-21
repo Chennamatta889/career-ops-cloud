@@ -21,7 +21,7 @@ This phase uses the separate Supabase project **career-ops-private**. It does no
 
 **Discovery expansion:** Scanning includes 32 publicly accessible Greenhouse/Ashby boards (up from 21), adding New Era Technology, Arcana Analytics, Instawork, Teikametrics, WPP, MerQube, Sarvam, OpenObserve, ScienceLogic, Arkose Labs and Lyric. Matches still depend on location, experience, title and deduplication filters and are not guaranteed. Selecting AI Review on a supported ATS job card attempts to fetch its public full job description while the private vault can refill the resume editor.
 
-**What remains:** Generative AI reviews are still on-demand after explicit consent, not automatic batch Gemini scoring. Native DOCX/PDF exports and automatic job submissions are not activated; existing AI Studio text draft export remains available. User-specific RLS operations require a real authenticated account to verify end to end.
+**What remains:** Generative AI reviews are still on-demand after explicit consent, not automatic batch Gemini scoring. AI Review offers text draft download plus browser **Print / Save as PDF** (using the device's print dialog; not a server-generated PDF). Native DOCX export and automatic job submissions are not activated. User-specific RLS operations require a real authenticated account to verify end to end.
 
 ## Gemini timeout and retry fix (November 21, 2026)
 
