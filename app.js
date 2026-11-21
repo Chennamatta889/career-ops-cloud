@@ -58,7 +58,7 @@
       if (!x || !Array.isArray(x.jobs)) return defaultState();
       return {
         mode: ["imported","manual","live"].includes(x.mode) ? x.mode : "demo",
-        jobs: x.jobs.slice(0,500).map(function (j) {
+        jobs: x.jobs.map(function (j) {
           return { id: str(j.id) || newId(), title: str(j.title), company: str(j.company), location: str(j.location), category:jobCategory(j), department:str(j.department), skills: Array.isArray(j.skills) ? j.skills.slice(0,12).map(str) : [], description: readableJobText(j.description,6000), url: safeUrl(j.url), demo: !!j.demo, manual: !!j.manual || (x.mode === "manual" && !j.demo), source: str(j.source), requiredExperience: str(j.requiredExperience), stage: STAGES.some(function (s) { return s.name === j.stage; }) ? j.stage : "", addedAt: str(j.addedAt) };
         }),
         prefs: Object.assign({}, DEFAULT_PREFS, x.prefs || {}),
@@ -72,7 +72,15 @@
   let activeJobId = null;
   const save = function () {
     try {
-      sessionStorage.setItem(activeAccountId?ACCOUNT_STORAGE_PREFIX+activeAccountId:GUEST_STORAGE_KEY,JSON.stringify(state));
+      // The published job feed is public and can now contain thousands of roles.
+      // Store only personal tracking/manual records, never the whole feed.
+      const storedJobs=state.mode==="live" ?
+        state.jobs.filter(function(j){return j.manual || !!j.stage;}) :
+        state.mode==="imported" ?
+          state.jobs.map(function(j){return Object.assign({},j,{description:str(j.description).slice(0,700)});}) :
+          state.jobs;
+      const snapshot=Object.assign({},state,{jobs:storedJobs});
+      sessionStorage.setItem(activeAccountId?ACCOUNT_STORAGE_PREFIX+activeAccountId:GUEST_STORAGE_KEY,JSON.stringify(snapshot));
     } catch (_) { memoryOnly = true; }
   };
   const stamp = function () { return new Date().toISOString(); };
@@ -154,7 +162,7 @@
     const location=$("locationFilter").value.toLowerCase();
     const sort=$("sortFilter").value;
     const priorityFilter=$("matchFilter").value;
-    return state.jobs.filter(function(job){
+    const jobs=state.jobs.filter(function(job){
       const all=normalizeSearch([job.title,job.company,job.location,job.description,job.department,jobCategory(job)]
         .concat(job.skills||[]).join(" "));
       const loc=String(job.location||"").toLowerCase();
@@ -164,11 +172,38 @@
       const locationOk=!location||loc.includes(location)||
         (location==="india" && /india|hyderabad|bengaluru|bangalore|mumbai|delhi|pune|chennai|noida|gurugram|gurgaon|kolkata|ahmedabad|kochi/.test(loc))||
         (location==="bengaluru"&&loc.includes("bangalore"));
-      const points=priority(job).score;
-      const priorityOk=priorityFilter==="all"||
-        (priorityFilter==="below"?points<50:points>=Number(priorityFilter));
+      const priorityOk=priorityFilter==="all"||function(){
+        const points=priority(job).score;
+        return priorityFilter==="below"?points<50:points>=Number(priorityFilter);
+      }();
       return searchTerms.every(function(term){return all.includes(term);})&&categoryOk&&sectorOk&&locationOk&&priorityOk;
-    }).sort(function(a,b){
+    });
+    if(sort==="variety"){
+      // Mix job types instead of letting high-volume IT boards dominate the first cards.
+      jobs.sort(function(a,b){return String(b.addedAt||"").localeCompare(String(a.addedAt||""));});
+      const queues=new Map();
+      for(const job of jobs){
+        const kind=jobCategory(job);
+        if(!queues.has(kind))queues.set(kind,[]);
+        queues.get(kind).push(job);
+      }
+      const indices=new Map(Array.from(queues.keys(),key=>[key,0]));
+      const ordered=[];
+      let remaining=true;
+      while(remaining){
+        remaining=false;
+        for(const [kind,queue] of queues){
+          const at=indices.get(kind);
+          if(at<queue.length){
+            ordered.push(queue[at]);
+            indices.set(kind,at+1);
+            remaining=true;
+          }
+        }
+      }
+      return ordered;
+    }
+    return jobs.sort(function(a,b){
       if(sort==="priority")return priority(b).score-priority(a).score||
         String(b.addedAt||"").localeCompare(String(a.addedAt||""));
       if(sort==="company")return a.company.localeCompare(b.company);
@@ -227,11 +262,9 @@
   };
   const pipelineCount = function (stage) { return state.jobs.filter(function (j) { return j.stage === stage; }).length; };
   const renderOverview = function () {
-    $("statDiscovered").textContent = state.jobs.length;
     $("statSaved").textContent = pipelineCount("Saved") + pipelineCount("Review");
     $("statApplied").textContent = ["Applied","Interview","Offer","Rejected"].reduce(function (n,s) { return n + pipelineCount(s); },0);
     $("statInterviews").textContent = pipelineCount("Interview");
-    $("navJobsCount").textContent = state.jobs.length;
     const top = state.jobs.slice().sort(function (a,b) { return String(b.addedAt||"").localeCompare(String(a.addedAt||"")); }).slice(0,4);
     $("overviewJobs").innerHTML = top.length ? top.map(overviewRow).join("") : '<p class="muted">No opportunities yet. Add a job or import scan results.</p>';
     const total = STAGES.reduce(function (n,s) { return n + pipelineCount(s.name); },0);
@@ -258,15 +291,13 @@
     const jobs = visibleJobs();
     const showing=Math.min(jobs.length,discoverVisibleCount);
     $("jobsGrid").innerHTML = jobs.slice(0,showing).map(card).join("");
-    $("resultsCount").textContent = jobs.length + (jobs.length === 1 ? " job listing" : " job listings") +
-      (showing<jobs.length ? " · showing "+showing : "");
     $("emptyJobs").hidden = jobs.length !== 0;
     $("loadMoreJobs").hidden=showing>=jobs.length;
-    $("loadMoreJobs").textContent="Show more jobs ("+(jobs.length-showing)+" remaining)";
+    $("loadMoreJobs").textContent="Show more jobs";
     $("resetDiscoverFilters").hidden=!Boolean(
       $("jobSearch").value.trim() || $("sectorFilter").value ||
       $("categoryFilter").value || $("locationFilter").value ||
-      $("matchFilter").value!=="all" || $("sortFilter").value!=="newest"
+      $("matchFilter").value!=="all" || $("sortFilter").value!=="variety"
     );
     $("dataModeTag").textContent = state.mode === "demo" ? "Examples" : state.mode === "live" ? "Published vacancies" : "Your job list";
     $("dataModeTag").classList.toggle("real", state.mode !== "demo");
@@ -409,12 +440,12 @@
       const parsed = JSON.parse(await file.text());
       const raw = extractJobs(parsed);
       const seen = new Set();
-      const jobs = raw.slice(0,1000).map(normalise).filter(function (j) {
+      const jobs = raw.map(normalise).filter(function (j) {
         if (!j) return false;
         const key = j.url || (j.company + "/" + j.title + "/" + j.location).toLowerCase();
         if (seen.has(key)) return false;
         seen.add(key); return true;
-      }).slice(0,500);
+      });
       if (!jobs.length) throw new Error("No job records found. This file may be a summary-only scan receipt.");
       const keep = state.jobs.filter(function (j) { return !j.demo && !!j.stage; });
       const kept = new Map();
@@ -422,15 +453,13 @@
       jobs.forEach(function (j) { const key = j.url || (j.company + "/" + j.title + "/" + j.location).toLowerCase(); j.stage = kept.get(key) || ""; });
       const importedKeys = new Set(jobs.map(function (j) { return j.url || (j.company + "/" + j.title + "/" + j.location).toLowerCase(); }));
       const previousTrackedJobs = keep.filter(function (j) { return !importedKeys.has(j.url || (j.company + "/" + j.title + "/" + j.location).toLowerCase()); });
-      // Keep tracked roles when the incoming scan reaches the 500-job display cap.
-      const pinned = jobs.filter(function(j){return !!j.stage;}).concat(previousTrackedJobs);
-      state.jobs = jobs.filter(function(j){return !j.stage;})
-        .slice(0,Math.max(0,500-pinned.length)).concat(pinned).slice(0,500);
+      // Every imported job remains searchable; retain old tracked roles too.
+      state.jobs=jobs.concat(previousTrackedJobs);
       state.mode = "imported";
       state.importedAt = stamp();
-      log("Scan results imported", jobs.length + " unique job records from " + file.name);
-      save(); render(); $("importMessage").textContent = "Imported " + jobs.length + " jobs from " + file.name + " · not a live connection";
-      toast(jobs.length + " jobs imported"); showPage("discover");
+      log("Scan results imported", "Job listings imported from "+file.name);
+      save(); render(); $("importMessage").textContent="Job listings imported from "+file.name+" · not a live connection";
+      toast("Job listings imported"); showPage("discover");
     } catch (err) {
       $("importMessage").textContent = err.message || "Import failed.";
       toast("Import failed: " + (err.message || "invalid JSON"));
@@ -467,7 +496,7 @@
     $("sectorFilter").value="";
     $("locationFilter").value="";
     $("matchFilter").value="all";
-    $("sortFilter").value="newest";
+    $("sortFilter").value="variety";
     discoverVisibleCount=DISCOVER_PAGE_SIZE;
     renderDiscover();
   };
@@ -477,6 +506,17 @@
     discoverVisibleCount+=DISCOVER_PAGE_SIZE;
     renderDiscover();
   });
+  // Automatically reveal the next batch as users scroll. Keep the button
+  // available for keyboard, assistive technology and unsupported browsers.
+  if(typeof IntersectionObserver==="function"){
+    const moreObserver=new IntersectionObserver(function(entries){
+      if(entries.some(function(entry){return entry.isIntersecting;}) && !$("loadMoreJobs").hidden){
+        discoverVisibleCount+=DISCOVER_PAGE_SIZE;
+        renderDiscover();
+      }
+    },{rootMargin:"360px 0px"});
+    moreObserver.observe($("loadMoreJobs"));
+  }
   $("mobileMenu").addEventListener("click", function () {
     const open=$("sidebar").classList.toggle("open");
     $("mobileScrim").classList.toggle("show",open);
@@ -596,7 +636,8 @@
       const lastRun = runTime.toLocaleString(undefined,{dateStyle:"medium",timeStyle:"short"});
       const scan = feed.scan;
       const numErrors = Number(scan.error_count) || 0;
-      const summary = "Last published update: " + lastRun + " · " + (Number(scan.scanned) || 0) + " employer boards checked · " + (Number(scan.found) || 0) + " listings reviewed · " + numErrors + " unavailable sources";
+      const summary = "Last published update: " + lastRun +
+        (numErrors?" · Some employer boards were unavailable.":" · Employer boards scanned.");
       const feedAgeMs=Date.now()-runTime.getTime();
       const overdue=feedAgeMs>48*60*60*1000;
       const future=feedAgeMs<-(15*60*1000);
@@ -618,7 +659,7 @@
       const oldByKey = new Map(previous.map(function (j) { return [feedKey(j),j]; }));
       const seen = new Set();
       const cloud = [];
-      feed.jobs.slice(0,500).forEach(function (raw) {
+      feed.jobs.forEach(function (raw) {
         const job = normalise(raw);
         if (!job || !safeUrl(job.url)) return;
         const key = feedKey(job);
@@ -638,18 +679,15 @@
         return (j.manual || !!j.stage || (oldMode === "manual" && j.source !== "cloud")) && !seen.has(feedKey(j));
       });
       const isNewScan = state.feedGeneratedAt !== feed.generated_at;
-      // Untracked public jobs yield capacity first. Never silently discard
-      // saved applications because a fresh public scan fills the 500-job cap.
-      const pinned=cloud.filter(function(j){return !!j.stage;}).concat(savedLocal);
-      state.jobs=cloud.filter(function(j){return !j.stage;})
-        .slice(0,Math.max(0,500-pinned.length)).concat(pinned).slice(0,500);
+      // Keep every available public role plus the user's own manual/tracked jobs.
+      state.jobs=cloud.concat(savedLocal);
       state.mode = "live";
       state.feedGeneratedAt = feed.generated_at;
-      if (isNewScan) log("Employer listings updated", cloud.length + " job listings · " + numErrors + " source errors");
+      if (isNewScan) log("Employer listings updated", numErrors?"Some employer boards were unavailable":"Latest public employer-board update loaded");
       save(); render();
       showFeedStatus(overdue||future?"partial":scan.status,
-        cloud.length + (cloud.length === 1 ? " published vacancy" : " published vacancies") +
-        (overdue?" · feed overdue":future?" · timestamp inconsistent":scan.status==="partial"?" · some sources unavailable":""),
+        overdue?"Public postings · update overdue":future?"Public postings · check timestamp":
+          scan.status==="partial"?"Public postings · partial update":"Public employer postings",
         summary+(overdue?" · The feed is overdue.":future?" · Feed time needs checking.":""));
       if (requestedByUser) toast(overdue||future?"Listings loaded; verify freshness at employer sites":"Published job listings are up to date");
     } catch (error) {
@@ -696,24 +734,22 @@
     mergeRemoteTracking:function(rows){
       if(!Array.isArray(rows))return 0;
       let merged=0;
-      for(const raw of rows.slice(0,500)){
+      const byKey=new Map(state.jobs.filter(j=>!j.demo).map(j=>[privateJobKey(j),j]));
+      for(const raw of rows){
         if(!raw || !STAGES.some(s=>s.name===raw.stage))continue;
         const title=str(raw.title).slice(0,160),company=str(raw.company).slice(0,130);
         const key=str(raw.job_key).slice(0,1500);
         if(!title || !company || key.length<6)continue;
         const url=safeUrl(raw.job_url);
-        const existing=state.jobs.find(j=>!j.demo && privateJobKey(j)===key);
+        const existing=byKey.get(key);
         if(existing){existing.stage=raw.stage;merged++;continue;}
-        if(state.jobs.length>=500){
-          const idx=state.jobs.findIndex(j=>!j.stage && !j.manual);
-          if(idx<0)break;
-          state.jobs.splice(idx,1);
-        }
-        state.jobs.push({
+        const restored={
           id:newId(),title,company,location:str(raw.location).slice(0,160)||"Not specified",
           url,stage:raw.stage,skills:[],description:"",demo:false,manual:true,
           source:"cloud-tracking",addedAt:str(raw.updated_at)||stamp()
-        });
+        };
+        state.jobs.push(restored);
+        byKey.set(key,restored);
         merged++;
       }
       if(merged){
