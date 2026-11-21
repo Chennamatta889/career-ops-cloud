@@ -115,6 +115,16 @@
         "anonymous_select": false,
         "private_ai_usage_select_for_anon_or_authenticated": false
       }
+    },
+    {
+      "phase": 11,
+      "status": "in_progress",
+      "note": "Security hardening PR #16 merged; CI 44938224648 and deployment 44938248227 passed. Live QA 44938346422 failed because its assertion incorrectly assumed at least one current ServiceNow vacancy in the India-only 30-day feed. Fix QA without inventing jobs; rerun verification before completion.",
+      "run_ids": [
+        44938224648,
+        44938248227,
+        44938346422
+      ]
     }
   ]
 }
