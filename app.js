@@ -195,6 +195,9 @@
     const sort=$("sortFilter").value;
     const priorityFilter=$("matchFilter").value;
     const jobs=state.jobs.filter(function(job){
+      // The site is temporarily India-only. Do not expose previously imported
+      // overseas roles here; they remain intact in My applications.
+      if(window.CareerOpsIndiaJobs?.isIndiaLocation?.(job.location)!==true)return false;
       // Fall back to strict role-field matching if a browser blocks the small
       // relevance module; never let a missing script blank the job grid.
       const result=searchApi?.evaluate?.(job,query,{includeDescription})||{
@@ -209,8 +212,7 @@
       const kind=jobCategory(job);
       const categoryOk=!category||kind===category;
       const sectorOk=!sector||(sector==="it" ? kind==="IT & Software" : kind!=="IT & Software");
-      const locationOk=!location||loc.includes(location)||
-        (location==="india" && /india|hyderabad|bengaluru|bangalore|mumbai|delhi|pune|chennai|noida|gurugram|gurgaon|kolkata|ahmedabad|kochi/.test(loc))||
+      const locationOk=!location||location==="india"||loc.includes(location)||
         (location==="bengaluru"&&loc.includes("bangalore"));
       const experienceOk=!experience||window.CareerOpsJobText?.experienceMatches?.(
         jobExperience(job)?.label||"",experience);
@@ -338,7 +340,9 @@
     $("statSaved").textContent = pipelineCount("Saved") + pipelineCount("Review");
     $("statApplied").textContent = ["Applied","Interview","Offer","Rejected"].reduce(function (n,s) { return n + pipelineCount(s); },0);
     $("statInterviews").textContent = pipelineCount("Interview");
-    const top = state.jobs.slice().sort(function (a,b) { return String(b.addedAt||"").localeCompare(String(a.addedAt||"")); }).slice(0,4);
+    const top = state.jobs.filter(j=>
+      window.CareerOpsIndiaJobs?.isIndiaLocation?.(j.location)===true
+    ).sort(function (a,b) { return String(b.addedAt||"").localeCompare(String(a.addedAt||"")); }).slice(0,4);
     $("overviewJobs").innerHTML = top.length ? top.map(overviewRow).join("") : '<p class="muted">No opportunities yet. Add a job or import scan results.</p>';
     const total = STAGES.reduce(function (n,s) { return n + pipelineCount(s.name); },0);
     $("pipelineChart").innerHTML = STAGES.map(function (s) { const n = pipelineCount(s.name); return n ? '<span class="pipeline-bar" style="background:' + s.color + ';flex:' + n + '"></span>' : ''; }).join("");
@@ -377,7 +381,8 @@
     $("jobsGrid").innerHTML = jobs.slice(0,showing).map(card).join("");
     $("emptyJobs").hidden = jobs.length !== 0;
     const hasExtraFilters=Boolean($("sectorFilter").value||$("categoryFilter").value||
-      $("locationFilter").value||$("experienceFilter").value||$("matchFilter").value!=="all");
+      ($("locationFilter").value&&$("locationFilter").value!=="india")||
+      $("experienceFilter").value||$("matchFilter").value!=="all");
     $("emptyJobsHint").textContent=hasExtraFilters?
       "No jobs match this combination. Select Reset search & filters, then try your keyword again.":
       $("jobSearch").value.trim()&&!$("searchDescriptions").checked?
@@ -387,7 +392,7 @@
     $("loadMoreJobs").textContent="Show more jobs";
     $("resetDiscoverFilters").hidden=!Boolean(
       $("jobSearch").value.trim() || $("sectorFilter").value ||
-      $("categoryFilter").value || $("locationFilter").value || $("experienceFilter").value ||
+      $("categoryFilter").value || ($("locationFilter").value&&$("locationFilter").value!=="india") || $("experienceFilter").value ||
       $("searchDescriptions").checked ||
       $("matchFilter").value!=="all" || $("sortFilter").value!=="variety"
     );
@@ -721,7 +726,7 @@
     $("searchDescriptions").checked=false;
     $("categoryFilter").value="";
     $("sectorFilter").value="";
-    $("locationFilter").value="";
+    $("locationFilter").value="india";
     $("experienceFilter").value="";
     $("matchFilter").value="all";
     $("sortFilter").value="variety";
@@ -939,8 +944,11 @@
       const feed = await response.json();
       // A previous account's in-flight fetch must not overwrite the new account.
       if(startingEpoch!==accountEpoch)return;
-      if (!feed || feed.schema !== "careerops.public-jobs.v1" || !Array.isArray(feed.jobs)
-        || !feed.scan || !["success","partial","failed"].includes(feed.scan.status)) {
+      if (!feed || feed.schema !== "careerops.public-jobs.v1" ||
+        feed.market!=="IN" || feed.scan?.india_only!==true ||
+        !Array.isArray(feed.jobs) ||
+        feed.jobs.some(j=>window.CareerOpsIndiaJobs?.isIndiaLocation?.(j?.location)!==true) ||
+        !feed.scan || !["success","partial","failed"].includes(feed.scan.status)) {
         throw new Error("Unsupported scanner feed format");
       }
       const runTime = new Date(feed.generated_at);
