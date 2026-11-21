@@ -445,3 +445,20 @@ test("Recruitee malformed responses do not generate invented vacancies",async()=
   await assert.rejects(scanBoard(source,async()=>fakeResponse({jobs:[]})),/Recruitee public offers response is invalid/);
   await assert.rejects(scanBoard(source,async()=>({ok:false,status:403})),/HTTP 403/);
 });
+
+test("public fresher and graduate job labels are derived only from title or genuine employer experience",async()=>{
+  const company={provider:"greenhouse",slug:"examplefreshers",name:"Example Employer"};
+  const now=new Date("2026-11-21T12:00:00Z");
+  const feed=await runScan({now,sources:[company],fetchImpl:async()=>fakeResponse({jobs:[
+    {id:90011,title:"Graduate Engineer Trainee",location:{name:"Bengaluru, India"},first_published:"2026-11-18T10:00:00Z"},
+    {id:90012,title:"Sales Manager",location:{name:"Hyderabad, India"},first_published:"2026-11-18T10:00:00Z",
+      content:"<p>Required 5+ years of sales experience</p>"},
+    {id:90013,title:"HR Internship",location:{name:"Pune, India"},first_published:"2026-11-20T10:00:00Z"},
+    {id:90014,title:"Old Apprentice",location:{name:"Hyderabad, India"},first_published:"2026-05-03T10:00:00Z"}
+  ]})});
+  assert.equal(feed.jobs.length,3);
+  assert.equal(feed.jobs.filter(j=>j.entry_level==="fresher").length,2);
+  assert.equal(feed.jobs.find(j=>j.title==="Sales Manager").entry_level,"unknown");
+  assert.equal(feed.scan.outdated_excluded,1);
+  assert.ok(feed.jobs.every(j=>j.freshness_date>="2026-10-22"));
+});
