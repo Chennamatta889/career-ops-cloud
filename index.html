@@ -13,15 +13,15 @@
   <meta name="description" content="Discover IT and non-IT opportunities, manage your applications, and prepare tailored documents in one secure career workspace.">
   <title>Overview | Career-Ops</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='17' fill='%230b1425'/%3E%3Cpath d='m17 34 11 11 20-26' fill='none' stroke='%2342dfb6' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="./styles.css?v=20261121-experience-filter-v1">
+  <link rel="stylesheet" href="./styles.css?v=20261121-application-confirmation-v1">
   <script defer src="./match-engine.js"></script>
   <script defer src="./job-categories.js"></script>
   <script defer src="./job-text.js?v=20261121-experience-filter-v1"></script>
   <script defer src="./careerops-config.js"></script>
-  <script defer src="./app.js?v=20261121-experience-filter-v1"></script>
+  <script defer src="./app.js?v=20261121-application-confirmation-v1"></script>
   <script defer src="./resume-parser.js"></script>
   <script defer src="./ai-studio.js"></script>
-  <script defer src="./private-workspace.js"></script>
+  <script defer src="./private-workspace.js?v=20261121-application-confirmation-v1"></script>
   <script defer src="./health-check.js"></script>
 </head>
 <body>
@@ -86,7 +86,7 @@
       </section>
       <section class="page" id="page-applications">
         <div class="page-heading"><div><div class="eyebrow">TRACK</div><h1>Your application <span>pipeline.</span></h1><p>Move jobs through your own workflow. No applications are submitted from this UI.</p></div><button class="btn btn-outline" data-nav="discover">Browse jobs ↗</button></div>
-        <div class="notice notice-compact"><span class="notice-icon">ⓘ</span><div>Statuses you change here are local tracking records, not confirmation from any employer.</div></div>
+        <div class="notice notice-compact"><span class="notice-icon">ⓘ</span><div>Opened means you visited the employer page; Applied means you explicitly confirmed submitting. These are your records, not employer-verified outcomes.</div></div>
         <div class="panel phase4-sync">
           <div><h2>Private application tracking</h2><p id="cloudTrackingStatus" role="status">Sign in with Google under AI Studio to sync your saved jobs across devices.</p></div>
           <div class="phase4-actions"><button class="btn btn-outline" id="cloudRefreshTracking" type="button">Sync tracked jobs</button>
@@ -222,8 +222,23 @@
     </main>
   </div>
 </div>
-<dialog class="job-dialog" id="jobDialog" aria-labelledby="dialogTitle"><div class="dialog-inner"><button class="dialog-close" id="closeDialog" aria-label="Close dialog">×</button><div class="eyebrow" id="dialogEyebrow">OPPORTUNITY</div><h2 id="dialogTitle">Job details</h2><div class="dialog-meta" id="dialogMeta"></div><p class="dialog-experience" id="dialogExperience"></p><p class="dialog-desc job-description-readable" id="dialogDescription"></p><p class="dialog-description-note" id="dialogDescriptionNote" hidden></p><div class="chip-wrap" id="dialogSkills"></div><div class="priority-explanation" id="matchExplanation" aria-label="Priority explanation"></div><div class="dialog-bottom"><div id="dialogSource"></div><div class="dialog-actions"><button class="btn btn-outline" id="dialogSave">Save job</button><button class="btn btn-outline" id="dialogAI" type="button">Review with AI</button><a class="btn btn-outline" id="dialogReport" href="#" hidden>Email a listing issue</a><a class="btn btn-primary" id="dialogLink" href="#" target="_blank" rel="noopener noreferrer" hidden>Open original posting ↗</a></div></div></div></dialog>
+<dialog class="job-dialog" id="jobDialog" aria-labelledby="dialogTitle"><div class="dialog-inner"><button class="dialog-close" id="closeDialog" aria-label="Close dialog">×</button><div class="eyebrow" id="dialogEyebrow">OPPORTUNITY</div><h2 id="dialogTitle">Job details</h2><div class="dialog-meta" id="dialogMeta"></div><p class="dialog-tracking" id="dialogTracking"></p><p class="dialog-experience" id="dialogExperience"></p><p class="dialog-desc job-description-readable" id="dialogDescription"></p><p class="dialog-description-note" id="dialogDescriptionNote" hidden></p><div class="chip-wrap" id="dialogSkills"></div><div class="priority-explanation" id="matchExplanation" aria-label="Priority explanation"></div><div class="dialog-bottom"><div id="dialogSource"></div><div class="dialog-actions"><button class="btn btn-outline" id="dialogSave">Save job</button><button class="btn btn-outline" id="dialogConfirmApplied" type="button">Yes, I applied</button><button class="btn btn-outline" id="dialogAI" type="button">Review with AI</button><a class="btn btn-outline" id="dialogReport" href="#" hidden>Email a listing issue</a><a class="btn btn-primary" id="dialogLink" href="#" data-action="open-listing" target="_blank" rel="noopener noreferrer" hidden>Open original posting ↗</a></div></div></div></dialog>
 <dialog class="job-dialog add-dialog" id="addDialog" aria-labelledby="addDialogTitle"><form id="addJobForm" class="dialog-inner"><button type="button" class="dialog-close" id="closeAddDialog" aria-label="Close dialog">×</button><div class="eyebrow">SAVE A ROLE</div><h2 id="addDialogTitle">Add a job listing</h2><p class="dialog-desc">Save a job you found on an employer site. Add the official posting URL when available.</p><div class="form-stack"><label>Job title *<input name="title" required maxlength="120" placeholder="Sales Associate, Accountant, Software Engineer..."></label><label>Company *<input name="company" required maxlength="100" placeholder="Company name"></label><label>Location<input name="location" maxlength="100" placeholder="Hyderabad / Remote"></label><label>Job posting URL<input name="url" type="url" placeholder="https://careers.example.com/..."></label><label>Skills (comma-separated)<input name="skills" maxlength="300" placeholder="Excel, Communication, SQL, Sales..."></label><label>Notes<textarea name="description" rows="3" maxlength="2000" placeholder="Why this role is interesting..."></textarea></label></div><div class="dialog-bottom"><span class="muted small">Saved in this browser; syncs to your private account when signed in</span><button class="btn btn-primary" type="submit">Add to workspace</button></div></form></dialog>
+<section class="application-followup" id="applicationFollowup" role="region" aria-labelledby="confirmApplicationTitle" hidden>
+  <button type="button" id="closeApplicationFollowup" class="application-followup-close" aria-label="Dismiss application confirmation">×</button>
+  <div class="eyebrow">APPLICATION TRACKING</div>
+  <h2 id="confirmApplicationTitle">Did you successfully submit an application?</h2>
+  <p id="confirmApplicationJob" class="application-followup-job"></p>
+  <p>Opening the employer listing does not confirm an application. Select Yes only if you submitted it.</p>
+  <label for="confirmAppliedDate">Application date</label>
+  <input id="confirmAppliedDate" type="date" min="2000-01-01" aria-describedby="applicationFollowupError">
+  <p id="applicationFollowupError" class="application-followup-error" role="alert"></p>
+  <div class="application-followup-actions">
+    <button id="confirmApplied" type="button" class="btn btn-primary">Yes, I applied</button>
+    <button id="confirmNotYet" type="button" class="btn btn-outline">Not yet</button>
+  </div>
+  <p class="application-followup-note">Your confirmation is stored in My applications; employer verification is not implied.</p>
+</section>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
