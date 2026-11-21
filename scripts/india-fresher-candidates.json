@@ -8,140 +8,160 @@
       "slug": "paytm",
       "name": "Paytm",
       "sector": "Technology & Services",
-      "reference_url": "https://jobs.lever.co/paytm/0ecd9d93-e4f3-4dd0-a22e-852fec9b6e02"
+      "reference_url": "https://jobs.lever.co/paytm/0ecd9d93-e4f3-4dd0-a22e-852fec9b6e02",
+      "focus": "fresher"
     },
     {
       "provider": "lever",
       "slug": "paytmpayments",
       "name": "Paytm Payments Services",
       "sector": "Technology & Services",
-      "reference_url": "https://jobs.lever.co/paytmpayments/72d00195-7eeb-41df-8d67-e438c898fd92"
+      "reference_url": "https://jobs.lever.co/paytmpayments/72d00195-7eeb-41df-8d67-e438c898fd92",
+      "focus": "fresher"
     },
     {
       "provider": "lever",
       "slug": "aleph",
       "name": "Aleph",
       "sector": "Technology & Services",
-      "reference_url": "https://jobs.lever.co/aleph/bbd1e11d-2b60-4edf-839e-ead57efcda8a"
+      "reference_url": "https://jobs.lever.co/aleph/bbd1e11d-2b60-4edf-839e-ead57efcda8a",
+      "focus": "fresher"
     },
     {
       "provider": "greenhouse",
       "slug": "point72",
       "name": "Point72",
       "sector": "Technology & Services",
-      "reference_url": "https://job-boards.greenhouse.io/point72/jobs/8893939002"
+      "reference_url": "https://job-boards.greenhouse.io/point72/jobs/8893939002",
+      "focus": "fresher"
     },
     {
       "provider": "greenhouse",
       "slug": "agoda",
       "name": "Agoda",
       "sector": "Technology & Services",
-      "reference_url": "https://job-boards.greenhouse.io/agoda/jobs/6323041"
+      "reference_url": "https://job-boards.greenhouse.io/agoda/jobs/6323041",
+      "focus": "fresher"
     },
     {
       "provider": "greenhouse",
       "slug": "karya",
       "name": "Karya",
       "sector": "Technology & Services",
-      "reference_url": "https://job-boards.greenhouse.io/karya"
+      "reference_url": "https://job-boards.greenhouse.io/karya",
+      "focus": "fresher"
     },
     {
       "provider": "greenhouse",
       "slug": "zinnov",
       "name": "Zinnov",
       "sector": "Technology & Services",
-      "reference_url": "https://job-boards.greenhouse.io/zinnov/jobs/4412579009"
+      "reference_url": "https://job-boards.greenhouse.io/zinnov/jobs/4412579009",
+      "focus": "fresher"
     },
     {
       "provider": "greenhouse",
       "slug": "formaaiinc3",
       "name": "Forma.ai India Campus",
       "sector": "Technology & Services",
-      "reference_url": "https://job-boards.greenhouse.io/formaaiinc3"
+      "reference_url": "https://job-boards.greenhouse.io/formaaiinc3",
+      "focus": "fresher"
     },
     {
       "provider": "lever",
       "slug": "fampay",
       "name": "FamPay",
       "sector": "Technology & Services",
-      "reference_url": "https://jobs.lever.co/fampay"
+      "reference_url": "https://jobs.lever.co/fampay",
+      "focus": "fresher"
     },
     {
       "provider": "greenhouse",
       "slug": "razorpaysoftwareprivatelimited",
       "name": "Razorpay",
       "sector": "Technology & Services",
-      "reference_url": "https://job-boards.greenhouse.io/razorpaysoftwareprivatelimited"
+      "reference_url": "https://job-boards.greenhouse.io/razorpaysoftwareprivatelimited",
+      "focus": "fresher"
     },
     {
       "provider": "ashby",
       "slug": "bolna",
       "name": "Bolna",
       "sector": "Technology & Services",
-      "reference_url": "https://jobs.ashbyhq.com/bolna"
+      "reference_url": "https://jobs.ashbyhq.com/bolna",
+      "focus": "fresher"
     },
     {
       "provider": "lever",
       "slug": "weekdayworks",
       "name": "Weekday",
       "sector": "Technology & Services",
-      "reference_url": "https://jobs.lever.co/weekdayworks"
+      "reference_url": "https://jobs.lever.co/weekdayworks",
+      "focus": "fresher"
     },
     {
       "provider": "smartrecruiters",
       "slug": "Konecranes",
       "name": "Konecranes",
       "sector": "Technology & Services",
-      "reference_url": "https://jobs.smartrecruiters.com/Konecranes"
+      "reference_url": "https://jobs.smartrecruiters.com/Konecranes",
+      "focus": "fresher"
     },
     {
       "provider": "ashby",
       "slug": "amperos",
       "name": "Amperos",
       "sector": "Technology & Services",
-      "reference_url": "https://jobs.ashbyhq.com/amperos"
+      "reference_url": "https://jobs.ashbyhq.com/amperos",
+      "focus": "fresher"
     },
     {
       "provider": "smartrecruiters",
       "slug": "CarousellGroup",
       "name": "Carousell Group",
       "sector": "Technology & Services",
-      "reference_url": "https://jobs.smartrecruiters.com/CarousellGroup"
+      "reference_url": "https://jobs.smartrecruiters.com/CarousellGroup",
+      "focus": "fresher"
     },
     {
       "provider": "ashby",
       "slug": "atlan",
       "name": "Atlan",
       "sector": "Technology & Services",
-      "reference_url": "https://jobs.ashbyhq.com/atlan/0b543ef7-92e6-4400-8480-20fbb9069323"
+      "reference_url": "https://jobs.ashbyhq.com/atlan/0b543ef7-92e6-4400-8480-20fbb9069323",
+      "focus": "fresher"
     },
     {
       "provider": "lever",
       "slug": "Sprinto",
       "name": "Sprinto",
       "sector": "Technology & Services",
-      "reference_url": "https://jobs.lever.co/Sprinto/a9ee3743-ad31-4df4-a334-d918a37c619b"
+      "reference_url": "https://jobs.lever.co/Sprinto/a9ee3743-ad31-4df4-a334-d918a37c619b",
+      "focus": "fresher"
     },
     {
       "provider": "greenhouse",
       "slug": "rubrik",
       "name": "Rubrik",
       "sector": "Technology & Services",
-      "reference_url": "https://job-boards.greenhouse.io/rubrik"
+      "reference_url": "https://job-boards.greenhouse.io/rubrik",
+      "focus": "fresher"
     },
     {
       "provider": "ashby",
       "slug": "sentilink",
       "name": "SentiLink",
       "sector": "Technology & Services",
-      "reference_url": "https://jobs.ashbyhq.com/sentilink/21b8f8a8-75b2-44de-92e5-6ef2b58b4c71"
+      "reference_url": "https://jobs.ashbyhq.com/sentilink/21b8f8a8-75b2-44de-92e5-6ef2b58b4c71",
+      "focus": "fresher"
     },
     {
       "provider": "greenhouse",
       "slug": "graphcore",
       "name": "Graphcore",
       "sector": "Technology & Services",
-      "reference_url": "https://job-boards.greenhouse.io/graphcore"
+      "reference_url": "https://job-boards.greenhouse.io/graphcore",
+      "focus": "fresher"
     }
   ]
 }
