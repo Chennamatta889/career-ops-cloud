@@ -184,7 +184,10 @@
       api?.experienceRequirement?.(job.description) || null;
   };
   const visibleJobs = function () {
-    const searchTerms=normalizeSearch($("jobSearch").value).split(" ").filter(Boolean);
+    const query=$("jobSearch").value;
+    const includeDescription=$("searchDescriptions").checked;
+    const searchApi=window.CareerOpsJobSearch;
+    const relevanceScores=new Map();
     const category=$("categoryFilter").value;
     const sector=$("sectorFilter").value;
     const location=$("locationFilter").value.toLowerCase();
@@ -192,8 +195,9 @@
     const sort=$("sortFilter").value;
     const priorityFilter=$("matchFilter").value;
     const jobs=state.jobs.filter(function(job){
-      const all=normalizeSearch([job.title,job.company,job.location,job.description,job.department,jobCategory(job)]
-        .concat(job.skills||[]).join(" "));
+      const result=searchApi.evaluate(job,query,{includeDescription});
+      if(!result.matches)return false;
+      relevanceScores.set(job,result.score);
       const loc=String(job.location||"").toLowerCase();
       const kind=jobCategory(job);
       const categoryOk=!category||kind===category;
@@ -207,8 +211,11 @@
         const points=priority(job).score;
         return priorityFilter==="below"?points<50:points>=Number(priorityFilter);
       }();
-      return searchTerms.every(function(term){return all.includes(term);})&&categoryOk&&sectorOk&&locationOk&&experienceOk&&priorityOk;
+      return categoryOk&&sectorOk&&locationOk&&experienceOk&&priorityOk;
     });
+    const byRelevance=function(a,b){
+      return query.trim()?((relevanceScores.get(b)||0)-(relevanceScores.get(a)||0)):0;
+    };
     if(sort==="variety"){
       // Mix job types instead of letting high-volume IT boards dominate the first cards.
       jobs.sort(function(a,b){return String(b.addedAt||"").localeCompare(String(a.addedAt||""));});
@@ -232,9 +239,12 @@
           }
         }
       }
-      return ordered;
+      // A role title match must outrank an incidental employer-description mention.
+      return query.trim()?ordered.sort(byRelevance):ordered;
     }
     return jobs.sort(function(a,b){
+      const relevance=byRelevance(a,b);
+      if(relevance)return relevance;
       if(sort==="priority")return priority(b).score-priority(a).score||
         String(b.addedAt||"").localeCompare(String(a.addedAt||""));
       if(sort==="company")return a.company.localeCompare(b.company);
@@ -303,12 +313,16 @@
     const experience=jobExperience(j);
     const experienceBadge='<span class="job-experience-badge" title="Based on an explicit employer requirement; verify the original posting">Experience: '+
       escapeHtml(experience?.label||"Not specified")+'</span>';
+    const descriptionOnly=Boolean($("searchDescriptions").checked&&$("jobSearch").value.trim()&&
+      window.CareerOpsJobSearch.evaluate(j,$("jobSearch").value,{includeDescription:true}).source==="description");
+    const searchNote=descriptionOnly?
+      '<span class="description-search-tag" title="This keyword appears in the description, not the job title or core fields">Mentioned in description</span>':"";
     const details = '<button class="text-link secondary-link" type="button" data-action="details" data-id="' + escapeHtml(j.id) + '">View details</button>';
     const aiReview = '<button class="text-link open-job-link" type="button" data-action="ai" data-id="' + escapeHtml(j.id) + '">Review with AI</button>';
     const open = url
       ? '<a class="text-link open-job-link" data-action="open-listing" data-id="' + escapeHtml(j.id) + '" href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer" aria-label="Open job listing for ' + escapeHtml(j.title) + ' at ' + escapeHtml(j.company) + '">Open listing ↗</a>'
       : '<span class="no-url-label">' + (j.demo ? 'Sample job — no link' : 'Posting link unavailable') + '</span>';
-    return '<article class="job-card"><div class="job-card-top"><div class="company-symbol">' + escapeHtml(companyInitials(j.company)) + '</div><button class="save-button ' + (j.stage ? 'saved' : '') + '" data-action="save" data-id="' + escapeHtml(j.id) + '">' + (j.stage ? '✓ Tracking' : '+ Save') + '</button></div>' + ranking + '<h3>' + escapeHtml(j.title) + '</h3><p class="company-line">' + escapeHtml(j.company) + ' · ' + escapeHtml(j.location) + '</p><p class="description">' + escapeHtml(readableJobText(j.description,220) || 'A description is not available in this listing. Open the employer website for details.') + '</p><div class="chip-wrap"><span class="skill-chip category-chip">' + escapeHtml(categoryName) + '</span>' + experienceBadge + chips(j.skills) + '</div><div class="card-tracking-summary">'+trackingSummary(j).map(function(value){return '<span>'+escapeHtml(value)+'</span>';}).join("")+'</div>' +
+    return '<article class="job-card"><div class="job-card-top"><div class="company-symbol">' + escapeHtml(companyInitials(j.company)) + '</div><button class="save-button ' + (j.stage ? 'saved' : '') + '" data-action="save" data-id="' + escapeHtml(j.id) + '">' + (j.stage ? '✓ Tracking' : '+ Save') + '</button></div>' + ranking + '<h3>' + escapeHtml(j.title) + '</h3><p class="company-line">' + escapeHtml(j.company) + ' · ' + escapeHtml(j.location) + '</p><p class="description">' + escapeHtml(readableJobText(j.description,220) || 'A description is not available in this listing. Open the employer website for details.') + '</p><div class="chip-wrap"><span class="skill-chip category-chip">' + escapeHtml(categoryName) + '</span>' + experienceBadge + searchNote + chips(j.skills) + '</div><div class="card-tracking-summary">'+trackingSummary(j).map(function(value){return '<span>'+escapeHtml(value)+'</span>';}).join("")+'</div>' +
       (listingNotice(j)?'<p class="listing-health-notice" role="status">'+escapeHtml(listingNotice(j))+'</p>':"")+
       '<div class="card-footer"><span class="job-date">' + escapeHtml(jobSource(j)) + '</span><div class="card-action-group">' + details + aiReview + open + '</div></div></article>';
   };
@@ -344,11 +358,15 @@
     const showing=Math.min(jobs.length,discoverVisibleCount);
     $("jobsGrid").innerHTML = jobs.slice(0,showing).map(card).join("");
     $("emptyJobs").hidden = jobs.length !== 0;
+    $("emptyJobsHint").textContent=Boolean($("jobSearch").value.trim()&&!$("searchDescriptions").checked)?
+      "No matching job titles, companies or skills. Enable Include job descriptions to broaden your search.":
+      "Try another filter, or add an opportunity from a career portal.";
     $("loadMoreJobs").hidden=showing>=jobs.length;
     $("loadMoreJobs").textContent="Show more jobs";
     $("resetDiscoverFilters").hidden=!Boolean(
       $("jobSearch").value.trim() || $("sectorFilter").value ||
       $("categoryFilter").value || $("locationFilter").value || $("experienceFilter").value ||
+      $("searchDescriptions").checked ||
       $("matchFilter").value!=="all" || $("sortFilter").value!=="variety"
     );
     $("dataModeTag").textContent = state.mode === "demo" ? "Examples" : state.mode === "live" ? "Published vacancies" : "Your job list";
@@ -670,7 +688,7 @@
   document.addEventListener("change", function (e) {
     if (e.target.matches("[data-stage-id]")) setStage(e.target.getAttribute("data-stage-id"), e.target.value);
   });
-  ["jobSearch","sectorFilter","categoryFilter","locationFilter","experienceFilter","matchFilter","sortFilter"].forEach(function (id) {
+  ["jobSearch","sectorFilter","categoryFilter","locationFilter","experienceFilter","matchFilter","sortFilter","searchDescriptions"].forEach(function (id) {
     $(id).addEventListener(id==="jobSearch"?"input":"change",function(){
       discoverVisibleCount=DISCOVER_PAGE_SIZE;
       renderDiscover();
@@ -678,6 +696,7 @@
   });
   const resetDiscovery = function(){
     $("jobSearch").value="";
+    $("searchDescriptions").checked=false;
     $("categoryFilter").value="";
     $("sectorFilter").value="";
     $("locationFilter").value="";
