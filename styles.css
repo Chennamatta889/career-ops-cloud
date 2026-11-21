@@ -18,3 +18,12 @@
 .feed-connect button{flex:none}
 #page-overview>.notice{margin-top:0}
 @media(max-width:600px){.feed-connect{align-items:flex-start;flex-wrap:wrap}.feed-connect button{margin-left:23px}}
+
+/* Job listing navigation: never display a link without a verified URL. */
+[hidden] { display:none !important; }
+.card-action-group{display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap}
+.secondary-link{color:#aac2d1}
+.open-job-link{white-space:nowrap}
+.no-url-label{font-size:10px;color:#8c9cb1;white-space:nowrap}
+.dialog-bottom #dialogSource{max-width:260px;color:#9fb4c8;font-size:11px;line-height:1.65}
+@media(max-width:520px){.card-action-group{width:100%;justify-content:flex-start}.card-footer{align-items:flex-start;flex-direction:column;gap:10px}}
