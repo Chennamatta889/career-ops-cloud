@@ -1,0 +1,35 @@
+name: Phase 08 real-browser website QA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/browser-live-qa.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: career-ops-live-browser-qa
+  cancel-in-progress: true
+
+jobs:
+  real-browser-qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out Career-Ops
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install pinned Playwright and isolated Chromium
+        run: |
+          npm install --no-save --package-lock=false --ignore-scripts --no-audit --no-fund playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Test the deployed site in real desktop and mobile browsers
+        env:
+          CAREEROPS_LIVE_ORIGIN: https://chennamatta889.github.io
+        run: node scripts/browser-live-smoke.mjs
