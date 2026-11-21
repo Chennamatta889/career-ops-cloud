@@ -7,6 +7,12 @@ on:
       - 'scripts/universal-job-scan.test.mjs'
       - 'scripts/universal-job-sources.json'
       - 'job-search.js'
+      - 'india-jobs.js'
+      - 'scripts/india-jobs.test.cjs'
+      - 'scripts/guard-public-feed.mjs'
+      - 'scripts/guard-public-feed.test.mjs'
+      - 'scripts/navigation-ui.test.cjs'
+      - 'app.js'
       - 'external-job-search.js'
       - 'scripts/external-job-search.test.cjs'
       - 'scripts/enterprise-careers.test.cjs'
@@ -22,6 +28,7 @@ on:
       - 'fix/servicenow-smartrecruiters-india-20261121'
       - 'feat/india-job-portals-workable-20261121'
       - 'fix/india-source-release-tests-20261121'
+      - 'feat/india-only-job-discovery-20261121'
 
 permissions:
   contents: read
@@ -40,6 +47,9 @@ jobs:
           node --check scripts/universal-job-scan.mjs
           node --check scripts/universal-job-scan.test.mjs
           node --check job-search.js
+          node --check india-jobs.js
+          node --check scripts/guard-public-feed.mjs
+          node --check app.js
           node --check external-job-search.js
           node --check scripts/job-search.test.cjs
-          node --test scripts/universal-job-scan.test.mjs scripts/job-search.test.cjs scripts/external-job-search.test.cjs scripts/ai-studio.test.cjs scripts/enterprise-careers.test.cjs
+          node --test scripts/universal-job-scan.test.mjs scripts/india-jobs.test.cjs scripts/guard-public-feed.test.mjs scripts/navigation-ui.test.cjs scripts/job-search.test.cjs scripts/external-job-search.test.cjs scripts/ai-studio.test.cjs scripts/enterprise-careers.test.cjs
