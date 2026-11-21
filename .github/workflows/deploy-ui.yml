@@ -14,6 +14,7 @@ on:
       - careerops-config.js
       - scripts/ai-studio.test.cjs
       - scripts/resume-parser.test.cjs
+      - scripts/resume-upload-ui.test.cjs
       - scripts/job-fetch.test.mjs
       - scripts/match-engine.test.cjs
       - scripts/export-scan-feed.mjs
@@ -182,7 +183,7 @@ jobs:
           node --check resume-parser.js
           node --check supabase/functions/careerops-ai-review/job-fetch.mjs
           node --check careerops-config.js
-          node --test scripts/export-scan-feed.test.mjs scripts/match-engine.test.cjs scripts/ai-studio.test.cjs scripts/resume-parser.test.cjs scripts/job-fetch.test.mjs
+          node --test scripts/export-scan-feed.test.mjs scripts/match-engine.test.cjs scripts/ai-studio.test.cjs scripts/resume-parser.test.cjs scripts/resume-upload-ui.test.cjs scripts/job-fetch.test.mjs
 
       - name: Scan public job listings
         if: steps.upstream.outcome == 'success' && steps.scanner_dependencies.outcome == 'success'
