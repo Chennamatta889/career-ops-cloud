@@ -20,36 +20,52 @@ function date(value){
   const parsed=new Date(value);
   return Number.isFinite(parsed.getTime())?parsed.toISOString().slice(0,10):null;
 }
+// Display ISO country names for discover's India location filter; no inferred location.
+function smartRecruitersLocation(location){
+  if(!location || typeof location!=="object")return "Not specified";
+  const code=clean(location.country,3).toUpperCase();
+  const country=({IN:"India",US:"United States",GB:"United Kingdom",
+    CA:"Canada",AU:"Australia",DE:"Germany",FR:"France",SG:"Singapore"})[code]||code;
+  return clean([location.remote?"Remote":null,location.city,location.region,country]
+    .filter(value=>typeof value==="string"&&value.trim()).join(", "),160)||"Not specified";
+}
 function assertSource(source){
-  if(!source || !["greenhouse","ashby","lever"].includes(source.provider) ||
+  if(!source || !["greenhouse","ashby","lever","smartrecruiters"].includes(source.provider) ||
     !/^[a-zA-Z0-9_-]{2,90}$/.test(source.slug) || !clean(source.name,120))
     throw Error("Invalid public employer board");
 }
 function normalize(source,job){
-  if(!job || source.provider==="ashby"&&job.isListed===false)return null;
+  if(!job || source.provider==="ashby"&&job.isListed===false ||
+    source.provider==="smartrecruiters"&&job.active===false)return null;
   const rawId=String(job.id||"");
   if(source.provider==="greenhouse"?!/^\d{3,18}$/.test(rawId):
       !/^[A-Za-z0-9_-]{3,110}$/.test(rawId))return null;
   const gh=source.provider==="greenhouse";
   const lever=source.provider==="lever";
-  const title=clean(plainText(lever?job.text:job.title,160),160);
+  const smart=source.provider==="smartrecruiters";
+  const title=clean(plainText(smart?job.name:lever?job.text:job.title,160),160);
   if(!title)return null;
-  const department=clean(plainText(gh?
+  const department=clean(plainText(smart?(job.department?.label||job.function?.label||""):gh?
     (Array.isArray(job.departments)?job.departments.map(x=>x?.name).filter(Boolean).join(" / "):""):
     lever?(job.categories?.department||job.categories?.team||""):
     (job.department||job.team||job.jobDepartment||""),130),130);
-  const location=clean(plainText(gh?job.location?.name:
+  const location=clean(plainText(smart?smartRecruitersLocation(job.location):gh?job.location?.name:
     lever?(job.categories?.location||job.categories?.allLocations?.join(" / ")||job.workplaceType||""):
     (job.location||job.locationName||job.workplaceType),160),160)||"Not specified";
-  const rawDescription=gh?job.content:
+  // SmartRecruiters list results generally omit the full job ad. Never
+  // claim experience requirements unless text was actually supplied.
+  const rawDescription=smart?[
+    job.jobAd?.sections?.jobDescription?.text,
+    job.jobAd?.sections?.qualifications?.text
+  ].filter(Boolean).join(" "):gh?job.content:
     lever?(job.descriptionPlain||job.description||job.openingPlain||""):
     (job.descriptionPlain||job.descriptionHtml||"");
   const desc=plainText(rawDescription,2500);
   const requirement=experienceRequirement(plainText(rawDescription,16000));
   // Lever's createdAt is a creation timestamp, NOT a published-on date.
-  const published=date(gh?job.first_published||job.updated_at:
+  const published=date(smart?job.releasedDate:gh?job.first_published||job.updated_at:
     job.publishedAt||job.updatedAt);
-  const publicUrl=gh?
+  const publicUrl=smart?"https://jobs.smartrecruiters.com/"+source.slug+"/"+rawId:gh?
     "https://job-boards.greenhouse.io/"+source.slug+"/jobs/"+rawId:
     lever?"https://jobs.lever.co/"+source.slug+"/"+rawId:
     "https://jobs.ashbyhq.com/"+source.slug+"/"+rawId;
@@ -59,7 +75,7 @@ function normalize(source,job){
     category:classify(title,department),description:desc,
     url:publicUrl,skills:[],requiredExperience:requirement?.label||"",
     posted_at:published,addedAt:published,
-    source:gh?"Greenhouse public board":lever?"Lever public board":"Ashby public board"
+    source:smart?"SmartRecruiters public board":gh?"Greenhouse public board":lever?"Lever public board":"Ashby public board"
   };
 }
 async function limitedJson(url,fetchImpl){
@@ -86,6 +102,28 @@ async function limitedJson(url,fetchImpl){
 }
 export async function scanBoard(source,fetchImpl=fetch){
   assertSource(source);
+  if(source.provider==="smartrecruiters"){
+    // Public list endpoint returns active company postings and a totalFound
+    // count. Iterate deterministically; never silently publish a partial page.
+    const pageSize=100,maxPages=100,results=[];
+    for(let page=0;page<maxPages;page++){
+      const offset=page*pageSize;
+      const url="https://api.smartrecruiters.com/v1/companies/"+source.slug+
+        "/postings?limit="+pageSize+"&offset="+offset;
+      const data=await limitedJson(url,fetchImpl);
+      if(!data||!Array.isArray(data.content)||
+         !Number.isSafeInteger(data.totalFound)||data.totalFound<0 ||
+         data.content.length>pageSize)
+        throw Error("SmartRecruiters public postings response is invalid");
+      if(data.content.length===0&&offset<data.totalFound)
+        throw Error("SmartRecruiters feed returned an incomplete page");
+      results.push(...data.content.map(job=>normalize(source,job)).filter(Boolean));
+      if(offset+data.content.length>=data.totalFound)return results;
+      if(data.content.length<pageSize)
+        throw Error("SmartRecruiters feed returned a truncated page");
+    }
+    throw Error("SmartRecruiters employer board exceeds the safe pagination window");
+  }
   if(source.provider==="lever"){
     // Lever uses a top-level JSON array and supports skip/limit paging.
     // Page the public board instead of allowing a large employer to exceed
@@ -166,7 +204,7 @@ export async function runScan({sources,fetchImpl=fetch,concurrency=5}={}){
   const published=status==="failed"?[]:balanceJobs(jobs);
   return {
     schema:"careerops.public-jobs.v1",generated_at:new Date().toISOString(),
-    scope:"IT and non-IT roles at selected public Greenhouse/Ashby/Lever employers, worldwide. Not an exhaustive job search.",
+    scope:"IT and non-IT roles at selected public Greenhouse/Ashby/Lever/SmartRecruiters employers, worldwide. Not an exhaustive job search.",
     scan:{status,date:new Date().toISOString().slice(0,10),scanned:sources.length,
       found,matched:published.length,error_count:errors.length,
       message:errors.length?"Some employers were unavailable; results may be incomplete.":
@@ -188,6 +226,9 @@ async function main(){
   // Release diagnostics only: job counts and titles are never added to visible UI.
   const serviceNowJobs=feed.jobs.filter(j=>/\bservice[\s-]?now\b/i.test(j.title));
   console.log("ServiceNow role titles in published employer scan:",serviceNowJobs.length);
+  const serviceNowEmployer=feed.jobs.filter(j=>j.company==="ServiceNow");
+  console.log("ServiceNow employer postings in public scan:",serviceNowEmployer.length,
+    "India:",serviceNowEmployer.filter(j=>/\\bIndia\\b/i.test(j.location)).length);
   console.log("ServiceNow sample titles:",JSON.stringify(serviceNowJobs.slice(0,12).map(j=>
     ({title:j.title,company:j.company,location:j.location}))));
   if(feed.source_errors.length)
