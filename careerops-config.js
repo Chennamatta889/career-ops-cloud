@@ -1,8 +1,8 @@
-/* Public configuration only. Never put API keys with elevated privileges here.
- * Use the URL and PUBLISHABLE (or legacy anon) key of a NEW Career-Ops project.
- * Keep GEMINI_API_KEY exclusively in the Supabase Edge Function secret store.
+/* PUBLIC browser configuration for independent Career-Ops project.
+ * These values are designed to be public. NEVER add secret/service-role keys.
+ * AI requires separate server-side secrets and authenticated access.
  */
 window.CAREEROPS_PRIVATE_CONFIG = Object.freeze({
-  supabaseUrl: "",
-  publishableKey: ""
+  supabaseUrl: "https://nnhzihcugvifhegsfmua.supabase.co",
+  publishableKey: "sb_publishable_91hh8qhm4MecOJxAFtr10A_0e1z_Gq4"
 });
