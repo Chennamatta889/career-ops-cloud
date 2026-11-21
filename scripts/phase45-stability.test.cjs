@@ -20,7 +20,7 @@ function dashboardHarness({initialLocal={},feedPromise}={}){
   const store=storage(initialLocal),session=storage();
   const el=id=>{
     if(!els.has(id)){
-      const obj={id,hidden:false,disabled:false,value:"",textContent:"",innerHTML:"",dataset:{},
+      const obj={id,hidden:false,disabled:false,checked:false,value:"",textContent:"",innerHTML:"",dataset:{},
         open:false,attributes:new Map(),listeners:new Map(),
         classList:{add(){},remove(){},toggle(){return true;}},
         addEventListener(name,fn){this.listeners.set(name,fn)},
