@@ -41,6 +41,13 @@
   const safeUrl = function (v) { try { const u = new URL(String(v)); return (u.protocol === "http:" || u.protocol === "https:") ? u.href : ""; } catch (_) { return ""; } };
   const str = function (v) { return (typeof v === "string" || typeof v === "number") ? String(v).trim() : ""; };
   const newId = function () { return "job-" + Date.now() + "-" + Math.random().toString(36).slice(2,9); };
+  // Bound the DOM work without reducing the total number of searchable jobs.
+  const DISCOVER_PAGE_SIZE = 30;
+  let discoverVisibleCount = DISCOVER_PAGE_SIZE;
+  const normalizeSearch = function(value) {
+    return String(value == null ? "" : value).normalize("NFKC").toLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu," ").replace(/\s+/g," ").trim();
+  };
   let memoryOnly = false;
   const defaultState = function () { return { mode: "demo", jobs: copy(SAMPLE), prefs: copy(DEFAULT_PREFS), activity: [], importedAt: null, feedGeneratedAt: null }; };
   const load = function (storageKey,storage=sessionStorage) {
@@ -141,15 +148,15 @@
   };
   const priority = function (job) { return window.CareerOpsMatch.rank(job,state.prefs); };
   const visibleJobs = function () {
-    const search=$("jobSearch").value.trim().toLowerCase();
+    const searchTerms=normalizeSearch($("jobSearch").value).split(" ").filter(Boolean);
     const category=$("categoryFilter").value;
     const sector=$("sectorFilter").value;
     const location=$("locationFilter").value.toLowerCase();
     const sort=$("sortFilter").value;
     const priorityFilter=$("matchFilter").value;
     return state.jobs.filter(function(job){
-      const all=[job.title,job.company,job.location,job.description,job.department,jobCategory(job)]
-        .concat(job.skills||[]).join(" ").toLowerCase();
+      const all=normalizeSearch([job.title,job.company,job.location,job.description,job.department,jobCategory(job)]
+        .concat(job.skills||[]).join(" "));
       const loc=String(job.location||"").toLowerCase();
       const kind=jobCategory(job);
       const categoryOk=!category||kind===category;
@@ -160,7 +167,7 @@
       const points=priority(job).score;
       const priorityOk=priorityFilter==="all"||
         (priorityFilter==="below"?points<50:points>=Number(priorityFilter));
-      return (!search||all.includes(search))&&categoryOk&&sectorOk&&locationOk&&priorityOk;
+      return searchTerms.every(function(term){return all.includes(term);})&&categoryOk&&sectorOk&&locationOk&&priorityOk;
     }).sort(function(a,b){
       if(sort==="priority")return priority(b).score-priority(a).score||
         String(b.addedAt||"").localeCompare(String(a.addedAt||""));
@@ -173,7 +180,20 @@
     const bits = String(company).split(/\s+/).filter(Boolean);
     return (bits.length >= 2 ? bits[0][0] + bits[1][0] : String(company).slice(0,2)).toUpperCase();
   };
-  const jobSource = function (j) { return j.demo ? "Example listing" : j.source === "cloud" ? "Public employer posting" : (j.url ? "Original job link available" : "Manually added"); };
+  // A public board may expose an update date rather than the original posting date.
+  // Never mislabel a feed's retrieval time as the job's publication date.
+  const listingSourceDate = function (j) {
+    const raw=str(j.addedAt).slice(0,10);
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(raw))return "date not provided";
+    const day=new Date(raw+"T12:00:00Z");
+    if(!Number.isFinite(day.valueOf()) || day.toISOString().slice(0,10)!==raw)return "date not provided";
+    return day.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric",timeZone:"UTC"});
+  };
+  const jobSource = function (j) {
+    return j.demo ? "Example listing" :
+      j.source === "cloud" ? "Public employer posting · Source date: "+listingSourceDate(j) :
+      (j.url ? "Original job link available" : "Manually added");
+  };
   const chips = function (skills) { return (skills || []).slice(0,5).map(function (s) { return '<span class="skill-chip">' + escapeHtml(s) + '</span>'; }).join(""); };
   const find = function (id) { return state.jobs.find(function (j) { return j.id === id; }); };
   const priorityBadge = function(j){
@@ -236,9 +256,18 @@
     $("matchFilter").disabled=!hasPreferences;
     if(!hasPreferences)$("matchFilter").value="all";
     const jobs = visibleJobs();
-    $("jobsGrid").innerHTML = jobs.map(card).join("");
-    $("resultsCount").textContent = jobs.length + (jobs.length === 1 ? " job listing" : " job listings");
+    const showing=Math.min(jobs.length,discoverVisibleCount);
+    $("jobsGrid").innerHTML = jobs.slice(0,showing).map(card).join("");
+    $("resultsCount").textContent = jobs.length + (jobs.length === 1 ? " job listing" : " job listings") +
+      (showing<jobs.length ? " · showing "+showing : "");
     $("emptyJobs").hidden = jobs.length !== 0;
+    $("loadMoreJobs").hidden=showing>=jobs.length;
+    $("loadMoreJobs").textContent="Show more jobs ("+(jobs.length-showing)+" remaining)";
+    $("resetDiscoverFilters").hidden=!Boolean(
+      $("jobSearch").value.trim() || $("sectorFilter").value ||
+      $("categoryFilter").value || $("locationFilter").value ||
+      $("matchFilter").value!=="all" || $("sortFilter").value!=="newest"
+    );
     $("dataModeTag").textContent = state.mode === "demo" ? "Examples" : state.mode === "live" ? "Published vacancies" : "Your job list";
     $("dataModeTag").classList.toggle("real", state.mode !== "demo");
   };
@@ -315,6 +344,14 @@
       : "This job record has no valid posting URL. Open the employer's career site to locate it.");
     $("dialogSave").textContent = j.stage ? "✓ Tracking" : "+ Save job";
     $("dialogLink").hidden = !url;
+    const report=$("dialogReport");
+    report.hidden=j.demo || !url;
+    if(!report.hidden){
+      report.href="mailto:mchennarao889@gmail.com?subject="+
+        encodeURIComponent("Career-Ops listing report")+"&body="+
+        encodeURIComponent("Please check this public job listing.\nCompany: "+j.company+
+        "\nRole: "+j.title+"\nPosting: "+url+"\nIssue (broken, expired or suspicious):\n");
+    }else report.removeAttribute("href");
     if (url) {
       $("dialogLink").href = url;
       $("dialogLink").setAttribute("aria-label", "Open original job listing at " + j.company);
@@ -351,7 +388,9 @@
       description: readableJobText(str(j.description || j.summary || j.job_description || ""),6000),
       requiredExperience: str(j.requiredExperience || j.required_experience || j.experience_requirement || "").slice(0,100),
       url: safeUrl(j.apply_url || j.job_url || j.url || j.link || j.source_url),
-      demo: false, manual: false, source: "import", stage: "", addedAt: stamp()
+      demo: false, manual: false, source: "import", stage: "",
+      addedAt: /^\d{4}-\d{2}-\d{2}/.test(str(j.posted_at||j.published_at||j.addedAt)) ?
+        str(j.posted_at||j.published_at||j.addedAt).slice(0,10) : ""
     };
   };
   const extractJobs = function (data) {
@@ -383,7 +422,10 @@
       jobs.forEach(function (j) { const key = j.url || (j.company + "/" + j.title + "/" + j.location).toLowerCase(); j.stage = kept.get(key) || ""; });
       const importedKeys = new Set(jobs.map(function (j) { return j.url || (j.company + "/" + j.title + "/" + j.location).toLowerCase(); }));
       const previousTrackedJobs = keep.filter(function (j) { return !importedKeys.has(j.url || (j.company + "/" + j.title + "/" + j.location).toLowerCase()); });
-      state.jobs = jobs.concat(previousTrackedJobs).slice(0,500);
+      // Keep tracked roles when the incoming scan reaches the 500-job display cap.
+      const pinned = jobs.filter(function(j){return !!j.stage;}).concat(previousTrackedJobs);
+      state.jobs = jobs.filter(function(j){return !j.stage;})
+        .slice(0,Math.max(0,500-pinned.length)).concat(pinned).slice(0,500);
       state.mode = "imported";
       state.importedAt = stamp();
       log("Scan results imported", jobs.length + " unique job records from " + file.name);
@@ -413,8 +455,28 @@
   document.addEventListener("change", function (e) {
     if (e.target.matches("[data-stage-id]")) setStage(e.target.getAttribute("data-stage-id"), e.target.value);
   });
-  ["jobSearch","sectorFilter","categoryFilter","locationFilter","matchFilter","sortFilter"].forEach(function (id) { $(id).addEventListener(id === "jobSearch" ? "input" : "change", renderDiscover); });
-  $("clearFilters").addEventListener("click", function () { $("jobSearch").value = ""; $("categoryFilter").value = ""; $("sectorFilter").value = ""; $("locationFilter").value = ""; $("matchFilter").value = "all"; renderDiscover(); });
+  ["jobSearch","sectorFilter","categoryFilter","locationFilter","matchFilter","sortFilter"].forEach(function (id) {
+    $(id).addEventListener(id==="jobSearch"?"input":"change",function(){
+      discoverVisibleCount=DISCOVER_PAGE_SIZE;
+      renderDiscover();
+    });
+  });
+  const resetDiscovery = function(){
+    $("jobSearch").value="";
+    $("categoryFilter").value="";
+    $("sectorFilter").value="";
+    $("locationFilter").value="";
+    $("matchFilter").value="all";
+    $("sortFilter").value="newest";
+    discoverVisibleCount=DISCOVER_PAGE_SIZE;
+    renderDiscover();
+  };
+  $("clearFilters").addEventListener("click",resetDiscovery);
+  $("resetDiscoverFilters").addEventListener("click",resetDiscovery);
+  $("loadMoreJobs").addEventListener("click",function(){
+    discoverVisibleCount+=DISCOVER_PAGE_SIZE;
+    renderDiscover();
+  });
   $("mobileMenu").addEventListener("click", function () {
     const open=$("sidebar").classList.toggle("open");
     $("mobileScrim").classList.toggle("show",open);
@@ -535,12 +597,20 @@
       const scan = feed.scan;
       const numErrors = Number(scan.error_count) || 0;
       const summary = "Last published update: " + lastRun + " · " + (Number(scan.scanned) || 0) + " employer boards checked · " + (Number(scan.found) || 0) + " listings reviewed · " + numErrors + " unavailable sources";
+      const feedAgeMs=Date.now()-runTime.getTime();
+      const overdue=feedAgeMs>48*60*60*1000;
+      const future=feedAgeMs<-(15*60*1000);
+      const freshness=$("feedFreshness");
+      freshness.hidden=!overdue&&!future;
+      freshness.textContent=overdue?
+        "Listings feed is over 48 hours old. Open the original employer posting to confirm each job is still available.":
+        future?"The published feed timestamp is ahead of the current time. Check employer postings before applying.":"";
       if (scan.status === "failed") {
         showFeedStatus("failed", "Listing update unavailable", summary + ". Previously saved jobs remain available.");
         return;
       }
       if (state.mode === "imported" && !requestedByUser) {
-        showFeedStatus(scan.status, "Published listings available", "Your imported listings are currently displayed. Select Reload listings to use the published feed. " + summary);
+        showFeedStatus(overdue||future?"partial":scan.status, "Published listings available", "Your imported listings are currently displayed. Select Reload listings to use the published feed. " + summary);
         return;
       }
       const oldMode = state.mode;
@@ -560,7 +630,7 @@
         job.source = "cloud";
         job.manual = false;
         const date = str(raw.posted_at || raw.addedAt);
-        job.addedAt = /^\d{4}-\d{2}-\d{2}/.test(date) ? date.slice(0,10) : feed.generated_at;
+        job.addedAt = /^\d{4}-\d{2}-\d{2}/.test(date) ? date.slice(0,10) : "";
         cloud.push(job);
       });
       // Retain manually added and tracked jobs even if a later scan misses them.
@@ -568,14 +638,20 @@
         return (j.manual || !!j.stage || (oldMode === "manual" && j.source !== "cloud")) && !seen.has(feedKey(j));
       });
       const isNewScan = state.feedGeneratedAt !== feed.generated_at;
-      state.jobs = cloud.concat(savedLocal).slice(0,500);
+      // Untracked public jobs yield capacity first. Never silently discard
+      // saved applications because a fresh public scan fills the 500-job cap.
+      const pinned=cloud.filter(function(j){return !!j.stage;}).concat(savedLocal);
+      state.jobs=cloud.filter(function(j){return !j.stage;})
+        .slice(0,Math.max(0,500-pinned.length)).concat(pinned).slice(0,500);
       state.mode = "live";
       state.feedGeneratedAt = feed.generated_at;
       if (isNewScan) log("Employer listings updated", cloud.length + " job listings · " + numErrors + " source errors");
       save(); render();
-      showFeedStatus(scan.status, cloud.length + (cloud.length === 1 ? " published vacancy" : " published vacancies") +
-        (scan.status === "partial" ? " · some sources unavailable" : ""), summary);
-      if (requestedByUser) toast("Published job listings are up to date");
+      showFeedStatus(overdue||future?"partial":scan.status,
+        cloud.length + (cloud.length === 1 ? " published vacancy" : " published vacancies") +
+        (overdue?" · feed overdue":future?" · timestamp inconsistent":scan.status==="partial"?" · some sources unavailable":""),
+        summary+(overdue?" · The feed is overdue.":future?" · Feed time needs checking.":""));
+      if (requestedByUser) toast(overdue||future?"Listings loaded; verify freshness at employer sites":"Published job listings are up to date");
     } catch (error) {
       showFeedStatus("failed", "Unable to refresh listings", "The published employer feed could not be loaded (" + String(error.message).slice(0,100) + "). Your saved jobs are unchanged.");
       if (requestedByUser) toast("The job listings service is temporarily unavailable");
