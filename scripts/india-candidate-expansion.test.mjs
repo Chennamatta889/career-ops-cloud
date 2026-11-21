@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {createRequire} from "node:module";
 import {scanBoard,balanceJobs,runScan,readPreviousCandidateHealth} from "./universal-job-scan.mjs";
-import {discoverIndiaCandidates,checkCandidateCatalog,mergeIndiaCandidates}
+import {discoverIndiaCandidates,checkCandidateCatalog,mergeIndiaCandidates,measureEnterpriseCoverage}
   from "./india-candidate-expansion.mjs";
 const require=createRequire(import.meta.url);
 const {isIndiaLocation}=require("../india-jobs.js");
@@ -141,6 +141,33 @@ test("phase 12 reports unique published fresher roles and employers after dedupl
   assert.equal(base.jobs.length,1);
 });
 
+test("phase 12 enterprise coverage uses only unique actual employer jobs and exact names",()=>{
+  const jobs=[
+    {url:"https://example.org/a",company:"Microsoft",title:"Graduate Trainee",
+      description:"",location:"Hyderabad, India"},
+    {url:"https://example.org/a",company:"Microsoft",title:"Graduate Trainee",
+      description:"",location:"Hyderabad, India"},
+    {url:"https://example.org/b",company:"IBM",title:"Software Engineer",
+      description:"No prior experience required",location:"Pune, India"},
+    {url:"https://example.org/c",company:"Amazonian Labs",title:"Graduate Intern",
+      description:"",location:"Bengaluru, India"},
+    {url:"https://example.org/d",company:"Microsoft Consulting Partners",
+      title:"Graduate Intern",description:"",location:"India"},
+    {url:"https://example.org/e",company:"Accenture",title:"Senior Architect",
+      description:"Minimum 8 years of experience",location:"Hyderabad, India"}
+  ];
+  const out=measureEnterpriseCoverage(jobs);
+  assert.equal(out.directory_companies,13);
+  assert.equal(out.employers_with_published_jobs,3);
+  assert.equal(out.employers_with_entry_positions,2);
+  assert.equal(out.published_jobs,3);
+  assert.equal(out.published_entry_positions,2);
+  assert.equal(out.companies.find(x=>x.id==="microsoft").postings,1);
+  assert.equal(out.companies.find(x=>x.id==="ibm").explicit_zero_experience,1);
+  assert.equal(out.companies.find(x=>x.id==="accenture").entry_positions,0);
+  assert.ok(out.companies.every(x=>!["amazon"].includes(x.id)));
+  assert.equal(measureEnterpriseCoverage([]).employers_with_published_jobs,0);
+});
 test("twenty freshers-focused employer leads are unique and not falsely counted as active sources",()=>{
   assert.equal(fresherRegistry.candidates.length,20);
   const all=[...registry.candidates,...fresherRegistry.candidates];

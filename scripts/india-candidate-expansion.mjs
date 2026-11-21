@@ -10,6 +10,60 @@
 import {filterRecentJobs} from "./job-freshness.mjs";
 import {createRequire} from "node:module";
 const {entryOpportunity}=createRequire(import.meta.url)("../job-text.js");
+const enterpriseDirectory=createRequire(import.meta.url)("../enterprise-careers.json");
+// Exact employer identities only: no substring matching (e.g. "Amazonian"
+// must not count as Amazon), and never infer an open vacancy from a portal URL.
+const ENTERPRISE_ALIASES={
+  tcs:["tcs","tata consultancy services"],
+  accenture:["accenture"],
+  wipro:["wipro","wipro limited"],
+  infosys:["infosys","infosys limited"],
+  ibm:["ibm","international business machines"],
+  capgemini:["capgemini"],
+  google:["google","google llc"],
+  microsoft:["microsoft","microsoft corporation"],
+  amazon:["amazon","amazon web services","aws"],
+  oracle:["oracle","oracle corporation"],
+  adobe:["adobe","adobe inc"],
+  servicenow:["servicenow","service now"],
+  atlassian:["atlassian"]
+};
+const employerIdentity=name=>String(name||"").toLowerCase()
+  .replace(/[^a-z0-9]+/g," ").trim();
+export function measureEnterpriseCoverage(jobs){
+  const lookup=new Map();
+  for(const company of enterpriseDirectory.companies){
+    for(const alias of ENTERPRISE_ALIASES[company.id]||[])
+      lookup.set(employerIdentity(alias),company.id);
+  }
+  const byId=new Map(enterpriseDirectory.companies.map(company=>[company.id,{
+    id:company.id,name:company.name,group:company.group,postings:0,
+    entry_positions:0,explicit_zero_experience:0
+  }]));
+  const seen=new Set();
+  for(const job of jobs){
+    const url=typeof job?.url==="string"?job.url.trim().toLowerCase():"";
+    if(!url||seen.has(url))continue;
+    seen.add(url);
+    const id=lookup.get(employerIdentity(job.company));
+    if(!id)continue;
+    const row=byId.get(id),entry=entryOpportunity(job);
+    row.postings++;
+    if(entry.level==="fresher"||entry.level==="early")row.entry_positions++;
+    if(entry.level==="fresher"&&entry.basis==="explicit")row.explicit_zero_experience++;
+  }
+  const companies=[...byId.values()].filter(row=>row.postings>0)
+    .sort((a,b)=>b.entry_positions-a.entry_positions||b.postings-a.postings||
+      a.name.localeCompare(b.name));
+  return {
+    directory_companies:enterpriseDirectory.companies.length,
+    employers_with_published_jobs:companies.length,
+    employers_with_entry_positions:companies.filter(row=>row.entry_positions>0).length,
+    published_jobs:companies.reduce((n,row)=>n+row.postings,0),
+    published_entry_positions:companies.reduce((n,row)=>n+row.entry_positions,0),
+    companies
+  };
+}
 const PROVIDERS=new Set(["greenhouse","ashby","lever","smartrecruiters"]);
 const KEY=s=>s.provider+":"+s.slug.toLowerCase();
 const clean=s=>typeof s==="string"?s.trim():"";
@@ -205,6 +259,7 @@ export function mergeIndiaCandidates(feed,expansion,balanceJobs){
       undated_excluded:(feed.scan.undated_excluded||0)+(expansion.report.undated_excluded||0),
       outdated_excluded:(feed.scan.outdated_excluded||0)+(expansion.report.outdated_excluded||0),
       future_excluded:(feed.scan.future_excluded||0)+(expansion.report.future_excluded||0),
-      candidate_discovery:{...expansion.report,published_evidence:publishedEvidence},
+      candidate_discovery:{...expansion.report,published_evidence:publishedEvidence,
+        enterprise_coverage:measureEnterpriseCoverage(jobs)},
       candidate_health:expansion.history}};
 }
