@@ -342,10 +342,11 @@
   $("resumeFile").addEventListener("change", function (e) {
     const f = e.target.files && e.target.files[0];
     if (!f) return;
-    if (!/\.(pdf|docx)$/i.test(f.name)) { toast("Please select a PDF or DOCX resume"); e.target.value = ""; return; }
-    if (f.size > 15*1024*1024) { toast("File exceeds 15 MB"); e.target.value = ""; return; }
-    $("resumeFileLabel").textContent = f.name + " · selected locally only";
-    toast("Resume selected. Analysis is not connected yet.");
+    if (!/\.(pdf|docx|txt)$/i.test(f.name)) { toast("Choose a PDF, DOCX or TXT resume"); e.target.value = ""; return; }
+    if (f.size > 6*1024*1024 || !f.size) { toast("Resume must be between 1 byte and 6 MB"); e.target.value = ""; return; }
+    $("resumeFileLabel").textContent = f.name + " · extracting locally for AI Studio";
+    window.dispatchEvent(new CustomEvent("careerops:resume-selected",{detail:{file:f}}));
+    e.target.value="";
   });
   $("scanImport").addEventListener("change", function (e) {
     const f = e.target.files && e.target.files[0]; importJson(f); e.target.value = "";
