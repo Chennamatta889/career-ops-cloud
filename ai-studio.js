@@ -189,13 +189,63 @@
     saveSession(null);activeResult=null;byId("aiResume").value="";byId("aiJd").value="";byId("aiConsent").checked=false;byId("aiResult").replaceChildren();byId("aiResult").hidden=true;byId("aiDownload").hidden=true;
     await refreshAuth();
   });
+  async function loadResume(file) {
+    if(!file)return;
+    const feedback=byId("aiResumeParseStatus");
+    feedback.textContent="Reading " + file.name.slice(0,100) + " locally. No file is being uploaded...";
+    try {
+      if(!rootParser())throw new Error("Browser resume parser is unavailable. Refresh the deployed site.");
+      const result=await rootParser().parseFile(file);
+      byId("aiResume").value=result.text;
+      prerequisites();
+      const notes=result.notes.length ? " " + result.notes.join(" ") : "";
+      feedback.textContent="Extracted " + result.text.length + " characters from " + result.filename + "." + notes + " Verify the text before AI Review.";
+      status("Resume text extracted locally. Review it, then fetch or paste the full job description.");
+      return true;
+    } catch(e) {
+      feedback.textContent="Could not parse resume: "+text(e?.message||e,260);
+      status("Resume parsing failed. You can paste your resume text manually.");
+      return false;
+    }
+  }
+  function rootParser(){return window.CareerOpsResumeParser;}
   byId("aiResumeTxtFile").addEventListener("change",async function(){
-    const f=this.files?.[0];if(!f)return;
-    if(!/\.txt$/i.test(f.name) || f.size>16000){status("Choose a plain-text .txt resume under 16 KB.");this.value="";return;}
-    byId("aiResume").value=await f.text();
-    prerequisites();
-    status("Plain-text resume loaded locally; nothing uploaded.");
+    const selected=this.files?.[0];
     this.value="";
+    await loadResume(selected);
+  });
+  window.addEventListener("careerops:resume-selected",async event=>{
+    const file=event.detail?.file;
+    const success=await loadResume(file);
+    if(success)document.querySelector('[data-nav="ai"]')?.click();
+  });
+
+  byId("aiFetchJob").addEventListener("click",async function(){
+    const link=byId("aiJobUrl").value.trim();
+    const feedback=byId("aiJobFetchStatus");
+    if(!link){feedback.textContent="Paste an official Greenhouse, Ashby or Lever posting link.";return;}
+    const jwt=await getAccessToken();
+    if(!jwt){feedback.textContent="Please sign in to Career-Ops AI Studio before fetching a job.";await refreshAuth();return;}
+    this.disabled=true;
+    feedback.textContent="Retrieving the public job description from the employer's career board...";
+    try {
+      const response=await api("/functions/v1/careerops-ai-review",{
+        method:"POST",headers:headers(jwt),
+        body:JSON.stringify({action:"fetch_job",url:link})
+      });
+      const job=response.job;
+      if(!job || typeof job.description!=="string" || job.description.length<120) {
+        throw new Error("The employer API did not provide enough job-description text.");
+      }
+      byId("aiJd").value=job.description.slice(0,16000);
+      if(job.title)byId("aiRole").value=job.title.slice(0,160);
+      if(!byId("aiCompany").value.trim() && job.company)byId("aiCompany").value=job.company.slice(0,130);
+      prerequisites();
+      feedback.textContent="Fetched "+job.description.length+" characters from "+job.provider+" (public official board). Review the job requirements before using AI.";
+      status("Employer job description loaded. Confirm the details and your resume before generating drafts.");
+    }catch(e){
+      feedback.textContent="Job fetch unavailable: "+text(e?.message||e,260)+" You can paste the full description manually.";
+    }finally{this.disabled=false;}
   });
   byId("aiDownload").addEventListener("click",exportDraft);
   ["aiResume","aiJd","aiRole","aiConsent"].forEach(id=>byId(id).addEventListener(id==="aiConsent"?"change":"input",prerequisites));
