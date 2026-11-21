@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://chennamatta889.github.io/sitemap.xml

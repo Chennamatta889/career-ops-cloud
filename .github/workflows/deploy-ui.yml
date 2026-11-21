@@ -36,6 +36,15 @@ on:
       - scripts/job-text.test.cjs
       - scripts/export-scan-feed.test.mjs
       - .github/workflows/deploy-ui.yml
+      - resources/**
+      - resource-styles.css
+      - about.html
+      - contact.html
+      - privacy.html
+      - terms.html
+      - ads.txt
+      - robots.txt
+      - sitemap.xml
   schedule:
     # 10:00 AM India Standard Time. GitHub schedules may run late.
     - cron: '30 4 * * *'
@@ -109,6 +118,8 @@ jobs:
         run: |
           mkdir -p public
           cp index.html styles.css match-engine.js job-categories.js job-text.js careerops-config.js app.js resume-parser.js ai-studio.js private-workspace.js health-check.js public/
+          cp about.html contact.html privacy.html terms.html resource-styles.css ads.txt robots.txt sitemap.xml public/
+          cp -R resources public/resources
           mkdir -p public/vendor
           cp "$RUNNER_TEMP/career-ops-vendor/node_modules/pdfjs-dist/build/pdf.min.mjs" public/vendor/
           cp "$RUNNER_TEMP/career-ops-vendor/node_modules/pdfjs-dist/build/pdf.worker.min.mjs" public/vendor/
