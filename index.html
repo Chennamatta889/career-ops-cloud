@@ -9,7 +9,9 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='17' fill='%230b1425'/%3E%3Cpath d='m17 34 11 11 20-26' fill='none' stroke='%2342dfb6' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="./styles.css">
   <script defer src="./match-engine.js"></script>
+  <script defer src="./careerops-config.js"></script>
   <script defer src="./app.js"></script>
+  <script defer src="./ai-studio.js"></script>
 </head>
 <body>
 <div class="app-shell" id="app">
@@ -25,6 +27,7 @@
       <button class="nav-link" data-nav="discover"><span class="nav-icon">⌕</span><span>Discover jobs</span><span class="nav-badge" id="navJobsCount">0</span></button>
       <button class="nav-link" data-nav="applications"><span class="nav-icon">▥</span><span>Applications</span></button>
       <button class="nav-link" data-nav="resume"><span class="nav-icon">▤</span><span>Resume lab</span></button>
+      <button class="nav-link" data-nav="ai"><span class="nav-icon">✧</span><span>AI Studio</span><span class="nav-badge">NEW</span></button>
       <button class="nav-link" data-nav="activity"><span class="nav-icon">◷</span><span>Activity</span></button>
       <div class="nav-label nav-label-secondary">PREFERENCES</div>
       <button class="nav-link" data-nav="settings"><span class="nav-icon">⚙</span><span>Settings & data</span></button>
@@ -73,6 +76,55 @@
       <section class="page" id="page-resume">
         <div class="page-heading"><div><div class="eyebrow">YOUR PROFILE</div><h1>Resume & <span>preferences.</span></h1><p>Define your target roles and keep your application strategy consistent.</p></div></div>
         <div class="form-grid"><section class="panel"><div class="panel-heading"><div><div class="eyebrow">RESUME</div><h2>Your document</h2></div></div><div class="upload-drop"><div class="upload-symbol">⇧</div><strong>Choose a resume to reference</strong><p>PDF or DOCX. Selection stays on this device; nothing is uploaded, analyzed, or saved to a server.</p><label class="btn btn-outline upload-btn" for="resumeFile">Choose file</label><input id="resumeFile" type="file" accept=".pdf,.docx" hidden><span class="muted small" id="resumeFileLabel">No file selected</span></div><p class="inline-note">AI tailoring and secure resume storage are planned integrations—not active in this preview.</p></section><section class="panel"><div class="panel-heading"><div><div class="eyebrow">ROLE PREFERENCES</div><h2>What you're targeting</h2></div></div><form id="preferencesForm" class="form-stack"><label>Target job titles<textarea id="targetRoles" rows="3" placeholder="DevOps Engineer, Cloud Engineer..."></textarea></label><label>Preferred locations<input id="targetLocations" placeholder="Hyderabad, Remote India..."></label><label>Experience level<input id="targetExperience" placeholder="2–4 years"></label><label>Key skills<textarea id="targetSkills" rows="3" placeholder="AWS, Jenkins, Kubernetes..."></textarea></label><button type="submit" class="btn btn-primary">Save preferences</button></form></section></div>
+      </section>
+      <section class="page" id="page-ai">
+        <div class="page-heading">
+          <div><div class="eyebrow">PRIVATE AI WORKSPACE · PHASE 3</div>
+            <h1>Turn a job into <span>a stronger application.</span></h1>
+            <p>Compare your actual resume with a job description, see gaps, and draft accurate application materials. Nothing is submitted automatically.</p>
+          </div>
+        </div>
+        <div class="ai-intro panel">
+          <span class="ai-intro-icon">✧</span>
+          <div><strong>Secure AI review</strong><p>This feature requires its own authenticated Career-Ops backend. Resume text remains in this browser tab until you explicitly request analysis; the request is then sent to the private backend and Gemini. Do not enter passwords or API keys here.</p></div>
+          <button class="btn btn-outline" type="button" id="aiSignOut" hidden>Sign out</button>
+        </div>
+        <div class="notice" role="status"><span class="notice-icon">ⓘ</span><div><strong>Connection:</strong> <span id="aiStatus">Checking AI backend configuration...</span></div></div>
+        <section class="panel ai-login" id="aiLogin" hidden>
+          <div class="panel-heading"><div><div class="eyebrow">SIGN IN</div><h2>Connect your private Career-Ops account</h2></div></div>
+          <p class="panel-desc">Once the separate backend is configured, enter your approved email address. A sign-in link will be sent to your inbox.</p>
+          <div class="ai-login-row"><input type="email" id="aiEmail" autocomplete="email" inputmode="email" placeholder="you@example.com" aria-label="Email address for private AI sign-in"><button class="btn btn-primary" id="aiSendLink" type="button">Email sign-in link</button></div>
+        </section>
+        <section id="aiWorkspace" hidden>
+          <div class="ai-signed-in">Private session: <strong id="aiSignedUser"></strong> · Resume and generated drafts are not saved to GitHub or the app database.</div>
+          <div class="form-grid ai-workflow">
+            <section class="panel ai-form-panel">
+              <div class="panel-heading"><div><div class="eyebrow">STEP 01</div><h2>Resume evidence</h2></div></div>
+              <p class="panel-desc">Paste your resume text. For PDFs and DOCX, copy the text here; automatic PDF parsing is not enabled. You can also select a plain-text .txt file. No upload occurs at this step.</p>
+              <div class="form-stack">
+                <label>Your resume text<textarea id="aiResume" rows="14" maxlength="16000" spellcheck="false" placeholder="Paste your actual resume content. Do not add or invent skills, experience, or metrics."></textarea></label>
+                <label class="btn btn-outline upload-btn" for="aiResumeTxtFile">Load .txt locally</label><input id="aiResumeTxtFile" type="file" accept=".txt,text/plain" hidden>
+              </div>
+            </section>
+            <section class="panel ai-form-panel">
+              <div class="panel-heading"><div><div class="eyebrow">STEP 02</div><h2>Target job</h2></div></div>
+              <p class="panel-desc">Choose <strong>AI review</strong> on a job card to prefill details, then paste the full employer job description. The scanner feed may not include the description.</p>
+              <div class="form-stack">
+                <label>Job title<input type="text" id="aiRole" maxlength="160" placeholder="DevOps Engineer"></label>
+                <label>Company<input type="text" id="aiCompany" maxlength="130" placeholder="Employer"></label>
+                <label>Job posting link (reference only)<input type="url" id="aiJobUrl" readonly placeholder="Select from Discover Jobs"></label>
+                <label>Full job description<textarea id="aiJd" rows="12" maxlength="16000" spellcheck="false" placeholder="Paste the job requirements, responsibilities and qualifications here."></textarea></label>
+              </div>
+            </section>
+          </div>
+          <div class="panel ai-submit-panel">
+            <div class="ai-submit-copy"><h2>Review before generating</h2><p>AI may make mistakes. Verify the final resume bullets, cover letter, outreach message and screening answers. The app will not send emails or submit applications.</p></div>
+            <label class="ai-consent"><input type="checkbox" id="aiConsent"><span>I agree to send my resume text and this job description to the configured Gemini AI provider for this review.</span></label>
+            <button id="aiAnalyze" class="btn btn-primary" type="button">✧ Review job with AI</button>
+          </div>
+          <div class="ai-result-bar"><button id="aiDownload" class="btn btn-outline" type="button" hidden>Download draft as .txt ↓</button></div>
+          <div id="aiResult" class="ai-results panel" hidden></div>
+        </section>
       </section>
       <section class="page" id="page-activity">
         <div class="page-heading"><div><div class="eyebrow">HISTORY</div><h1>Activity <span>timeline.</span></h1><p>A simple log of actions within this browser.</p></div><button class="btn btn-outline" id="clearActivity">Clear activity</button></div><section class="panel"><div id="activityList" class="activity-list"></div></section>
