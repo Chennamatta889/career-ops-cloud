@@ -126,3 +126,16 @@ test("all employer failures produce a failed feed and no fabricated positions",a
   assert.equal(result.scan.status,"failed");
   assert.equal(result.jobs.length,0);
 });
+
+test("scheduled employer scan includes experience only when stated in the employer description",async()=>{
+  const board={provider:"greenhouse",slug:"exampleboard",name:"Example Employer"};
+  const jobs=await scanBoard(board,async()=>fakeResponse({jobs:[
+    {id:80011,title:"Cloud Engineer",content:"<h3>Requirements</h3><p>3–5 years of relevant engineering experience.</p>"},
+    {id:80012,title:"Sales Coordinator",content:"<p>We are happy to welcome freshers.</p>"},
+    {id:80013,title:"Senior Manager",content:"<p>Lead people and manage projects. Knowledge of Excel required.</p>"}
+  ]}));
+  assert.equal(jobs.length,3);
+  assert.equal(jobs[0].requiredExperience,"3–5 years");
+  assert.equal(jobs[1].requiredExperience,"No experience required");
+  assert.equal(jobs[2].requiredExperience,"","seniority alone must not invent minimum years");
+});
