@@ -344,9 +344,21 @@
     if (!f) return;
     if (!/\.(pdf|docx|txt)$/i.test(f.name)) { toast("Choose a PDF, DOCX or TXT resume"); e.target.value = ""; return; }
     if (f.size > 6*1024*1024 || !f.size) { toast("Resume must be between 1 byte and 6 MB"); e.target.value = ""; return; }
-    $("resumeFileLabel").textContent = f.name + " · extracting locally for AI Studio";
+    $("resumeFileLabel").textContent = f.name + " · opening AI Studio to extract";
     window.dispatchEvent(new CustomEvent("careerops:resume-selected",{detail:{file:f}}));
-    e.target.value="";
+    // Keep the File handle valid until parsing completes. This matters for
+    // Android document providers that may revoke temporary file access early.
+  });
+  window.addEventListener("careerops:resume-parse-result",function(event){
+    const result=event.detail||{};
+    $("resumeFile").value="";
+    if(result.success){
+      $("resumeFileLabel").textContent=(result.filename||"Resume")+" · "+result.characters+" characters extracted";
+      toast("Resume extracted successfully — review the text in AI Studio");
+    } else {
+      $("resumeFileLabel").textContent=(result.filename||"Resume")+" · extraction failed; see AI Studio";
+      toast("Resume extraction failed — see the detailed message in AI Studio");
+    }
   });
   $("scanImport").addEventListener("change", function (e) {
     const f = e.target.files && e.target.files[0]; importJson(f); e.target.value = "";
