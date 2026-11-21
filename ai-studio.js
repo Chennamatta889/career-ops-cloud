@@ -18,6 +18,10 @@
   let googleProviderEnabled = null; // true/false/null: verified/disabled/unknown
   let googleRedirectStarted = false;
   const siteRedirect = "https://chennamatta889.github.io/";
+  // Reuse the existing allowlisted Supabase callback during the domain-root
+  // transition. The callback immediately hands the verified session to the
+  // same-origin canonical homepage; no token is placed in the destination URL.
+  const authCallbackRedirect = "https://chennamatta889.github.io/career-ops-cloud/";
   const siteOrigin = new URL(siteRedirect).origin;
   const text = (v,n=10000) => typeof v==="string" ? v.trim().slice(0,n) : "";
   const cleanJobDescription=(value,max=16000)=>
@@ -132,7 +136,7 @@
     // No Google OAuth secrets belong in the browser or public GitHub repository.
     const url = new URL(base + "/auth/v1/authorize");
     url.searchParams.set("provider","google");
-    url.searchParams.set("redirect_to",siteRedirect);
+    url.searchParams.set("redirect_to",authCallbackRedirect);
     return url.toString();
   }
   async function checkGoogleProvider() {
@@ -162,6 +166,16 @@
     }
   }
   function readUrlSession() {
+    // Preserve a safe error message across the one-time callback handoff.
+    try {
+      const carry=sessionStorage.getItem("careerops-login-error");
+      if(carry){
+        authCallbackError=text(carry,190);
+        sessionStorage.removeItem("careerops-login-error");
+      }
+    } catch(_){}
+    const callbackAtOldPath=location.origin===siteOrigin &&
+      location.pathname===new URL(authCallbackRedirect).pathname;
     const hash=location.hash.startsWith("#") ? new URLSearchParams(location.hash.slice(1)) : null;
     const query=new URLSearchParams(location.search || "");
     const authError=hash?.get("error") || hash?.get("error_code") || query.get("error") || query.get("error_code");
@@ -169,6 +183,11 @@
       const detail=hash?.get("error_description") || query.get("error_description") || authError;
       authCallbackError="Google sign-in did not complete: "+text(detail,190)+". Check that Google is enabled in Career-Ops Supabase and your Gmail account is authorized.";
       history.replaceState(null,"",location.pathname+"#ai"); // remove error parameters
+      if(callbackAtOldPath) {
+        try{sessionStorage.setItem("careerops-login-error",authCallbackError);}catch(_){}
+        location.replace(siteRedirect+"#ai");
+        return;
+      }
       document.querySelector('[data-nav="ai"]')?.click();
       return;
     }
@@ -185,6 +204,10 @@
     });
     // Remove credential-bearing fragment before showing the signed-in page.
     history.replaceState(null,"",location.pathname+location.search+"#ai");
+    if(callbackAtOldPath) {
+      location.replace(siteRedirect+"#ai");
+      return;
+    }
     document.querySelector('[data-nav="ai"]')?.click();
   }
   async function getAccessToken() {
@@ -331,7 +354,7 @@
     emailRequestInFlight=true;
     updateEmailButton();
     try{
-      await api("/auth/v1/otp?redirect_to="+encodeURIComponent(location.origin+location.pathname),{
+      await api("/auth/v1/otp?redirect_to="+encodeURIComponent(authCallbackRedirect),{
         method:"POST",headers:headers(),body:JSON.stringify({email,create_user:true})
       });
       emailNotice="Sign-in link requested successfully. Check your inbox and spam folder. Avoid requesting another link unless it is necessary.";
