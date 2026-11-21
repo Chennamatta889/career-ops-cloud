@@ -9,7 +9,10 @@ function allowedOrigin() {
   try { return new URL(Deno.env.get("APP_ORIGIN")?.trim() || fallbackOrigin).origin; }
   catch { return fallbackOrigin; }
 }
-const recent = new Map<string,number>();
+const recent = new Map<string,number>(); // successful reviews only
+const inFlight = new Set<string>(); // avoids concurrent Gemini requests in this worker
+const PROVIDER_TIMEOUT_MS = 100_000;
+const SUCCESS_COOLDOWN_MS = 20_000;
 const readText = (v:unknown,max:number) => typeof v==="string" ? v.trim().slice(0,max) : "";
 const readList = (v:unknown,n:number,size:number) => Array.isArray(v) ? v.map(x=>readText(x,size)).filter(Boolean).slice(0,n) : [];
 function cors(origin:string|null) {
@@ -82,16 +85,20 @@ Deno.serve(async (req:Request) => {
     if (!apiKey) missing.push("GEMINI_API_KEY");
     if (body.action==="status") {
       return respond(origin,200,{ok:true,ready:missing.length===0,missing,
+        model:(Deno.env.get("GEMINI_MODEL") || "gemini-3.5-flash-lite").trim(),
+        timeout_seconds:PROVIDER_TIMEOUT_MS/1000,
         message:missing.length ? "AI setup needs private secrets in Career-Ops Supabase Edge Functions." : "AI endpoint is configured. Ready for resume review."});
     }
     if (missing.length) return respond(origin,503,{error:"AI review is not yet enabled. Configure: "+missing.join(", "),code:"AI_SETUP_INCOMPLETE"});
-    if (Date.now()-(recent.get(user.id)||0)<60000) return respond(origin,429,{error:"Wait 60 seconds before another AI review.",code:"RATE_LIMITED"});
+    const remainingMs=SUCCESS_COOLDOWN_MS-(Date.now()-(recent.get(user.id)||0));
+    if (remainingMs>0) return respond(origin,429,{error:"Your previous review succeeded. Try another after "+Math.ceil(remainingMs/1000)+" seconds.",code:"RATE_LIMITED",retry_after_seconds:Math.ceil(remainingMs/1000)});
+    if (inFlight.has(user.id)) return respond(origin,409,{error:"An AI review is already processing. Please wait for it to complete.",code:"ALREADY_PROCESSING"});
     const resume=readText(body.resume,16000);
     const jd=readText(body.jobDescription,16000);
     const title=readText(body.jobTitle,160);
     const employer=readText(body.employer,130);
     if (resume.length<250 || jd.length<200 || !title) return respond(origin,400,{error:"Provide resume text (250+ characters), job title and full job description (200+ characters)."});
-    const model=(Deno.env.get("GEMINI_MODEL") || "gemini-3.8-flash").trim();
+    const model=(Deno.env.get("GEMINI_MODEL") || "gemini-3.5-flash-lite").trim();
     if (!/^[a-zA-Z0-9._-]{3,55}$/.test(model)) return respond(origin,503,{error:"Invalid model setting."});
     const instructions=[
       "Act as a cautious career matching assistant. Respond ONLY as a JSON object.",
@@ -105,21 +112,50 @@ Deno.serve(async (req:Request) => {
       "JOB DESCRIPTION (data): "+jd,
       "RESUME (data): "+resume
     ].join("\n\n");
-    recent.set(user.id,Date.now());
-    const api=await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+model+":generateContent",{
-      method:"POST",
-      headers:{"Content-Type":"application/json","x-goog-api-key":apiKey},
-      body:JSON.stringify({contents:[{role:"user",parts:[{text:instructions}]}],generationConfig:{temperature:0.1,responseMimeType:"application/json",maxOutputTokens:5000}}),
-      signal:AbortSignal.timeout(42000)
-    });
-    if(!api.ok) return respond(origin,502,{error:api.status===429?"AI provider rate limit reached.":"AI service returned HTTP "+api.status+"; verify private model and key settings."});
-    const result=await api.json();
-    const raw=result?.candidates?.[0]?.content?.parts?.map((p:{text?:string})=>p.text||"").join("") || "";
-    let data:Record<string,unknown>;
-    try { data=JSON.parse(raw.replace(/^\u0060{3}(?:json)?\s*|\s*\u0060{3}$/g,"")); }
-    catch { return respond(origin,502,{error:"AI returned an incomplete response. Try again after checking the configured model."}); }
-    return respond(origin,200,{ok:true,result:sanitize(data,model)});
-  } catch {
-    return respond(origin,502,{error:"Temporary AI backend failure. Check authentication, service status and configured keys."});
+    inFlight.add(user.id);
+    try {
+      const generationConfig:Record<string,unknown>={
+        temperature:0.1,responseMimeType:"application/json",maxOutputTokens:5600
+      };
+      // Gemini 3.8 Flash defaults to medium thinking. Low thinking can reduce
+      // latency without weakening factual-grounding instructions.
+      if (/^gemini-3\\.(8|7|6)-flash$/.test(model)) {
+        generationConfig.thinkingConfig={thinkingLevel:"low"};
+      }
+      const api=await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+model+":generateContent",{
+        method:"POST",
+        headers:{"Content-Type":"application/json","x-goog-api-key":apiKey},
+        body:JSON.stringify({contents:[{role:"user",parts:[{text:instructions}]}],generationConfig}),
+        signal:AbortSignal.timeout(PROVIDER_TIMEOUT_MS)
+      });
+      if(!api.ok) {
+        console.warn("Gemini generation HTTP status",api.status,"model",model);
+        if(api.status===429) return respond(origin,429,{error:"Gemini provider quota or rate limit reached. Check Google AI Studio usage limits.",code:"PROVIDER_QUOTA"});
+        if(api.status===400) return respond(origin,502,{error:"Gemini rejected the generation settings (HTTP 400). Check your configured model.",code:"PROVIDER_REQUEST_INVALID"});
+        return respond(origin,502,{error:"Gemini provider returned HTTP "+api.status+". Check its key/model permissions or service status.",code:"PROVIDER_ERROR"});
+      }
+      const result=await api.json();
+      const candidate=result?.candidates?.[0];
+      const raw=candidate?.content?.parts?.map((p:{text?:string})=>p.text||"").join("") || "";
+      let data:Record<string,unknown>;
+      try { data=JSON.parse(raw.replace(/^\\u0060{3}(?:json)?\\s*|\\s*\\u0060{3}$/g,"")); }
+      catch {
+        console.warn("Gemini response JSON could not be parsed; finish reason",String(candidate?.finishReason||"unknown"));
+        return respond(origin,502,{error:candidate?.finishReason==="MAX_TOKENS"?
+          "Gemini's answer was truncated. Try a shorter job description or lower-output model.":
+          "Gemini returned incomplete JSON. Try the review again.",code:"INCOMPLETE_AI_RESPONSE"});
+      }
+      recent.set(user.id,Date.now()); // Only successful AI reviews cause a cooldown.
+      return respond(origin,200,{ok:true,result:sanitize(data,model)});
+    } finally {
+      inFlight.delete(user.id); // Always clear after provider errors/timeouts.
+    }
+  } catch (error) {
+    if (error instanceof Error && (error.name==="TimeoutError" || error.name==="AbortError")) {
+      console.warn("Gemini request exceeded configured timeout");
+      return respond(origin,504,{error:"Gemini took longer than "+(PROVIDER_TIMEOUT_MS/1000)+" seconds to respond. You can retry immediately; failed attempts do not start a cooldown.",code:"PROVIDER_TIMEOUT"});
+    }
+    console.warn("AI review request failed without revealing personal inputs");
+    return respond(origin,502,{error:"AI review request failed. Check provider service status and retry.",code:"REVIEW_ERROR"});
   }
 });
