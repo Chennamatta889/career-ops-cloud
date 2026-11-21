@@ -24,7 +24,7 @@
       <span class="brand-icon"><span></span><span></span></span>
       <span class="brand-copy"><strong>career<span>ops</span></strong><small>JOB DISCOVERY & APPLICATIONS</small></span>
     </a>
-    <div class="workspace-select"><span class="workspace-icon">C</span><span><strong>Career workspace</strong><small>Job search &amp; applications</small></span></div>
+    <button class="workspace-select workspace-home" type="button" data-nav="overview" aria-label="Open Career-Ops Overview"><span class="workspace-icon" aria-hidden="true">C</span><span><strong>Career workspace</strong><small>Job search &amp; applications</small></span><span class="workspace-home-arrow" aria-hidden="true">›</span></button>
     <div class="nav-label">WORKSPACE</div>
     <nav class="nav-list" id="mainNav">
       <button class="nav-link active" data-nav="overview"><span class="nav-icon">◫</span><span>Overview</span></button>
@@ -44,7 +44,7 @@
   <div class="mobile-scrim" id="mobileScrim"></div>
   <div class="main-shell">
     <header class="topbar">
-      <div class="topbar-left"><button class="mobile-menu" id="mobileMenu" aria-label="Open navigation" aria-expanded="false">☰</button><span class="breadcrumb">Workspace</span><span class="breadcrumb-divider">/</span><strong id="currentCrumb">Overview</strong></div>
+      <div class="topbar-left"><button class="mobile-menu" id="mobileMenu" aria-label="Open navigation" aria-expanded="false">☰</button><button class="breadcrumb breadcrumb-home" type="button" data-nav="overview" aria-label="Return to Career-Ops Overview">Workspace</button><span class="breadcrumb-divider" aria-hidden="true">/</span><strong id="currentCrumb" aria-live="polite">Overview</strong></div>
       <div class="topbar-actions"><span class="sync-pill" id="headerFeedStatus" data-state="loading"><span></span><span id="headerFeedLabel">Checking published listings</span></span><button class="icon-button" data-nav="activity" aria-label="View activity">◷</button><span class="top-avatar">CO</span></div>
     </header>
     <main class="page-content">
@@ -155,14 +155,56 @@
       </section>
       <section class="page" id="page-settings">
         <div class="page-heading"><div><div class="eyebrow">WORKSPACE SETTINGS</div><h1>Settings & <span>privacy.</span></h1><p>Manage imports, browser data, and connection diagnostics.</p></div></div>
-        <div class="form-grid"><section class="panel"><div class="panel-heading"><div><div class="eyebrow">DATA IMPORT</div><h2>Import job listings</h2></div></div><p class="panel-desc">Import a JSON file exported by Career-Ops. Supported inputs include an array of jobs, or an object with a <code>jobs</code>, <code>matches</code>, <code>results</code>, or <code>discovered_jobs</code> array. The import is local only.</p><label class="btn btn-primary upload-btn" for="scanImport">Choose JSON file ⇧</label><input id="scanImport" type="file" accept=".json,application/json" hidden><p class="inline-note" id="importMessage">No file imported. You can upload job listings in JSON format.</p></section><section class="panel"><div class="panel-heading"><div><div class="eyebrow">WORKSPACE</div><h2>Data & privacy</h2></div></div><p class="panel-desc">Your private resume and tracked jobs are stored in your signed-in Supabase account. Browser job lists are kept only for this tab and separated by Google account. Older unassigned browser records are imported only with your confirmation. Resetting this browser does not delete cloud data.</p><div class="setting-actions"><button class="btn btn-outline" id="exportData">Export workspace JSON ↓</button><button class="btn btn-danger" id="resetWorkspace">Reset browser workspace</button></div></section></div>
-        <section class="panel health-panel" aria-label="System health diagnostics">
+        <div class="settings-grid">
+          <section class="panel settings-card" aria-labelledby="settingsAccountHeading">
+            <div class="settings-card-head"><span class="settings-card-icon" aria-hidden="true">◎</span><div><div class="eyebrow">ACCOUNT</div><h2 id="settingsAccountHeading">Account settings</h2></div></div>
+            <p class="panel-desc">Manage your Google sign-in and access the private Career-Ops workspace associated with your account.</p>
+            <p class="settings-account-state" id="settingsAccountStatus" role="status" aria-live="polite">Checking sign-in status…</p>
+            <button class="btn btn-outline settings-card-action" type="button" data-nav="ai">Manage sign-in <span aria-hidden="true">→</span></button>
+          </section>
+          <section class="panel settings-card" aria-labelledby="settingsPrivacyHeading">
+            <div class="settings-card-head"><span class="settings-card-icon" aria-hidden="true">◇</span><div><div class="eyebrow">PRIVACY &amp; DATA</div><h2 id="settingsPrivacyHeading">Your information</h2></div></div>
+            <p class="panel-desc">Your saved resume and tracked applications are protected by account-specific access rules. Local browser records are separate from your cloud data.</p>
+            <div class="settings-card-links">
+              <button class="settings-link" type="button" data-nav="ai"><span>Manage saved resume</span><span aria-hidden="true">→</span></button>
+              <button class="settings-link" type="button" data-nav="applications"><span>View tracked applications</span><span aria-hidden="true">→</span></button>
+            </div>
+            <p class="settings-small-note">Deleting browser data does not delete records saved in your private account.</p>
+          </section>
+        </div>
+        <section class="panel health-panel settings-status" aria-label="System health diagnostics">
           <div class="panel-heading"><div><div class="eyebrow">SYSTEM STATUS</div><h2>Connection diagnostics</h2></div></div>
-          <p class="panel-desc">Run read-only checks for job discovery, resume parsers, Google sign-in, your private database permissions, and the AI configuration. No resume content is uploaded, no Gemini generation occurs, and no sign-in email is sent.</p>
+          <p class="panel-desc">Check the published job feed, file extraction libraries, Google authentication, your private storage access and AI configuration. Diagnostics are read-only and do not consume AI review credits.</p>
           <button type="button" class="btn btn-outline" id="runHealthChecks">Run diagnostics</button>
           <p id="healthSummary" role="status" aria-live="polite">Checks have not been run in this browser.</p>
           <div id="healthResults" class="health-results" aria-live="polite"></div>
         </section>
+        <details class="panel settings-advanced" id="advancedTools">
+          <summary class="settings-advanced-toggle">
+            <span class="settings-advanced-icon" aria-hidden="true">⚙</span>
+            <span class="settings-advanced-label"><strong>Advanced tools</strong><small>Import, export and reset browser data</small></span>
+            <span class="settings-advanced-chevron" aria-hidden="true">⌄</span>
+          </summary>
+          <div class="settings-advanced-content">
+            <section class="settings-advanced-section" aria-labelledby="advancedImportHeading">
+              <h3 id="advancedImportHeading">Import job listings</h3>
+              <p>Load a JSON file containing job records to work with them in this browser. Supported formats include a job array or a <code>jobs</code>, <code>matches</code>, <code>results</code> or <code>discovered_jobs</code> array. This does not submit applications.</p>
+              <label class="btn btn-outline upload-btn" for="scanImport">Choose JSON file</label>
+              <input id="scanImport" type="file" accept=".json,application/json" hidden>
+              <p class="inline-note" id="importMessage" role="status">No file imported.</p>
+            </section>
+            <section class="settings-advanced-section" aria-labelledby="advancedBackupHeading">
+              <h3 id="advancedBackupHeading">Export browser workspace</h3>
+              <p>Download the current tab's job list, preferences and activity as JSON. This export does not include your private Supabase resume.</p>
+              <button class="btn btn-outline" type="button" id="exportData">Download workspace JSON</button>
+            </section>
+            <section class="settings-advanced-section" aria-labelledby="advancedResetHeading">
+              <h3 id="advancedResetHeading">Reset browser workspace</h3>
+              <p>Clear the current tab's job list, preferences and activity. Your cloud resume and saved account records will remain untouched. This cannot be undone for unsynced data.</p>
+              <button class="btn btn-danger" type="button" id="resetWorkspace">Reset browser data</button>
+            </section>
+          </div>
+        </details>
         <div class="notice" style="margin-top:22px"><span class="notice-icon">ⓘ</span><div><strong>Privacy:</strong> Job status in the pipeline reflects your own tracking, not employer confirmation. Your stored resume is protected with account-owned database rules; do not use a shared device without signing out. No applications are submitted automatically.</div></div>
       </section>
     </main>
