@@ -26,6 +26,10 @@
   ];
   const DEFAULT_PREFS = {roles:"",locations:"",experience:"",skills:""};
   const $ = function (id) { return document.getElementById(id); };
+  const readableJobText=function(raw,max=6000){
+    return window.CareerOpsJobText?.plainText?.(raw,max)||
+      (typeof raw==="string"?raw.slice(0,max).trim():"");
+  };
   const categoryApi=window.CareerOpsCategories;
   const jobCategory=function(j){
     const provided=typeof j?.category==="string"?j.category:"";
@@ -48,7 +52,7 @@
       return {
         mode: ["imported","manual","live"].includes(x.mode) ? x.mode : "demo",
         jobs: x.jobs.slice(0,500).map(function (j) {
-          return { id: str(j.id) || newId(), title: str(j.title), company: str(j.company), location: str(j.location), category:jobCategory(j), department:str(j.department), skills: Array.isArray(j.skills) ? j.skills.slice(0,12).map(str) : [], description: str(j.description), url: safeUrl(j.url), demo: !!j.demo, manual: !!j.manual || (x.mode === "manual" && !j.demo), source: str(j.source), requiredExperience: str(j.requiredExperience), stage: STAGES.some(function (s) { return s.name === j.stage; }) ? j.stage : "", addedAt: str(j.addedAt) };
+          return { id: str(j.id) || newId(), title: str(j.title), company: str(j.company), location: str(j.location), category:jobCategory(j), department:str(j.department), skills: Array.isArray(j.skills) ? j.skills.slice(0,12).map(str) : [], description: readableJobText(j.description,6000), url: safeUrl(j.url), demo: !!j.demo, manual: !!j.manual || (x.mode === "manual" && !j.demo), source: str(j.source), requiredExperience: str(j.requiredExperience), stage: STAGES.some(function (s) { return s.name === j.stage; }) ? j.stage : "", addedAt: str(j.addedAt) };
         }),
         prefs: Object.assign({}, DEFAULT_PREFS, x.prefs || {}),
         activity: Array.isArray(x.activity) ? x.activity.slice(0,100) : [],
@@ -174,7 +178,7 @@
   const find = function (id) { return state.jobs.find(function (j) { return j.id === id; }); };
   const priorityBadge = function(j){
     if(!state.prefs.roles.trim()&&!state.prefs.locations.trim()&&!state.prefs.skills.trim())
-      return '<span class="match limited" title="Set preferences for personal ranking">All roles</span>';
+      return "";
     const fit=priority(j);
     return '<span class="match '+(fit.quality==="Limited evidence"?"limited":"")+
       '" title="'+escapeHtml(fit.quality+" · rule-based personal priority, not AI")+'">'+
@@ -187,13 +191,19 @@
   const card = function (j) {
     const url = safeUrl(j.url);
     const fit = priority(j);
+    const showPersonalRanking=Boolean(
+      state.prefs.roles.trim()||state.prefs.locations.trim()||state.prefs.skills.trim()
+    );
+    const ranking=showPersonalRanking?
+      '<div class="card-priority-row">'+priorityBadge(j)+
+      '<span class="priority-quality">'+escapeHtml(fit.quality)+'</span></div>':"";
     const categoryName=jobCategory(j);
     const details = '<button class="text-link secondary-link" type="button" data-action="details" data-id="' + escapeHtml(j.id) + '">View details</button>';
     const aiReview = '<button class="text-link open-job-link" type="button" data-action="ai" data-id="' + escapeHtml(j.id) + '">Review with AI</button>';
     const open = url
-      ? '<a class="text-link open-job-link" href="' + escapeHtml(url) + '" rel="noopener noreferrer" aria-label="Open job listing for ' + escapeHtml(j.title) + ' at ' + escapeHtml(j.company) + '">Open listing ↗</a>'
+      ? '<a class="text-link open-job-link" href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer" aria-label="Open job listing for ' + escapeHtml(j.title) + ' at ' + escapeHtml(j.company) + '">Open listing ↗</a>'
       : '<span class="no-url-label">' + (j.demo ? 'Sample job — no link' : 'Posting link unavailable') + '</span>';
-    return '<article class="job-card"><div class="job-card-top"><div class="company-symbol">' + escapeHtml(companyInitials(j.company)) + '</div><button class="save-button ' + (j.stage ? 'saved' : '') + '" data-action="save" data-id="' + escapeHtml(j.id) + '">' + (j.stage ? '✓ Tracking' : '+ Save') + '</button></div><div class="card-priority-row">' + priorityBadge(j) + '<span class="priority-quality">' + escapeHtml(fit.quality) + '</span></div><h3>' + escapeHtml(j.title) + '</h3><p class="company-line">' + escapeHtml(j.company) + ' · ' + escapeHtml(j.location) + '</p><p class="description">' + escapeHtml(j.description || 'Full requirements are not included in the public scan. Open the listing to review them.') + '</p><div class="chip-wrap"><span class="skill-chip category-chip">' + escapeHtml(categoryName) + '</span>' + chips(j.skills) + '</div><div class="card-footer"><span class="job-date">' + escapeHtml(jobSource(j)) + '</span><div class="card-action-group">' + details + aiReview + open + '</div></div></article>';
+    return '<article class="job-card"><div class="job-card-top"><div class="company-symbol">' + escapeHtml(companyInitials(j.company)) + '</div><button class="save-button ' + (j.stage ? 'saved' : '') + '" data-action="save" data-id="' + escapeHtml(j.id) + '">' + (j.stage ? '✓ Tracking' : '+ Save') + '</button></div>' + ranking + '<h3>' + escapeHtml(j.title) + '</h3><p class="company-line">' + escapeHtml(j.company) + ' · ' + escapeHtml(j.location) + '</p><p class="description">' + escapeHtml(readableJobText(j.description,220) || 'A description is not available in this listing. Open the employer website for details.') + '</p><div class="chip-wrap"><span class="skill-chip category-chip">' + escapeHtml(categoryName) + '</span>' + chips(j.skills) + '</div><div class="card-footer"><span class="job-date">' + escapeHtml(jobSource(j)) + '</span><div class="card-action-group">' + details + aiReview + open + '</div></div></article>';
   };
   const pipelineCount = function (stage) { return state.jobs.filter(function (j) { return j.stage === stage; }).length; };
   const renderOverview = function () {
@@ -274,7 +284,13 @@
     $("dialogEyebrow").textContent = j.demo ? "EXAMPLE LISTING" : "JOB DETAILS";
     $("dialogTitle").textContent = j.title;
     $("dialogMeta").textContent = j.company + " · " + j.location;
-    $("dialogDescription").textContent = j.description || "No description provided. Review the original job listing for full requirements.";
+    const fullDescription=readableJobText(j.description,6000);
+    $("dialogDescription").textContent=fullDescription||
+      "A job description is not available. Check the original employer posting for complete requirements.";
+    const sourceNote=$("dialogDescriptionNote");
+    sourceNote.hidden=!(j.source==="cloud" && !!safeUrl(j.url));
+    if(!sourceNote.hidden)sourceNote.textContent=
+      "Description excerpt from the published employer board. The original posting contains the most complete and current details.";
     $("dialogSkills").innerHTML = chips(j.skills);
     const fit = priority(j);
     const signalRow = function (title, result, total) {
@@ -284,15 +300,15 @@
     const priorityConfigured=Boolean(
       state.prefs.roles.trim()||state.prefs.locations.trim()||state.prefs.skills.trim()
     );
-    $("matchExplanation").innerHTML = priorityConfigured ?
+    // Hide the entire ranking panel unless the candidate asked for
+    // personalized job priorities. The full description remains the focus.
+    $("matchExplanation").hidden=!priorityConfigured;
+    $("matchExplanation").innerHTML=priorityConfigured ?
       '<div class="priority-head"><div><span class="eyebrow">PERSONALIZED PRIORITY</span><h3>' +
       (j.demo ? 'Example ' : '') + fit.score + '/100</h3></div><span class="priority-quality">' + escapeHtml(fit.quality) +
       '</span></div>' + signalRow("Target role",fit.role,50) + signalRow("Location",fit.location,30) +
       signalRow("Skills mentioned",fit.skills,20) + '<div class="priority-experience">' +
-      escapeHtml(fit.experience) + '</div><p class="priority-disclaimer">' + escapeHtml(fit.method) + '</p>' :
-      '<div class="ranking-not-configured"><strong>Personalized ranking is optional</strong>' +
-      '<p>Browse and save this opportunity without a score. To enable a custom priority breakdown, ' +
-      'set your target roles, preferred locations, or skills under Resume &amp; preferences.</p></div>';
+      escapeHtml(fit.experience) + '</div><p class="priority-disclaimer">' + escapeHtml(fit.method) + '</p>' : "";
     const url = safeUrl(j.url);
     $("dialogSource").textContent = url ? jobSource(j) + " · opens on the employer website"
       : (j.demo ? "Sample job: this is not a real listing, so there is no external URL."
@@ -332,7 +348,7 @@
       category:jobCategory({title,category:j.category,department:j.department}),
       department:str(j.department).slice(0,130),
       skills: skills.map(str).filter(Boolean).slice(0,12),
-      description: str(j.description || j.summary || j.job_description || "").slice(0,3000),
+      description: readableJobText(str(j.description || j.summary || j.job_description || ""),6000),
       requiredExperience: str(j.requiredExperience || j.required_experience || j.experience_requirement || "").slice(0,100),
       url: safeUrl(j.apply_url || j.job_url || j.url || j.link || j.source_url),
       demo: false, manual: false, source: "import", stage: "", addedAt: stamp()
@@ -389,7 +405,7 @@
       if (action.getAttribute("data-action") === "ai") {
         const job = find(id);
         if (job) window.dispatchEvent(new CustomEvent("careerops:job-selected", {detail:{
-          title:job.title,company:job.company,url:job.url,description:job.description
+          title:job.title,company:job.company,url:job.url,description:readableJobText(job.description,6000)
         }}));
       }
     }
@@ -420,7 +436,7 @@
   $("openAddJob").addEventListener("click", function () { $("addDialog").showModal(); });
   $("closeDialog").addEventListener("click", function () { $("jobDialog").close(); });
   $("closeAddDialog").addEventListener("click", function () { $("addDialog").close(); });
-  $("dialogAI").addEventListener("click", function () { const job=find(activeJobId); $("jobDialog").close(); if(job) window.dispatchEvent(new CustomEvent("careerops:job-selected",{detail:{title:job.title,company:job.company,url:job.url,description:job.description}})); });
+  $("dialogAI").addEventListener("click", function () { const job=find(activeJobId); $("jobDialog").close(); if(job) window.dispatchEvent(new CustomEvent("careerops:job-selected",{detail:{title:job.title,company:job.company,url:job.url,description:readableJobText(job.description,6000)}})); });
   $("dialogSave").addEventListener("click", function () { if (activeJobId) { track(activeJobId); const j = find(activeJobId); $("dialogSave").textContent = j && j.stage ? "✓ Tracking" : "+ Save job"; } });
   $("addJobForm").addEventListener("submit", function (e) {
     e.preventDefault();
@@ -430,7 +446,7 @@
     const rawUrl = str(form.get("url"));
     const url = safeUrl(rawUrl);
     if (rawUrl && !url) { toast("Please enter a valid http(s) job URL"); return; }
-    const job = { id:newId(),title:title.slice(0,160),company:company.slice(0,120),location:str(form.get("location")) || "Not specified",category:jobCategory({title}),skills:str(form.get("skills")).split(",").map(function (s) { return s.trim(); }).filter(Boolean).slice(0,12),description:str(form.get("description")),url:url,demo:false,manual:true,source:"manual",stage:"Saved",addedAt:stamp() };
+    const job = { id:newId(),title:title.slice(0,160),company:company.slice(0,120),location:str(form.get("location")) || "Not specified",category:jobCategory({title}),skills:str(form.get("skills")).split(",").map(function (s) { return s.trim(); }).filter(Boolean).slice(0,12),description:readableJobText(str(form.get("description")),6000),url:url,demo:false,manual:true,source:"manual",stage:"Saved",addedAt:stamp() };
     if (state.mode === "demo") state.jobs = state.jobs.filter(function (j) { return !j.demo; });
     state.jobs.unshift(job); if (state.mode !== "live") state.mode = "manual";
     log("Opportunity added", title + " · " + company);
