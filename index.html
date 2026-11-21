@@ -89,7 +89,7 @@
           <div><strong>Secure AI review</strong><p>This feature requires its own authenticated Career-Ops backend. Resume text remains in this browser tab until you explicitly request analysis; the request is then sent to the private backend and Gemini. Do not enter passwords or API keys here.</p></div>
           <button class="btn btn-outline" type="button" id="aiSignOut" hidden>Sign out</button>
         </div>
-        <div class="notice" role="status"><span class="notice-icon">ⓘ</span><div><strong>Connection:</strong> <span id="aiStatus">Checking AI backend configuration...</span></div></div>
+        <div class="notice" role="status"><span class="notice-icon">ⓘ</span><div><strong>Connection:</strong> <span id="aiStatus">Checking AI backend configuration...</span></div><button class="btn btn-outline" type="button" id="aiCheckConnection">Check AI connection</button></div>
         <section class="panel ai-login" id="aiLogin" hidden>
           <div class="panel-heading"><div><div class="eyebrow">SIGN IN</div><h2>Connect your private Career-Ops account</h2></div></div>
           <p class="panel-desc">Once the separate backend is configured, enter your approved email address. A sign-in link will be sent to your inbox.</p>
@@ -102,7 +102,7 @@
               <div class="panel-heading"><div><div class="eyebrow">STEP 01</div><h2>Resume evidence</h2></div></div>
               <p class="panel-desc">Paste your resume text. For PDFs and DOCX, copy the text here; automatic PDF parsing is not enabled. You can also select a plain-text .txt file. No upload occurs at this step.</p>
               <div class="form-stack">
-                <label>Your resume text<textarea id="aiResume" rows="14" maxlength="16000" spellcheck="false" placeholder="Paste your actual resume content. Do not add or invent skills, experience, or metrics."></textarea></label>
+                <label>Your resume text<textarea id="aiResume" rows="14" maxlength="16000" spellcheck="false" placeholder="Paste your actual resume content. Do not add or invent skills, experience, or metrics."></textarea></label><p id="aiResumeCount" class="ai-field-count" aria-live="polite">0 / 250 characters minimum</p>
                 <label class="btn btn-outline upload-btn" for="aiResumeTxtFile">Load .txt locally</label><input id="aiResumeTxtFile" type="file" accept=".txt,text/plain" hidden>
               </div>
             </section>
@@ -113,14 +113,14 @@
                 <label>Job title<input type="text" id="aiRole" maxlength="160" placeholder="DevOps Engineer"></label>
                 <label>Company<input type="text" id="aiCompany" maxlength="130" placeholder="Employer"></label>
                 <label>Job posting link (reference only)<input type="url" id="aiJobUrl" readonly placeholder="Select from Discover Jobs"></label>
-                <label>Full job description<textarea id="aiJd" rows="12" maxlength="16000" spellcheck="false" placeholder="Paste the job requirements, responsibilities and qualifications here."></textarea></label>
+                <label>Full job description<textarea id="aiJd" rows="12" maxlength="16000" spellcheck="false" placeholder="Paste the job requirements, responsibilities and qualifications here."></textarea></label><p id="aiJdCount" class="ai-field-count" aria-live="polite">0 / 200 characters minimum · required even when a job card is selected</p>
               </div>
             </section>
           </div>
           <div class="panel ai-submit-panel">
             <div class="ai-submit-copy"><h2>Review before generating</h2><p>AI may make mistakes. Verify the final resume bullets, cover letter, outreach message and screening answers. The app will not send emails or submit applications.</p></div>
             <label class="ai-consent"><input type="checkbox" id="aiConsent"><span>I agree to send my resume text and this job description to the configured Gemini AI provider for this review.</span></label>
-            <button id="aiAnalyze" class="btn btn-primary" type="button">✧ Review job with AI</button>
+            <p class="ai-checklist" id="aiChecklist" aria-live="polite">Complete your resume, the full job description, job title and consent before reviewing.</p><button id="aiAnalyze" class="btn btn-primary" type="button">✧ Review job with AI</button>
           </div>
           <div class="ai-result-bar"><button id="aiDownload" class="btn btn-outline" type="button" hidden>Download draft as .txt ↓</button></div>
           <div id="aiResult" class="ai-results panel" hidden></div>
