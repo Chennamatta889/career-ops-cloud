@@ -76,3 +76,11 @@
 .ai-draft-text{white-space:pre-wrap;word-break:break-word;font:inherit;font-size:11px;color:#bdcfdd;line-height:1.75;background:#122539;border:1px solid #2d4b60;border-radius:9px;padding:14px;margin:0}
 .ai-disclaimer{border-top:1px solid #315669;color:#e3bd79;font-size:10px;line-height:1.6;padding-top:15px}
 @media(max-width:720px){.ai-intro,.ai-login-row{flex-wrap:wrap}.ai-intro .btn{width:100%}.ai-login-row .btn{width:100%}.ai-submit-panel .btn{width:100%}}
+
+/* AI Review diagnostics and explicit input prerequisites */
+#page-ai > .notice{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+#page-ai > .notice > div{flex:1;min-width:220px;line-height:1.65}
+#aiCheckConnection{flex:none}
+.ai-field-count{font-size:11px;color:#a7c3d1;margin:5px 0 12px}
+.ai-checklist{flex-basis:100%;width:100%;background:#162d3d;color:#bfd0de;border:1px solid #3a566a;border-radius:9px;padding:10px 13px;font-size:11px;line-height:1.6}
+@media(max-width:620px){#aiCheckConnection{width:100%}}
