@@ -124,14 +124,21 @@ export async function runScan({sources,fetchImpl=fetch,concurrency=5}={}){
     if(seenSources.has(identity))throw Error("Duplicate board "+identity);
     seenSources.add(identity);
   }
-  const jobs=[],errors=[];let found=0,next=0;
+  const jobs=[],errors=[],health=new Array(sources.length);
+  let found=0,next=0;
   await Promise.all(Array.from({length:Math.min(sources.length,Math.max(1,Math.min(8,concurrency)))},async()=>{
     while(next<sources.length){
-      const source=sources[next++];
+      const sourceIndex=next++;
+      const source=sources[sourceIndex];
+      const common={provider:source.provider,board:source.slug,name:source.name};
       try{
         const openings=await scanBoard(source,fetchImpl);
         jobs.push(...openings);found+=openings.length;
-      }catch(e){errors.push({board:source.name,reason:clean(e?.message||"Source unavailable",140)});}
+        health[sourceIndex]={...common,status:"ok",count:openings.length};
+      }catch(e){
+        errors.push({board:source.name,reason:clean(e?.message||"Source unavailable",140)});
+        health[sourceIndex]={...common,status:"error",count:0};
+      }
     }
   }));
   const status=errors.length===sources.length?"failed":errors.length?"partial":"success";
@@ -144,7 +151,7 @@ export async function runScan({sources,fetchImpl=fetch,concurrency=5}={}){
       message:errors.length?"Some employers were unavailable; results may be incomplete.":
         "All published roles scanned without title, country, experience or seniority exclusions."},
     category_counts:Object.fromEntries(categories.map(c=>[c,published.filter(j=>j.category===c).length])),
-    source_errors:errors.slice(0,30),jobs:published
+    source_errors:errors.slice(0,30),source_health:health,jobs:published
   };
 }
 async function main(){
