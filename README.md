@@ -1,5 +1,26 @@
 # Career-Ops Cloud Sandbox
 
+## Phase 4.5 — Stability, security, and read-only diagnostics (November 21, 2026)
+
+### Included fixes
+
+- **Account separation:** Browser job records are now session-scoped by the active Google account, rather than automatically showing the old browser-wide localStorage data. On sign-out or account change, the dashboard switches to that account's own session records and restores only its own RLS-protected server data. A network job feed still running for an earlier account cannot overwrite the next account's data.
+- **Legacy tracking migration:** The Applications page's **Upload this device's saved jobs** action explicitly asks permission before importing old unassigned browser records. Users should not import legacy jobs from another person's shared device. Old unassigned job data is cleared only after successful confirmed upload.
+- **Tracking consistency:** Manually added jobs now send a canonical job key with every stage change (including unsaving), preventing mismatched cloud keys for new records.
+- **Async safety:** An in-flight resume-vault fetch is invalidated when a user signs out or switches accounts, including during response JSON parsing. Restoring a saved resume won't overwrite text entered while loading; manual Load confirms before replacing an existing editor. Google auth responses from an older sign-in cannot restore stale private UI after logout.
+- **Job description freshness:** Clicking AI review on a supported Ashby, Lever or Greenhouse job now attempts to retrieve the full public description even when the public scan already contains a long excerpt. A job-fetch response cannot overwrite a different link or a description the user edited while it was loading. Unsupported or unavailable portals still allow manual paste.
+- **Error handling:** Clearer signed-out, diagnostic, parser and private storage messages; no automatic applications or paid background Gemini checks.
+
+### Diagnostics and release gates
+
+Open **Settings & data → System diagnostics → Run diagnostics**. The checks are read-only: public scanner feed schema, PDF/DOCX parser bundle assets, Google provider status, verified user session, owner-only resume vault query (metadata only), owner-only tracking query (metadata only), and AI configuration. **No Gemini generation, recruiter email or job application is triggered**. The AI diagnostic verifies configuration, not a successful paid generation; scanned PDF OCR remains unavailable.
+
+The GitHub Actions **Publish Career-Ops dashboard** workflow now runs browser regression tests for account switching, unassigned legacy data, canonical job keys, stale public feed requests, login, PDF/DOCX parser handling and AI review wiring, plus a post-deploy public website smoke test. The live smoke checks published JS/HTML and parser assets and verifies an unauthenticated request to the AI endpoint is denied. A real per-user Google login, PDF parsing on the user's phone and successful Gemini response still require explicit signed-in tests using the browser; do not mark those completed based only on mocked tests.
+
+### Security note
+
+Supabase schema and quota RLS checks were audited. User-owned vault/tracking tables have RLS and anonymous read denied. The Gemini quota reservation function remains service-role only. Supabase's existing **Leaked Password Protection Disabled** advisory applies if password sign-in is enabled; see https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection. Project owners can enable the setting in Supabase without exposing credentials in code.
+
 ## Verified multi-user access (November 21, 2026)
 
 Career-Ops no longer enforces a single-email ALLOWED_EMAIL allowlist. Any verified Supabase Auth account may fetch public supported employer job descriptions and request an AI Review. The Edge Function checks the authenticated user's email confirmation status. Existing Row Level Security isolates each user's private resume and application tracking records.
