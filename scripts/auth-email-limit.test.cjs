@@ -19,6 +19,9 @@ function harness(response,sharedStore) {
   };
   let requestCount=0;
   const fetcher=async(url,options)=>{
+    if(String(url).endsWith("/auth/v1/settings")) {
+      return {ok:true,status:200,json:async()=>({external:{google:true}})};
+    }
     requestCount++;
     assert.ok(String(url).includes("/auth/v1/otp"));
     assert.equal(options.method,"POST");
