@@ -119,8 +119,10 @@ jobs:
           mkdir -p public
           cp index.html styles.css match-engine.js job-categories.js job-text.js careerops-config.js app.js resume-parser.js ai-studio.js private-workspace.js health-check.js public/
           # Browser caches must not pair a previous dashboard script with new markup.
-          sed -i "s|?v=20261121-jobcards-recovery-v1|?v=$GITHUB_RUN_ID|g" public/index.html
+          sed -i "s|?v=20261121-experience-filter-v1|?v=$GITHUB_RUN_ID|g" public/index.html
           grep -Fq "./app.js?v=$GITHUB_RUN_ID" public/index.html
+          grep -Fq "./job-text.js?v=$GITHUB_RUN_ID" public/index.html
+          grep -Fq 'id="experienceFilter"' public/index.html
           cp about.html contact.html privacy.html terms.html resource-styles.css ads.txt robots.txt sitemap.xml public/
           cp -R resources public/resources
           mkdir -p public/vendor
