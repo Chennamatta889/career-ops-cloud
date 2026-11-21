@@ -9,6 +9,20 @@ A standalone experiment running the original [Career-Ops](https://github.com/car
 - To preview locally, clone/download the repository and open index.html in a browser.
 - To enable hosting: open **Settings → Pages → Build and deployment → Source: GitHub Actions**. Then run **Publish Career-Ops dashboard** in the Actions tab, or push an edit to the UI. This is a one-time repository setting.
 
+## Phase 4 — Private Resume Vault, Cross-Device Tracking and 32-Source Discovery
+
+This phase uses the separate Supabase project **career-ops-private**. It does not use or modify DraftflowAI.
+
+**Private Resume Vault:** Sign in with Google, extract a PDF/DOCX/TXT resume in your browser, check the extracted text, then click **Save resume privately**. Only the extracted TEXT, source filename and timestamp are upserted to a user-owned Postgres row. No original PDF bytes are uploaded. On another device, sign in and choose **Load saved resume**, or select a job's AI Review to restore an existing saved resume into an empty editor. Use **Delete saved resume** to remove your cloud copy. These actions do not call Gemini; Gemini is called only after consent and the deliberate Review button.
+
+**Cloud application tracking:** When signed in, saving a real job or moving its pipeline stage automatically updates its owner-only cloud record; removing it from Saved deletes the record. The Applications screen has **Sync tracked jobs** and **Upload this device's saved jobs**. The latter explicitly confirms migration of pre-existing local statuses. Demo listings are not synced. Browser-local statuses may remain after signout; local reset does not remove cloud records.
+
+**Privacy and security:** Tables careerops_resume_vault and careerops_job_tracking have Row Level Security with owner-only policies for SELECT, INSERT, UPDATE and DELETE. Anonymous privileges are revoked; user access uses the signed-in JWT, not a public secret key. Postgres storage is not end-to-end encrypted; project administrators with elevated privileges may access it. No resume text is committed to public GitHub files. Database schema is tracked at supabase/migrations/20261121_phase4_private_vault_tracking.sql.
+
+**Discovery expansion:** Scanning includes 32 publicly accessible Greenhouse/Ashby boards (up from 21), adding New Era Technology, Arcana Analytics, Instawork, Teikametrics, WPP, MerQube, Sarvam, OpenObserve, ScienceLogic, Arkose Labs and Lyric. Matches still depend on location, experience, title and deduplication filters and are not guaranteed. Selecting AI Review on a supported ATS job card attempts to fetch its public full job description while the private vault can refill the resume editor.
+
+**What remains:** Generative AI reviews are still on-demand after explicit consent, not automatic batch Gemini scoring. Native DOCX/PDF exports and automatic job submissions are not activated; existing AI Studio text draft export remains available. User-specific RLS operations require a real authenticated account to verify end to end.
+
 ## Gemini timeout and retry fix (November 21, 2026)
 
 The AI Studio was observed to reach Supabase successfully, then a Gemini generation call took about 42.5 seconds and produced HTTP 502 because the function had a 42-second timeout. The next attempt received HTTP 429 because the original code applied a 60-second cooldown even on failure.
