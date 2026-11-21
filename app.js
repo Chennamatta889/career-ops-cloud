@@ -735,6 +735,74 @@
   $("confirmApplied").addEventListener("click",confirmApplication);
   $("confirmNotYet").addEventListener("click",notYetApplied);
   $("closeApplicationFollowup").addEventListener("click",notYetApplied);
+
+  // Optional user-supplied acknowledgement review. The mailbox is never accessed.
+  const resetEmailAnalysis=function(){
+    emailReviewAnalysis=null;
+    emailReviewJobId="";
+    $("emailReviewAttach").disabled=true;
+    $("emailReviewResult").textContent="Nothing has been analysed or attached.";
+  };
+  const clearEmailReview=function(){
+    for(const id of ["emailReviewSender","emailReviewSubject","emailReviewBody","emailReviewJob"])
+      $(id).value="";
+    resetEmailAnalysis();
+  };
+  const analyseEmailReview=function(){
+    const job=find($("emailReviewJob").value);
+    if(!job || job.demo || !job.stage){
+      resetEmailAnalysis();
+      $("emailReviewResult").textContent="Select a real tracked job from My applications first.";
+      return;
+    }
+    const helper=window.CareerOpsApplicationEmail;
+    const result=helper?.analyse?.({
+      subject:$("emailReviewSubject").value,sender:$("emailReviewSender").value,
+      body:$("emailReviewBody").value
+    });
+    emailReviewAnalysis=null;
+    emailReviewJobId="";
+    $("emailReviewAttach").disabled=true;
+    if(!result || !result.hasMessage){
+      $("emailReviewResult").textContent="Paste the relevant acknowledgement text to check it.";
+      return;
+    }
+    const confidence=helper.scoreJob(result,job);
+    if(result.isLikelyAcknowledgement && result.senderPresent && confidence>=60){
+      emailReviewAnalysis=result;
+      emailReviewJobId=job.id;
+      $("emailReviewAttach").disabled=false;
+      $("emailReviewResult").textContent=result.notice+
+        " The selected company name appears in the email; confirm the correct posting yourself.";
+    } else {
+      $("emailReviewResult").textContent=result.notice+
+        (result.isLikelyAcknowledgement?
+          " A recognizable sender and matching company are required before attaching this note.":"");
+    }
+  };
+  const attachEmailReview=function(){
+    const job=find($("emailReviewJob").value);
+    if(!job || !job.stage || job.id!==emailReviewJobId ||
+      !emailReviewAnalysis?.isLikelyAcknowledgement || $("emailReviewAttach").disabled){
+      $("emailReviewResult").textContent="Review the selected job and email again before attaching.";
+      return;
+    }
+    // Save only a review timestamp to this browser's private session.
+    // Never persist sender, subject, message body or guessed application status.
+    job.emailEvidenceAt=stamp();
+    log("User reviewed a possible application acknowledgement",job.title+" · "+job.company);
+    save();render();
+    clearEmailReview();
+    $("emailReviewResult").textContent="Review note saved on this device. Application status was not changed.";
+    toast("Acknowledgement reviewed — use Yes, I applied if you submitted the form.");
+  };
+  $("emailReviewAnalyze").addEventListener("click",analyseEmailReview);
+  $("emailReviewAttach").addEventListener("click",attachEmailReview);
+  $("emailReviewClear").addEventListener("click",clearEmailReview);
+  ["emailReviewSender","emailReviewSubject","emailReviewBody","emailReviewJob"].forEach(function(id){
+    $(id).addEventListener(id==="emailReviewJob"?"change":"input",resetEmailAnalysis);
+  });
+
   $("addJobForm").addEventListener("submit", function (e) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
@@ -1030,6 +1098,7 @@
     state=load(ACCOUNT_STORAGE_PREFIX+id);
     activeJobId=null;
     closeApplicationFollowup();
+    clearEmailReview();
     if($("jobDialog")?.open)$("jobDialog").close();
     render();
     syncCloudFeed(false);
@@ -1041,6 +1110,7 @@
     state=load(GUEST_STORAGE_KEY);
     activeJobId=null;
     closeApplicationFollowup();
+    clearEmailReview();
     if($("jobDialog")?.open)$("jobDialog").close();
     render();
     syncCloudFeed(false);
