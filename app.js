@@ -638,9 +638,18 @@
 
   // Job status and application history are session-scoped to the CURRENT
   // account; this prevents old browser data from appearing for another user.
+  const updateSettingsAccount=function(email){
+    const indicator=$("settingsAccountStatus");
+    if(!indicator)return;
+    const address=str(email).slice(0,254);
+    indicator.textContent=address?"Signed in as "+address:
+      "Sign in with Google to access your private workspace.";
+    indicator.dataset.state=address?"connected":"signed-out";
+  };
   window.addEventListener("careerops:authenticated",function(event){
     const id=str(event.detail?.id);
     if(!/^[0-9a-fA-F-]{36}$/.test(id))return;
+    updateSettingsAccount(event.detail?.email||"");
     if(activeAccountId===id)return;
     activeAccountId=id;
     accountEpoch++;
@@ -651,6 +660,7 @@
     syncCloudFeed(false);
   });
   window.addEventListener("careerops:signed-out",function(){
+    updateSettingsAccount("");
     activeAccountId=null;
     accountEpoch++;
     state=load(GUEST_STORAGE_KEY);
