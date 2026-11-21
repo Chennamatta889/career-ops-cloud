@@ -219,7 +219,7 @@
   const renderDiscover = function () {
     const jobs = visibleJobs();
     $("jobsGrid").innerHTML = jobs.map(card).join("");
-    $("resultsCount").textContent = jobs.length + (jobs.length === 1 ? " opportunity" : " opportunities");
+    $("resultsCount").textContent = jobs.length + (jobs.length === 1 ? " job listing" : " job listings");
     $("emptyJobs").hidden = jobs.length !== 0;
     $("dataModeTag").textContent = state.mode === "demo" ? "Examples" : state.mode === "live" ? "Published vacancies" : "Your job list";
     $("dataModeTag").classList.toggle("real", state.mode !== "demo");
@@ -228,7 +228,7 @@
     $("applicationsBoard").innerHTML = STAGES.map(function (s) {
       const jobs = state.jobs.filter(function (j) { return j.stage === s.name; });
       return '<section class="board-column"><div class="board-heading"><i style="background:' + s.color + '"></i><strong>' + s.name + '</strong><b>' + jobs.length + '</b></div>' + (jobs.length ? jobs.map(function (j) {
-        return '<article class="board-card"><strong>' + escapeHtml(j.title) + '</strong><p>' + escapeHtml(j.company) + '</p><label><span class="muted small">Move to</span><select data-stage-id="' + escapeHtml(j.id) + '" aria-label="Change status for ' + escapeHtml(j.title) + '">' + ['Not tracking'].concat(STAGES.map(function (x) { return x.name; })).map(function (name) { const val = name === "Not tracking" ? "" : name; return '<option value="' + escapeHtml(val) + '"' + (val === j.stage ? ' selected' : '') + '>' + escapeHtml(name) + '</option>'; }).join("") + '</select></label></article>';
+        return '<article class="board-card"><strong>' + escapeHtml(j.title) + '</strong><p>' + escapeHtml(j.company) + '</p><label><span class="muted small">Update status</span><select data-stage-id="' + escapeHtml(j.id) + '" aria-label="Change status for ' + escapeHtml(j.title) + '">' + ['Not tracking'].concat(STAGES.map(function (x) { return x.name; })).map(function (name) { const val = name === "Not tracking" ? "" : name; return '<option value="' + escapeHtml(val) + '"' + (val === j.stage ? ' selected' : '') + '>' + escapeHtml(name) + '</option>'; }).join("") + '</select></label></article>';
       }).join("") : '<div class="board-empty">No jobs in this stage</div>') + '</section>';
     }).join("");
   };
@@ -273,11 +273,18 @@
       return '<div class="priority-factor"><div><strong>' + escapeHtml(title) + '</strong><p>' + escapeHtml(result.detail) +
         '</p></div><span>+' + result.points + '/' + total + '</span></div>';
     };
-    $("matchExplanation").innerHTML = '<div class="priority-head"><div><span class="eyebrow">RULE-BASED PRIORITY</span><h3>' +
-      (j.demo ? 'Sample ' : '') + fit.score + '/100</h3></div><span class="priority-quality">' + escapeHtml(fit.quality) +
+    const priorityConfigured=Boolean(
+      state.prefs.roles.trim()||state.prefs.locations.trim()||state.prefs.skills.trim()
+    );
+    $("matchExplanation").innerHTML = priorityConfigured ?
+      '<div class="priority-head"><div><span class="eyebrow">PERSONALIZED PRIORITY</span><h3>' +
+      (j.demo ? 'Example ' : '') + fit.score + '/100</h3></div><span class="priority-quality">' + escapeHtml(fit.quality) +
       '</span></div>' + signalRow("Target role",fit.role,50) + signalRow("Location",fit.location,30) +
       signalRow("Skills mentioned",fit.skills,20) + '<div class="priority-experience">' +
-      escapeHtml(fit.experience) + '</div><p class="priority-disclaimer">' + escapeHtml(fit.method) + '</p>';
+      escapeHtml(fit.experience) + '</div><p class="priority-disclaimer">' + escapeHtml(fit.method) + '</p>' :
+      '<div class="ranking-not-configured"><strong>Personalized ranking is optional</strong>' +
+      '<p>Browse and save this opportunity without a score. To enable a custom priority breakdown, ' +
+      'set your target roles, preferred locations, or skills under Resume &amp; preferences.</p></div>';
     const url = safeUrl(j.url);
     $("dialogSource").textContent = url ? jobSource(j) + " · opens on the employer website"
       : (j.demo ? "Sample job: this is not a real listing, so there is no external URL."
@@ -465,13 +472,20 @@
   const showFeedStatus = function (kind, title, description) {
     $("feedIndicator").className = "feed-indicator" +
       (kind === "success" ? " ok" : kind === "partial" ? " partial" : kind === "failed" ? " offline" : "");
+    const pill=$("headerFeedStatus");
+    if(pill)pill.dataset.state=kind;
+    const pillLabel=$("headerFeedLabel");
+    if(pillLabel)pillLabel.textContent={
+      loading:"Checking listings",success:"Listings available",
+      partial:"Partial update",failed:"Update unavailable"
+    }[kind]||"Published job feed";
     $("feedTitle").textContent = title;
     $("feedText").textContent = description;
   };
   const syncCloudFeed = async function (requestedByUser) {
     const startingEpoch=accountEpoch;
     $("refreshCloud").disabled = true;
-    showFeedStatus("loading", "Checking cloud scanner...", "Reading the latest published public-job feed");
+    showFeedStatus("loading", "Loading published listings", "Retrieving the latest available employer-board feed.");
     try {
       const response = await fetch("./data/jobs.json?v=" + Date.now(), {cache:"no-store"});
       if (!response.ok) throw new Error("HTTP " + response.status);
@@ -487,13 +501,13 @@
       const lastRun = runTime.toLocaleString(undefined,{dateStyle:"medium",timeStyle:"short"});
       const scan = feed.scan;
       const numErrors = Number(scan.error_count) || 0;
-      const summary = "Last run: " + lastRun + " · " + (Number(scan.scanned) || 0) + " career boards · " + (Number(scan.found) || 0) + " postings inspected · " + numErrors + " source errors";
+      const summary = "Last published update: " + lastRun + " · " + (Number(scan.scanned) || 0) + " employer boards checked · " + (Number(scan.found) || 0) + " listings reviewed · " + numErrors + " unavailable sources";
       if (scan.status === "failed") {
-        showFeedStatus("failed", "Cloud scan failed", summary + ". Existing browser records are preserved.");
+        showFeedStatus("failed", "Listing update unavailable", summary + ". Previously saved jobs remain available.");
         return;
       }
       if (state.mode === "imported" && !requestedByUser) {
-        showFeedStatus(scan.status, "Cloud feed available · local import selected", "Click Refresh jobs to switch to the latest cloud feed. " + summary);
+        showFeedStatus(scan.status, "Published listings available", "Your imported listings are currently displayed. Select Reload listings to use the published feed. " + summary);
         return;
       }
       const oldMode = state.mode;
@@ -524,14 +538,14 @@
       state.jobs = cloud.concat(savedLocal).slice(0,500);
       state.mode = "live";
       state.feedGeneratedAt = feed.generated_at;
-      if (isNewScan) log("Public scanner feed refreshed", cloud.length + " job listings · " + numErrors + " source errors");
+      if (isNewScan) log("Employer listings updated", cloud.length + " job listings · " + numErrors + " source errors");
       save(); render();
-      showFeedStatus(scan.status, cloud.length + (cloud.length === 1 ? " public match" : " public matches") +
-        (scan.status === "partial" ? " · partial scan" : " · scanner connected"), summary);
-      if (requestedByUser) toast("Latest published scanner feed loaded");
+      showFeedStatus(scan.status, cloud.length + (cloud.length === 1 ? " published vacancy" : " published vacancies") +
+        (scan.status === "partial" ? " · some sources unavailable" : ""), summary);
+      if (requestedByUser) toast("Published job listings are up to date");
     } catch (error) {
-      showFeedStatus("failed", "Cloud feed not available", "The published jobs file could not be reached (" + String(error.message).slice(0,100) + "). Your saved jobs remain available.");
-      if (requestedByUser) toast("The published scanner feed is not available yet");
+      showFeedStatus("failed", "Unable to refresh listings", "The published employer feed could not be loaded (" + String(error.message).slice(0,100) + "). Your saved jobs are unchanged.");
+      if (requestedByUser) toast("The job listings service is temporarily unavailable");
     } finally {
       $("refreshCloud").disabled = false;
     }
