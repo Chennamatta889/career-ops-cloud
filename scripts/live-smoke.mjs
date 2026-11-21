@@ -30,6 +30,7 @@ const checks=[
   {path:"health-check.js",contains:"runHealthChecks"},
   {path:"resume-parser.js",contains:"CareerOpsResumeParser"},
   {path:"data/jobs.json",json:true},
+  {path:"data/coverage-evidence.json",coverage:true},
   {path:"data/enterprise-careers.json",portal:true},
   {path:"vendor/pdf.min.mjs",head:true},
   {path:"vendor/pdf.worker.min.mjs",head:true},
@@ -43,7 +44,24 @@ async function check(item){
   });
   if(!r.ok)throw Error((item.path||"index.html")+" returned HTTP "+r.status);
   if(item.head)return;
-  if(item.portal){
+  if(item.coverage){
+    const evidence=await r.json();
+    const feedResponse=await fetch(site+"data/jobs.json",{
+      cache:"no-store",signal:AbortSignal.timeout(12000)
+    });
+    if(!feedResponse.ok)throw Error("Cannot compare live coverage evidence to job feed");
+    const feed=await feedResponse.json();
+    const expected=feed.scan?.candidate_discovery?.enterprise_coverage;
+    if(evidence.schema!=="careerops.coverage-evidence.v1"||
+       evidence.market!=="IN"||evidence.source_feed!=="data/jobs.json"||
+       evidence.generated_at!==feed.generated_at||
+       evidence.published_jobs!==feed.jobs?.length||
+       JSON.stringify(evidence.enterprise_coverage)!==JSON.stringify(expected))
+      throw Error("Live public coverage evidence differs from published jobs feed");
+    console.log("Verified MNC employer coverage:",evidence.enterprise_coverage.employers_with_published_jobs,
+      "published MNC jobs:",evidence.enterprise_coverage.published_jobs,
+      "total India jobs:",evidence.published_jobs);
+  }else if(item.portal){
     const data=await r.json();
     if(data.schema!=="careerops.enterprise-careers.v1"||
       !Array.isArray(data.companies)||data.companies.length!==13||

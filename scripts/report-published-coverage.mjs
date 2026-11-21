@@ -4,7 +4,7 @@
  * Exit nonzero if fresher/MNC evidence disagrees with actual deduplicated jobs.
  * Only anonymous public metadata is printed; never applicant details.
  */
-import {readFileSync,appendFileSync} from "node:fs";
+import {readFileSync,appendFileSync,writeFileSync} from "node:fs";
 import {measureEnterpriseCoverage} from "./india-candidate-expansion.mjs";
 import {createRequire} from "node:module";
 const {entryOpportunity}=createRequire(import.meta.url)("../job-text.js");
@@ -55,6 +55,27 @@ const lines=[
 for(const row of expected.companies)
   lines.push("| "+row.name.replace(/[|\r\n]/g," ")+" | "+row.postings+
     " | "+row.entry_positions+" | "+row.explicit_zero_experience+" |");
+// Public, machine-readable evidence from the exact final feed used for Pages.
+// Never include applicant details, raw descriptions, or unverified portal leads.
+const evidence={
+  schema:"careerops.coverage-evidence.v1",
+  generated_at:feed.generated_at,
+  market:"IN",
+  source_feed:"data/jobs.json",
+  published_jobs:jobs.length,
+  entry_signals:entry,
+  explicit_zero_experience:zero,
+  enterprise_coverage:expected,
+  candidate_discovery:{
+    checked:feed.scan?.candidate_discovery?.checked??0,
+    activated:feed.scan?.candidate_discovery?.activated??0,
+    quarantined:feed.scan?.candidate_discovery?.quarantined??0,
+    unavailable:feed.scan?.candidate_discovery?.unavailable??0
+  },
+  note:"Employer and fresher counts are evidence-based signals, not guaranteed hiring eligibility."
+};
+if(process.env.COVERAGE_OUTPUT)
+  writeFileSync(process.env.COVERAGE_OUTPUT,JSON.stringify(evidence,null,2)+"\n");
 const report=lines.join("\n")+"\n";
 process.stdout.write(report);
 if(process.env.GITHUB_STEP_SUMMARY)appendFileSync(process.env.GITHUB_STEP_SUMMARY,report);
