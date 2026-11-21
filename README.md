@@ -1,5 +1,17 @@
 # Career-Ops Cloud Sandbox
 
+
+## Phases 08, 09 and 10 — Reliability, Email Evidence and Source Freshness (November 21, 2026)
+
+**Phase 08 — reliability and live QA:** The desktop/mobile dashboard retains its existing stages, job-search filters, signed-in account isolation and one-click application-confirmation flow. A new independent "Phase 08 real-browser website QA" GitHub Actions workflow uses Chromium against public GitHub Pages. It tests cards, filters, a synthetic guest-only job, the Not yet / Yes, I applied flow, email review without auto-apply, and mobile overflow. It never signs in, accesses a real user's account or submits to employers. CI and public smoke tests cannot fully replace manual sign-in/device checks.
+
+**Phase 09 — acknowledgement review (opt-in):** My applications has a collapsed "Review a Gmail application acknowledgement" area. Users copy sender, subject and relevant text from Gmail. The application-email.js module analyses text inside their browser. A possible receipt needs explicit submitted/received language, a sender and the selected employer's name. The user chooses a tracked job and selects "Attach reviewed note". Only a review timestamp is saved in that browser's session; email sender, subject and message body are neither stored nor transmitted. This does not mark the job Applied: the user must still choose "Yes, I applied". Direct Gmail OAuth, automatic inbox scanning and cryptographic sender verification are NOT included.
+
+**Phase 10 — expanded sources and freshness:** Three public Ashby ATS boards (Ashby, Ramp, Linear) were added. The daily scanner emits privacy-safe source_health per employer board. An older saved job missing after a successful board scan is labeled "Not in latest employer feed". When that board could not be reached, the card shows "Employer board unavailable"; neither label definitively establishes vacancy closure. Tracked applications are never deleted automatically. The guard-public-feed.mjs script blocks deployment of empty or severely degraded job feeds and preserves the previous published release. Sources remain a selected subset of public Greenhouse and Ashby boards.
+
+**Protected:** No employer applications, Gmail mailbox permissions, private resume uploads, or additional Supabase database migrations were introduced. AdSense, Search Console verification, Google OAuth, privacy/legal pages, portfolio and DraftflowAI remain covered by the release gates.
+
+
 ## Universal IT and Non-IT Job Discovery (November 21, 2026)
 
 The website now **collects all published job titles** from its selected public Greenhouse and Ashby employer boards. It no longer filters jobs at the scanner by DevOps/Cloud/SRE keywords, seniority, years of experience, or country. Source catalog: `scripts/universal-job-sources.json`, currently **57 verified public employer boards** spanning IT, marketing, customer support, finance, HR, sales, retail, education, manufacturing, healthcare, logistics and hospitality. Scan implementation: `scripts/universal-job-scan.mjs`.
