@@ -1,8 +1,8 @@
 {
   "schema": "careerops.hourly-roadmap.v1",
   "project": "Career-Ops, India-only, free-API job discovery",
-  "active_phase": 11,
-  "last_completed_phase": 10,
+  "active_phase": 12,
+  "last_completed_phase": 11,
   "verification_required": [
     "PR regression tests pass",
     "production GitHub Pages deployment succeeds",
@@ -50,8 +50,31 @@
     {
       "number": 11,
       "title": "Security and account protection",
-      "status": "in_progress",
-      "definition_of_done": "Audit auth, Supabase RLS and migrations, private resume isolation, quota/CORS, add non-destructive integration tests, remediate verified issues safely"
+      "status": "completed",
+      "definition_of_done": "Audit auth, Supabase RLS and migrations, private resume isolation, quota/CORS, add non-destructive integration tests, remediate verified issues safely",
+      "verified_at": "2026-11-21T19:05:00Z",
+      "evidence": {
+        "security_pr": "https://github.com/Chennamatta889/career-ops-cloud/pull/16",
+        "qa_recovery_prs": [
+          "https://github.com/Chennamatta889/career-ops-cloud/pull/17",
+          "https://github.com/Chennamatta889/career-ops-cloud/pull/18"
+        ],
+        "security_merge_commit": "c547c5144857b949d5ad053f50fd299069217f2f",
+        "final_qa_commit": "bfe60282a0bfc59014fba358a5ce862e0265ab1e",
+        "security_pr_ci_run": "44938224648",
+        "final_pr_ci_run": "44938784062",
+        "final_deployment_run": "44938843349",
+        "final_live_browser_qa_run": "44938947352",
+        "live_supabase_project": "career-ops-private",
+        "rls_enabled_for": [
+          "careerops_resume_vault",
+          "careerops_job_tracking"
+        ],
+        "owner_only_policies_verified": 8,
+        "anon_select_on_private_tables": false,
+        "private_ai_usage_select_for_anon_or_authenticated": false,
+        "scope": "Read-only live DB schema/grant audit and deterministic account-switch tests; no real-user authenticated cross-account penetration test."
+      }
     },
     {
       "number": 12,
@@ -134,6 +157,17 @@
         44938443849,
         44938495239,
         44938627296
+      ]
+    },
+    {
+      "phase": 11,
+      "status": "completed",
+      "note": "Account-switch security fix and tests merged. Live RLS grants/policies verified. Browser QA failures traced to incorrect assumptions about live ServiceNow job presence and title-only search, fixed in two follow-up PRs. Final PR CI, production deploy, and live desktop/mobile Chromium QA passed.",
+      "run_ids": [
+        44938224648,
+        44938784062,
+        44938843349,
+        44938947352
       ]
     }
   ]
