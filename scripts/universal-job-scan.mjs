@@ -12,17 +12,10 @@ import {createHash} from "node:crypto";
 
 const require=createRequire(import.meta.url);
 const {classify,categories}=require("../job-categories.js");
+const {plainText}=require("../job-text.js");
 const MAX_RESPONSE_BYTES=10*1024*1024;
 export const MAX_PUBLISHED=500;
 const clean=(value,n=200)=>typeof value==="string" ? value.replace(/[\u0000-\u001f\u007f]+/g," ").replace(/\s+/g," ").trim().slice(0,n):"";
-function plain(value){
-  return String(value||"").replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi," ")
-    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi," ")
-    .replace(/<[^>]*>/g," ").replace(/&nbsp;/gi," ")
-    .replace(/&amp;/gi,"&").replace(/&lt;/gi,"<").replace(/&gt;/gi,">")
-    .replace(/&quot;/gi,'"').replace(/&#39;|&#x27;/gi,"'")
-    .replace(/\s+/g," ").trim();
-}
 function date(value){
   if(typeof value!=="string"||!/^\d{4}-\d{2}-\d{2}/.test(value))return null;
   const parsed=new Date(value);
@@ -38,14 +31,16 @@ function normalize(source,job){
   const rawId=String(job.id||"");
   if(source.provider==="greenhouse"?!/^\d{3,18}$/.test(rawId):
       !/^[A-Za-z0-9_-]{3,110}$/.test(rawId))return null;
-  const title=clean(job.title,160);
+  const title=clean(plainText(job.title,160),160);
   if(!title)return null;
   const gh=source.provider==="greenhouse";
-  const department=clean(gh?
+  const department=clean(plainText(gh?
     (Array.isArray(job.departments)?job.departments.map(x=>x?.name).filter(Boolean).join(" / "):""):
-    (job.department||job.team||job.jobDepartment||""),130);
-  const location=clean(gh?job.location?.name:(job.location||job.locationName||job.workplaceType),160)||"Not specified";
-  const desc=clean(gh?plain(job.content):job.descriptionPlain||plain(job.descriptionHtml),420);
+    (job.department||job.team||job.jobDepartment||""),130),130);
+  const location=clean(plainText(gh?job.location?.name:(job.location||job.locationName||job.workplaceType),160),160)||"Not specified";
+  // Keep paragraph breaks and bullet points in the published excerpt.
+  // The browser applies the same sanitizer again to legacy saved listings.
+  const desc=plainText(gh?job.content:(job.descriptionPlain||job.descriptionHtml||""),2500);
   const published=date(gh?job.first_published||job.updated_at:job.publishedAt||job.updatedAt);
   const publicUrl=gh?
     "https://job-boards.greenhouse.io/"+source.slug+"/jobs/"+rawId:
