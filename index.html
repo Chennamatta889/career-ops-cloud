@@ -100,9 +100,9 @@
         <div class="notice" role="status"><span class="notice-icon">ⓘ</span><div><strong>Connection:</strong> <span id="aiStatus">Checking AI backend configuration...</span></div><button class="btn btn-outline" type="button" id="aiCheckConnection">Check AI connection</button></div>
         <section class="panel ai-login" id="aiLogin" hidden>
           <div class="panel-heading"><div><div class="eyebrow">SIGN IN</div><h2>Connect your private Career-Ops account</h2></div></div>
-          <p class="panel-desc">Sign in with your approved Google account. Google login does not send a Supabase email link and does not use the built-in email quota.</p>
+          <p class="panel-desc">Sign in with any Google account that has a verified email address. Each user gets a private resume vault and job tracker; AI reviews have shared and daily per-account usage limits.</p>
           <button class="btn btn-primary ai-google-login" id="aiGoogleSignIn" type="button"><span class="ai-google-symbol" aria-hidden="true">G</span> Continue with Google</button>
-          <p class="ai-google-help" id="aiGoogleHelp" role="status">Use the same Gmail address approved for AI Review. Career-Ops never receives your Google password.</p>
+          <p class="ai-google-help" id="aiGoogleHelp" role="status">Use a verified Google account. Career-Ops never receives your Google password. Each user has a separate private workspace.</p>
           <details class="ai-email-fallback"><summary>Use email sign-in link instead</summary>
             <p class="panel-desc">Email links are a fallback and may still be limited by Supabase's email quota.</p>
             <div class="ai-login-row"><input type="email" id="aiEmail" autocomplete="email" inputmode="email" placeholder="you@example.com" aria-label="Email address for private AI sign-in"><button class="btn btn-outline" id="aiSendLink" type="button">Email sign-in link</button></div><p id="aiEmailCooldown" class="ai-email-guidance" role="status" aria-live="polite">Request only one sign-in email. If you already have a recent unused link in Gmail, open that link instead of requesting another.</p>
