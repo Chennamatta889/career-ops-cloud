@@ -1,0 +1,288 @@
+{
+  "version": 1,
+  "scope": "public employer ATS job postings",
+  "sources": [
+    {
+      "name": "Glean",
+      "provider": "greenhouse",
+      "slug": "gleanwork",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "RZR",
+      "provider": "greenhouse",
+      "slug": "rzr",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "Temporal",
+      "provider": "ashby",
+      "slug": "temporal",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "Cohere Health",
+      "provider": "greenhouse",
+      "slug": "coherehealth",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "Ivanti",
+      "provider": "greenhouse",
+      "slug": "a3c41b8b71eff8c4",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "HackerRank",
+      "provider": "greenhouse",
+      "slug": "hackerrank",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "CrashPlan",
+      "provider": "greenhouse",
+      "slug": "crashplan",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "Motive",
+      "provider": "greenhouse",
+      "slug": "gomotive",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "DataHub",
+      "provider": "greenhouse",
+      "slug": "acryldata",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "RhythmX AI",
+      "provider": "greenhouse",
+      "slug": "rhythmx-ai",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "Zenoti",
+      "provider": "greenhouse",
+      "slug": "zenoti",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "Momentum Financial Services",
+      "provider": "greenhouse",
+      "slug": "momentumfinancialservicesgroup",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "BusPatrol",
+      "provider": "ashby",
+      "slug": "buspatrol",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "Neuphonic",
+      "provider": "ashby",
+      "slug": "neuphonic",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "Outmarket AI",
+      "provider": "ashby",
+      "slug": "outmarket",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "Ema",
+      "provider": "ashby",
+      "slug": "ema",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "Demandbase",
+      "provider": "ashby",
+      "slug": "demandbase",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "Encord",
+      "provider": "ashby",
+      "slug": "encord",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "Plane Software",
+      "provider": "ashby",
+      "slug": "plane",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "UptimeAI",
+      "provider": "ashby",
+      "slug": "uptimeai",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "Triomics",
+      "provider": "ashby",
+      "slug": "triomics",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "New Era Technology",
+      "provider": "greenhouse",
+      "slug": "neweratech",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "Arcana Analytics",
+      "provider": "greenhouse",
+      "slug": "arcanaanalytics",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "Instawork",
+      "provider": "greenhouse",
+      "slug": "instawork",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "Teikametrics",
+      "provider": "greenhouse",
+      "slug": "teikametrics",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "WPP",
+      "provider": "greenhouse",
+      "slug": "wpp",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "MerQube",
+      "provider": "greenhouse",
+      "slug": "merqube",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "Sarvam",
+      "provider": "ashby",
+      "slug": "sarvam",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "OpenObserve",
+      "provider": "ashby",
+      "slug": "openobserve-careers",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "ScienceLogic",
+      "provider": "ashby",
+      "slug": "sciencelogic",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "Arkose Labs",
+      "provider": "ashby",
+      "slug": "arkoselabs",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "Lyric",
+      "provider": "ashby",
+      "slug": "lyric",
+      "sector": "Technology & Services"
+    },
+    {
+      "name": "Global Healthcare Exchange",
+      "provider": "greenhouse",
+      "slug": "globalhealthcareexchangeinc",
+      "sector": "Healthcare"
+    },
+    {
+      "name": "OLIVER Agency APAC",
+      "provider": "greenhouse",
+      "slug": "oliverseapac",
+      "sector": "Marketing"
+    },
+    {
+      "name": "OLIVER Agency Global",
+      "provider": "greenhouse",
+      "slug": "oliver",
+      "sector": "Marketing"
+    },
+    {
+      "name": "DoorDash India",
+      "provider": "greenhouse",
+      "slug": "doordashindia",
+      "sector": "Delivery & Logistics"
+    },
+    {
+      "name": "DoorDash USA",
+      "provider": "greenhouse",
+      "slug": "doordashusa",
+      "sector": "Delivery & Logistics"
+    },
+    {
+      "name": "Coursera",
+      "provider": "greenhouse",
+      "slug": "coursera",
+      "sector": "Education"
+    },
+    {
+      "name": "Fresh Prints",
+      "provider": "greenhouse",
+      "slug": "freshprints",
+      "sector": "Retail"
+    },
+    {
+      "name": "Shubhashray Housing India",
+      "provider": "greenhouse",
+      "slug": "shubhashrayhousingcareers",
+      "sector": "Real Estate"
+    },
+    {
+      "name": "Lumimeds",
+      "provider": "greenhouse",
+      "slug": "lumimeds",
+      "sector": "Healthcare"
+    },
+    {
+      "name": "Lyft",
+      "provider": "greenhouse",
+      "slug": "opportunities-lyft",
+      "sector": "Transportation"
+    },
+    {
+      "name": "Backblaze",
+      "provider": "greenhouse",
+      "slug": "backblaze",
+      "sector": "Technology"
+    },
+    {
+      "name": "LaunchDarkly",
+      "provider": "greenhouse",
+      "slug": "launchdarkly",
+      "sector": "Technology"
+    },
+    {
+      "name": "Mixpanel",
+      "provider": "greenhouse",
+      "slug": "mixpanel",
+      "sector": "Technology"
+    },
+    {
+      "name": "ConnectWise",
+      "provider": "greenhouse",
+      "slug": "connectwise",
+      "sector": "Business services"
+    },
+    {
+      "name": "Afresh",
+      "provider": "greenhouse",
+      "slug": "afresh",
+      "sector": "Food & Retail"
+    }
+  ]
+}
