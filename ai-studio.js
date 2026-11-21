@@ -248,7 +248,7 @@
     host.append(arraySection("Suggested screening answers",result.screeningAnswers));
     const small=document.createElement("p");small.className="ai-disclaimer";small.textContent=result.disclaimer || "AI drafts require human verification. No application was submitted.";
     host.append(small);
-    host.hidden=false;byId("aiDownload").hidden=false;
+    host.hidden=false;byId("aiDownload").hidden=false;byId("aiPrint").hidden=false;
   }
   function exportDraft() {
     if(!activeResult)return;
@@ -336,7 +336,7 @@
   byId("aiSignOut").addEventListener("click",async()=>{
     try{const jwt=await getAccessToken();if(jwt)await api("/auth/v1/logout",{method:"POST",headers:headers(jwt)});}catch(_){}
     window.dispatchEvent(new CustomEvent("careerops:signed-out"));
-    saveSession(null);activeResult=null;byId("aiResume").value="";byId("aiJd").value="";byId("aiConsent").checked=false;byId("aiResult").replaceChildren();byId("aiResult").hidden=true;byId("aiDownload").hidden=true;
+    saveSession(null);activeResult=null;byId("aiResume").value="";byId("aiJd").value="";byId("aiConsent").checked=false;byId("aiResult").replaceChildren();byId("aiResult").hidden=true;byId("aiDownload").hidden=true;byId("aiPrint").hidden=true;
     await refreshAuth();
   });
   let resumeParseInProgress=false;
@@ -424,6 +424,7 @@
     }finally{this.disabled=false;}
   });
   byId("aiDownload").addEventListener("click",exportDraft);
+  byId("aiPrint").addEventListener("click",()=>{if(activeResult)window.print();});
   ["aiResume","aiJd","aiRole","aiConsent"].forEach(id=>byId(id).addEventListener(id==="aiConsent"?"change":"input",prerequisites));
   byId("aiCheckConnection").addEventListener("click",()=>checkReviewConnection());
   byId("aiAnalyze").addEventListener("click",async function(){
@@ -441,7 +442,7 @@
     const token=await getAccessToken();
     if(!token){status("Sign in again to review this job.");await refreshAuth();return;}
     if(!reviewReady && !(await checkReviewConnection(token)))return;
-    this.disabled=true;activeResult=null;byId("aiDownload").hidden=true;
+    this.disabled=true;activeResult=null;byId("aiDownload").hidden=true;byId("aiPrint").hidden=true;
     const started=Date.now();
     const showProgress=()=>{
       const sec=Math.max(0,Math.floor((Date.now()-started)/1000));
@@ -472,7 +473,7 @@
     byId("aiCompany").value=text(j.company,130);
     byId("aiJobUrl").value=text(j.url,1000);
     byId("aiJd").value=text(j.description,15000);
-    byId("aiResult").hidden=true;byId("aiDownload").hidden=true;activeResult=null;
+    byId("aiResult").hidden=true;byId("aiDownload").hidden=true;byId("aiPrint").hidden=true;activeResult=null;
     prerequisites();
     status("Job selected. Preparing available public job details. Verify your resume and the full description before requesting AI Review.");
     document.querySelector('[data-nav="ai"]')?.click();
