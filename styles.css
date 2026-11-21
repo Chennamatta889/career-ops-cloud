@@ -356,3 +356,6 @@ a:focus-visible,button:focus-visible,[role="button"]:focus-visible{outline:2px s
 .results-line .discover-reset{margin-left:auto;padding:8px 12px;font-size:11px}
 .feed-freshness-warning{margin:12px 0 18px;border:1px solid #a88039;background:#322819;color:#f3d5a0;border-radius:12px;padding:12px 15px;line-height:1.55}
 @media(max-width:600px){.discover-pagination .btn{width:100%;min-width:0}.results-line .discover-reset{margin-left:0}}
+
+/* Job discovery: display public roles as cards, without a public vacancy counter. */
+.stat-word{font:800 18px/1.3 Manrope,sans-serif;letter-spacing:-.04em;margin-bottom:9px;color:var(--teal)}
