@@ -9,6 +9,9 @@ on:
       - styles.css
       - app.js
       - match-engine.js
+      - ai-studio.js
+      - careerops-config.js
+      - scripts/ai-studio.test.cjs
       - scripts/match-engine.test.cjs
       - scripts/export-scan-feed.mjs
       - scripts/export-scan-feed.test.mjs
@@ -164,7 +167,9 @@ jobs:
         run: |
           node --check app.js
           node --check match-engine.js
-          node --test scripts/export-scan-feed.test.mjs scripts/match-engine.test.cjs
+          node --check ai-studio.js
+          node --check careerops-config.js
+          node --test scripts/export-scan-feed.test.mjs scripts/match-engine.test.cjs scripts/ai-studio.test.cjs
 
       - name: Scan public job listings
         if: steps.upstream.outcome == 'success' && steps.scanner_dependencies.outcome == 'success'
@@ -194,7 +199,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p public
-          cp index.html styles.css match-engine.js app.js public/
+          cp index.html styles.css match-engine.js careerops-config.js app.js ai-studio.js public/
           test -s public/data/jobs.json
 
       - name: Configure Pages
