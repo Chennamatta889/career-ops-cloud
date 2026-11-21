@@ -90,7 +90,7 @@
       reviewReady = result.ok===true && result.ready===true;
       const missing = Array.isArray(result.missing) ? result.missing.join(", ") : "";
       const modelName=text(result.model,75);
-      status(reviewReady ? "AI endpoint ready" + (modelName ? " · model: "+modelName : "") + ". Complete your resume and job description to generate drafts."
+      status(reviewReady ? "AI endpoint ready" + (modelName ? " · model: "+modelName : "") + ". Verified users: up to "+(Number(result.daily_user_limit)||2)+" reviews per UTC day; shared limit "+(Number(result.daily_global_limit)||20)+". Complete your resume and job description to generate drafts."
         : "AI backend is connected but not enabled. Missing private settings: " + (missing || "unknown") +
           ". Configure these in Career-Ops Supabase → Edge Functions → Secrets.");
       return reviewReady;
@@ -142,7 +142,7 @@
       const enabled=settings?.external?.google;
       if(enabled===true) {
         googleProviderEnabled=true;
-        help.textContent="Google Sign-In enabled. Choose the same Gmail account approved for Career-Ops AI Review.";
+        help.textContent="Google Sign-In enabled. Any verified Google account may use Career-Ops; AI reviews have daily usage limits.";
       } else if(enabled===false) {
         googleProviderEnabled=false;
         help.textContent="Google Sign-In is disabled in the Career-Ops Supabase project. Enable and save Authentication → Sign In / Providers → Google, then reload this page.";
