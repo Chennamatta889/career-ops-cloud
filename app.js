@@ -214,8 +214,11 @@
       const sectorOk=!sector||(sector==="it" ? kind==="IT & Software" : kind!=="IT & Software");
       const locationOk=!location||location==="india"||loc.includes(location)||
         (location==="bengaluru"&&loc.includes("bangalore"));
-      const experienceOk=!experience||window.CareerOpsJobText?.experienceMatches?.(
-        jobExperience(job)?.label||"",experience);
+      const entrySignal=window.CareerOpsJobText?.entryOpportunity?.(job);
+      const experienceOk=experience==="fresher"?entrySignal?.level==="fresher":
+        experience==="entry"?(entrySignal?.level==="fresher"||entrySignal?.level==="early"):
+        !experience||window.CareerOpsJobText?.experienceMatches?.(
+          jobExperience(job)?.label||"",experience);
       const priorityOk=priorityFilter==="all"||function(){
         const points=priority(job).score;
         return priorityFilter==="below"?points<50:points>=Number(priorityFilter);
@@ -254,6 +257,12 @@
     return jobs.sort(function(a,b){
       const relevance=byRelevance(a,b);
       if(relevance)return relevance;
+      if(sort==="fresher"){
+        const score=j=>{const group=window.CareerOpsJobText?.entryOpportunity?.(j)?.level;
+          return group==="fresher"?2:group==="early"?1:0;};
+        return score(b)-score(a)||String(b.freshness_date||b.addedAt||"")
+          .localeCompare(String(a.freshness_date||a.addedAt||""));
+      }
       if(sort==="priority")return priority(b).score-priority(a).score||
         String(b.addedAt||"").localeCompare(String(a.addedAt||""));
       if(sort==="company")return a.company.localeCompare(b.company);
@@ -322,6 +331,11 @@
     const experience=jobExperience(j);
     const experienceBadge='<span class="job-experience-badge" title="Based on an explicit employer requirement; verify the original posting">Experience: '+
       escapeHtml(experience?.label||"Not specified")+'</span>';
+    const entrySignal=window.CareerOpsJobText?.entryOpportunity?.(j);
+    const entryBadge=entrySignal?.level==="fresher"?
+      '<span class="skill-chip fresher-entry-badge" title="Fresher indication from job title or stated experience; verify graduate year and requirements on employer site">Fresher / intern pathway</span>':
+      entrySignal?.level==="early"?
+      '<span class="skill-chip fresher-entry-badge" title="A junior role or 1–2 year minimum is indicated; freshers must verify eligibility">Early-career opportunity</span>':"";
     const descriptionOnly=Boolean($("searchDescriptions").checked&&$("jobSearch").value.trim()&&
       window.CareerOpsJobSearch?.evaluate?.(j,$("jobSearch").value,{includeDescription:true})?.source==="description");
     const searchNote=descriptionOnly?
@@ -331,7 +345,7 @@
     const open = url
       ? '<a class="text-link open-job-link" data-action="open-listing" data-id="' + escapeHtml(j.id) + '" href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer" aria-label="Open job listing for ' + escapeHtml(j.title) + ' at ' + escapeHtml(j.company) + '">Open listing ↗</a>'
       : '<span class="no-url-label">' + (j.demo ? 'Sample job — no link' : 'Posting link unavailable') + '</span>';
-    return '<article class="job-card"><div class="job-card-top"><div class="company-symbol">' + escapeHtml(companyInitials(j.company)) + '</div><button class="save-button ' + (j.stage ? 'saved' : '') + '" data-action="save" data-id="' + escapeHtml(j.id) + '">' + (j.stage ? '✓ Tracking' : '+ Save') + '</button></div>' + ranking + '<h3>' + escapeHtml(j.title) + '</h3><p class="company-line">' + escapeHtml(j.company) + ' · ' + escapeHtml(j.location) + '</p><p class="description">' + escapeHtml(readableJobText(j.description,220) || 'A description is not available in this listing. Open the employer website for details.') + '</p><div class="chip-wrap"><span class="skill-chip category-chip">' + escapeHtml(categoryName) + '</span>' + experienceBadge + searchNote + chips(j.skills) + '</div><div class="card-tracking-summary">'+trackingSummary(j).map(function(value){return '<span>'+escapeHtml(value)+'</span>';}).join("")+'</div>' +
+    return '<article class="job-card"><div class="job-card-top"><div class="company-symbol">' + escapeHtml(companyInitials(j.company)) + '</div><button class="save-button ' + (j.stage ? 'saved' : '') + '" data-action="save" data-id="' + escapeHtml(j.id) + '">' + (j.stage ? '✓ Tracking' : '+ Save') + '</button></div>' + ranking + '<h3>' + escapeHtml(j.title) + '</h3><p class="company-line">' + escapeHtml(j.company) + ' · ' + escapeHtml(j.location) + '</p><p class="description">' + escapeHtml(readableJobText(j.description,220) || 'A description is not available in this listing. Open the employer website for details.') + '</p><div class="chip-wrap"><span class="skill-chip category-chip">' + escapeHtml(categoryName) + '</span>' + experienceBadge + entryBadge + searchNote + chips(j.skills) + '</div><div class="card-tracking-summary">'+trackingSummary(j).map(function(value){return '<span>'+escapeHtml(value)+'</span>';}).join("")+'</div>' +
       (listingNotice(j)?'<p class="listing-health-notice" role="status">'+escapeHtml(listingNotice(j))+'</p>':"")+
       '<div class="card-footer"><span class="job-date">' + escapeHtml(jobSource(j)) + '</span><div class="card-action-group">' + details + aiReview + open + '</div></div></article>';
   };
@@ -396,7 +410,9 @@
       $("searchDescriptions").checked ||
       $("matchFilter").value!=="all" || $("sortFilter").value!=="variety"
     );
-    $("dataModeTag").textContent = state.mode === "demo" ? "Examples" : state.mode === "live" ? "Published vacancies" : "Your job list";
+    $("dataModeTag").textContent = state.mode === "demo" ? "Examples" :
+      state.mode === "live" && $("experienceFilter").value==="fresher" ?
+        "Fresher opportunities" : state.mode === "live" ? "Published vacancies" : "Your job list";
     $("dataModeTag").classList.toggle("real", state.mode !== "demo");
   };
   const renderEmailReviewChoices=function(){
@@ -720,6 +736,18 @@
       discoverVisibleCount=DISCOVER_PAGE_SIZE;
       renderDiscover();
     });
+  });
+  $("showFresherJobs").addEventListener("click",function(){
+    $("jobSearch").value="";
+    $("categoryFilter").value="";
+    $("sectorFilter").value="";
+    $("locationFilter").value="india";
+    $("experienceFilter").value="fresher";
+    $("matchFilter").value="all";
+    $("sortFilter").value="fresher";
+    $("searchDescriptions").checked=false;
+    discoverVisibleCount=DISCOVER_PAGE_SIZE;
+    renderDiscover();
   });
   const resetDiscovery = function(){
     $("jobSearch").value="";
