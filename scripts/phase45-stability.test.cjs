@@ -250,9 +250,14 @@ test("Phase 5 warns when a successful-looking feed is stale and does not invent 
 
 test("Phase 6 Discover view shows cards, not public job totals, and mixes job types",async()=>{
   const html=fs.readFileSync(path.resolve(__dirname,"../index.html"),"utf8");
-  assert.doesNotMatch(html,/id="resultsCount"/);
-  assert.doesNotMatch(html,/id="navJobsCount"/);
-  assert.doesNotMatch(html,/id="statDiscovered"/);
+  for(const legacyId of ["resultsCount","navJobsCount","statDiscovered"]){
+    assert.ok(html.includes('id="'+legacyId+'" hidden'),
+      "legacy scripts must find an invisible compatibility element");
+  }
+  assert.ok(html.includes("app.js?v=20261121-jobcards-recovery-v1"));
+  assert.ok(html.includes("styles.css?v=20261121-jobcards-recovery-v1"));
+  assert.ok(html.includes('id="discoverFeedStatus"'));
+  assert.ok(html.includes('id="retryDiscoverFeed"'));
   assert.match(html,/value="variety">Explore all industries/);
   const h=dashboardHarness();
   h.auth(USER_A);
@@ -271,4 +276,20 @@ test("Phase 6 Discover view shows cards, not public job totals, and mixes job ty
   assert.match(cards,/General Associate/);
   assert.match(cards,/Software Developer/);
   assert.equal(h.el("loadMoreJobs").textContent,"Show more jobs");
+});
+
+test("Phase 6 compatibility smoke: all required dashboard element IDs exist in the HTML",()=>{
+  const html=fs.readFileSync(path.resolve(__dirname,"../index.html"),"utf8");
+  const code=fs.readFileSync(path.resolve(__dirname,"../app.js"),"utf8");
+  const ids=new Set([...html.matchAll(/\bid="([^"]+)"/g)].map(match=>match[1]));
+  const calledIds=[...new Set([...code.matchAll(/\$\("([A-Za-z0-9_-]+)"\)/g)].map(match=>match[1]))];
+  const absent=calledIds.filter(id=>!ids.has(id));
+  assert.deepEqual(absent,[],"job cards must never crash because an expected UI element was removed");
+});
+test("Phase 6 shows useful messages when a feed is still loading or unavailable",async()=>{
+  const h=dashboardHarness({feedPromise:Promise.reject(new Error("Network unavailable"))});
+  await tick();await tick();
+  assert.equal(h.el("discoverFeedStatus").hidden,false);
+  assert.match(h.el("discoverFeedStatus").textContent,/couldn't be loaded/);
+  assert.equal(h.el("retryDiscoverFeed").hidden,false);
 });
