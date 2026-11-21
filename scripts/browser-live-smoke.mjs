@@ -5,7 +5,7 @@
  */
 import assert from "node:assert/strict";
 import {chromium} from "playwright";
-const website=process.env.CAREEROPS_LIVE_ORIGIN||"https://chennamatta889.github.io";
+const website=(process.env.CAREEROPS_LIVE_ORIGIN||"https://chennamatta889.github.io/career-ops-cloud").replace(/\/$/,"");
 const browser=await chromium.launch({headless:true,args:["--disable-dev-shm-usage"]});
 const failures=[];
 function watch(page){page.on("pageerror",error=>failures.push(String(error.message||error)));}
@@ -85,13 +85,14 @@ try{
   const searchPage=await searchContext.newPage();watch(searchPage);
   const exampleFeed={
     schema:"careerops.public-jobs.v1",generated_at:new Date().toISOString(),
-    scan:{status:"success",scanned:2,found:2,error_count:0},
+    market:"IN",
+    scan:{status:"success",scanned:2,found:2,error_count:0,india_only:true},
     jobs:[
       {id:"test-servicenow",title:"ServiceNow Developer",company:"ITSM Example",
-        url:"https://example.org/jobs/servicenow",location:"Remote",
+        url:"https://example.org/jobs/servicenow",location:"Hyderabad, India",
         description:"Configure ITSM workflows and ServiceNow modules.",skills:[]},
       {id:"test-salesforce",title:"Salesforce Developer",company:"CRM Example",
-        url:"https://example.org/jobs/salesforce",location:"Remote",
+        url:"https://example.org/jobs/salesforce",location:"Bengaluru, India",
         description:"Integrate Salesforce CRM with ServiceNow ticketing.",skills:[]}
     ]
   };
@@ -119,7 +120,47 @@ try{
   await mpage.waitForSelector("#jobsGrid .job-card",{timeout:25000});
   const dimensions=await mpage.evaluate(()=>({viewport:document.documentElement.clientWidth,content:document.documentElement.scrollWidth}));
   assert.ok(dimensions.content<=dimensions.viewport+5,"mobile page has horizontal overflow: "+JSON.stringify(dimensions));
-  assert.ok(await mpage.locator("#experienceFilter").count()===1);
+  assert.equal(await mpage.locator("#experienceFilter").count(),1);
+  // Phase 9 mobile-first UX: tests the actual published Android-sized layout.
+  const tabs=mpage.locator(".mobile-bottom-nav");
+  assert.equal(await tabs.isVisible(),true,"fixed bottom navigation is missing on phones");
+  assert.equal(await mpage.locator("#mobileTabDiscover").getAttribute("aria-current"),"page");
+  const nav=await tabs.boundingBox();
+  assert.ok(nav && nav.y>640 && nav.y+nav.height<=846,
+    "phone navigation must remain visible near bottom of screen");
+  for(const id of ["mobileTabDiscover","mobileTabApplications","mobileTabResume","mobileTabAi","mobileMore"]){
+    const size=await mpage.locator("#"+id).boundingBox();
+    assert.ok(size&&size.height>=44,"small mobile tap target: "+id);
+  }
+  assert.equal(await mpage.locator("#jobAdvancedFields").isVisible(),false,
+    "secondary job filters should be collapsed by default");
+  await mpage.locator("#toggleJobFilters").click();
+  assert.equal(await mpage.locator("#toggleJobFilters").getAttribute("aria-expanded"),"true");
+  assert.equal(await mpage.locator("#jobAdvancedFields").isVisible(),true);
+  await mpage.locator("#categoryFilter").selectOption("IT & Software");
+  assert.match(await mpage.locator("#advancedFilterCount").innerText(),/1 active/);
+  await mpage.locator("#quickResetFilters").click();
+  assert.equal(await mpage.locator("#categoryFilter").inputValue(),"");
+  assert.equal(await mpage.locator("#toggleJobFilters").getAttribute("aria-expanded"),"false");
+  await mpage.locator("#mobileMore").click();
+  assert.equal(await mpage.locator("#mobileMore").getAttribute("aria-expanded"),"true");
+  assert.equal(await mpage.locator("#sidebar").evaluate(el=>el.classList.contains("open")),true);
+  await mpage.locator("#mobileScrim").click({position:{x:375,y:400}});
+  assert.equal(await mpage.locator("#mobileMore").getAttribute("aria-expanded"),"false");
+  await mpage.locator("#mobileTabApplications").click();
+  assert.equal(await mpage.locator("#page-applications").isVisible(),true);
+  assert.equal(await mpage.locator("#applicationsBoard").evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(" ").length),1,
+    "application stages must not require a six-column sideways scroll on a phone");
+  await mpage.locator("#mobileTabResume").click();
+  assert.equal(await mpage.locator("#page-resume").isVisible(),true);
+  await mpage.locator("#mobileTabDiscover").click();
+  assert.equal(await mpage.locator("#page-discover").isVisible(),true);
+  const finalDimensions=await mpage.evaluate(()=>({
+    viewport:document.documentElement.clientWidth,
+    content:document.documentElement.scrollWidth
+  }));
+  assert.ok(finalDimensions.content<=finalDimensions.viewport+5,
+    "mobile navigation introduced horizontal overflow: "+JSON.stringify(finalDimensions));
   await mobile.close();
   assert.deepEqual(failures,[],"unhandled browser JavaScript errors");
   console.log("Career-Ops live Chromium QA PASSED: desktop, mobile, ServiceNow relevance and synthetic guest tracking.");
