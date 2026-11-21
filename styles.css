@@ -384,3 +384,20 @@ a:focus-visible,button:focus-visible,[role="button"]:focus-visible{outline:2px s
 .board-followup-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:9px 0}
 .board-confirm-button{font-size:11px;padding:7px 10px}
 @media(max-width:600px){.application-followup{right:8px;bottom:8px;width:calc(100vw - 16px);padding:16px}.application-followup-actions>.btn{flex:1}}
+
+/* Phases 08-10: accessible privacy-first evidence review and feed diagnostics. */
+.email-review-panel{margin:18px 0 22px}
+.email-review-panel summary{display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;list-style:none;min-height:42px}
+.email-review-panel summary::-webkit-details-marker{display:none}
+.email-review-panel summary:after{content:"+";font-size:19px;color:#afe6d5}
+.email-review-panel[open] summary:after{content:"−"}
+.email-review-panel .form-stack{margin-top:15px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.email-review-panel .form-stack label:last-child{grid-column:1/-1}
+.email-review-disclosure{font-size:12px;line-height:1.7;color:#b2cad8;margin:10px 0}
+.email-review-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.email-review-result{margin:12px 0 6px;color:#bbdfcd;line-height:1.6;font-size:12px}
+.email-review-panel .btn:disabled{opacity:.48;cursor:not-allowed}
+.listing-health-notice,.application-duplicate-warning{padding:9px 11px;border:1px solid #956c34;border-radius:9px;background:#3c3020;color:#fae0a9;font-size:11px;line-height:1.6;margin:10px 0}
+.listing-health-notice[hidden],.application-duplicate-warning[hidden]{display:none!important}
+:where(.job-card,.board-card,.email-review-panel,.application-followup) :is(button,a,input,select,textarea,summary):focus-visible{outline:2px solid #8af1cb;outline-offset:3px}
+@media(max-width:640px){.email-review-panel .form-stack{grid-template-columns:1fr}.email-review-panel .form-stack label:last-child{grid-column:auto}.email-review-actions .btn{flex:1 1 100%}}
