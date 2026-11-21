@@ -13,6 +13,8 @@
   let currentUser=null;
   let syncing=false;
   let vaultBusy=false;
+  let accountVersion=0; // invalidates requests returning after Google account changes
+  const changedAccount=()=>new Error("Your signed-in account changed during this request. Please retry.");
   let hasSavedResume=null;
   const safe=(x,max=200)=>typeof x==="string"?x.trim().slice(0,max):"";
   const status=(elementId,message,state)=>{
@@ -31,8 +33,10 @@
     return currentUser;
   }
   async function request(path,method="GET",body,extra={}){
-    requireSignedIn();
+    const account=requireSignedIn();
+    const version=accountVersion;
     const jwt=await window.CareerOpsAuth.getAccessToken();
+    if(accountVersion!==version || currentUser?.id!==account.id)throw changedAccount();
     if(!jwt)throw Error("Google session expired. Sign in again.");
     const headers={
       apikey:apiKey,
@@ -48,6 +52,7 @@
         cache:"no-store",signal:AbortSignal.timeout(18000)
       });
     }catch(_){throw Error("Private storage service is unreachable. Check your connection and retry.");}
+    if(accountVersion!==version || currentUser?.id!==account.id)throw changedAccount();
     if(!response.ok){
       let parsed={};try{parsed=await response.json();}catch(_){}
       const message=safe(parsed.message||parsed.details||"",150);
@@ -90,9 +95,11 @@
     } catch(e){status("vaultStatus","Could not save resume: "+safe(e.message,190),"error");}
     finally{$("vaultSave").disabled=false;vaultBusy=false;}
   }
-  async function loadVault(){
+  async function loadVault(onlyIfEmpty=false){
     if(vaultBusy)return;
     const me=requireSignedIn();
+    if(!onlyIfEmpty && $("aiResume").value.trim() &&
+      !window.confirm("Replace the resume text currently in the editor with your saved private resume?"))return;
     vaultBusy=true;$("vaultLoad").disabled=true;
     status("vaultStatus","Loading your private resume text…","loading");
     try{
@@ -102,6 +109,10 @@
       }
       const raw=safe(rows[0].resume_text,MAX_RESUME);
       if(raw.length<250)throw Error("Saved resume text is incomplete.");
+      if(onlyIfEmpty && $("aiResume").value.trim()) {
+        status("vaultStatus","Resume editor already has text. Existing text was preserved.","idle");
+        return;
+      }
       // Never write resume text into localStorage or any public job feed.
       $("aiResume").value=raw;
       $("aiResume").dispatchEvent(new Event("input",{bubbles:true}));
@@ -178,10 +189,21 @@
   async function importLocal(){
     if(!currentUser)return;
     const me=requireSignedIn();
-    const jobs=window.CareerOpsDashboard?.getTrackedJobs()?.slice(0,300)||[];
-    const values=jobs.map(trackedPayload).filter(Boolean).map(x=>({...x,user_id:me.id}));
+    const dashboard=window.CareerOpsDashboard;
+    // Legacy browser-wide records are NEVER displayed automatically for a
+    // different signed-in account. They can only be migrated on explicit
+    // confirmation, with an additional warning on shared devices.
+    const previous=dashboard?.getLegacyTrackedJobs?.()||[];
+    const current=dashboard?.getTrackedJobs?.()||[];
+    const byKey=new Map();
+    for(const item of previous.concat(current)){
+      const safeJob=validTracked({...item,user_id:me.id});
+      if(safeJob)byKey.set(safeJob.job_key,safeJob);
+    }
+    const values=[...byKey.values()].slice(0,300);
     if(!values.length){status("cloudTrackingStatus","There are no real tracked jobs on this device to import.","idle");return;}
-    if(!window.confirm("Upload "+values.length+" saved job statuses from this device to your private Supabase account?"))return;
+    if(!window.confirm("Upload "+values.length+" job statuses to your current private account?"+
+      (previous.length?" This device also contains "+previous.length+" older, unassigned saved jobs. Only continue if these belong to you; data from another account may be present.":"")))return;
     $("cloudImportTracking").disabled=true;
     status("cloudTrackingStatus","Uploading this device's tracked jobs privately…","loading");
     try{
@@ -190,6 +212,10 @@
         await request("careerops_job_tracking?on_conflict=user_id,job_key","POST",values.slice(i,i+50),
           {"Prefer":"resolution=merge-duplicates,return=minimal"});
       }
+      dashboard?.mergeRemoteTracking(values);
+      // Remove unassigned browser-wide records after the user explicitly
+      // confirms migration and every upload batch completes successfully.
+      if(previous.length)dashboard?.clearLegacyTrackedJobs?.();
       status("cloudTrackingStatus",values.length+" tracked jobs imported privately. Their future status changes will sync automatically.","success");
     }catch(e){status("cloudTrackingStatus","Could not import local tracking: "+safe(e.message,160),"error");}
     finally{$("cloudImportTracking").disabled=false;}
@@ -207,12 +233,20 @@
   window.addEventListener("careerops:authenticated",event=>{
     const info=event.detail||{};
     if(!/^[0-9a-fA-F-]{36}$/.test(String(info.id||"")))return;
+    if(currentUser?.id===info.id)return;
+    accountVersion++;
+    hasSavedResume=null;
+    syncing=false;
+    vaultBusy=false;
     currentUser={id:info.id};
     status("cloudTrackingStatus","Signed in. Connecting to private job tracking…","loading");
     checkVault();
     syncRemote();
   });
   window.addEventListener("careerops:signed-out",()=>{
+    accountVersion++;
+    syncing=false;
+    vaultBusy=false;
     currentUser=null;
     hasSavedResume=null;
     status("vaultStatus","Sign in with Google to access your private resume text.","idle");
@@ -223,7 +257,7 @@
   // This never invokes Gemini; AI processing still needs consent and a click.
   window.addEventListener("careerops:job-selected",()=>{
     if(currentUser && hasSavedResume!==false && !$("aiResume").value.trim() && !vaultBusy){
-      loadVault().catch(e=>status("vaultStatus",safe(e.message,160),"error"));
+      loadVault(true).catch(e=>status("vaultStatus",safe(e.message,160),"error"));
     }
   });
   window.addEventListener("careerops:resume-parse-result",event=>{
