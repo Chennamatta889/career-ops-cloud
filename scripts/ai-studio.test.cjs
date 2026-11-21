@@ -25,7 +25,9 @@ test("only browser-safe values for the dedicated Career-Ops project are publishe
   assert.match(ai,/if\(!ready\)/);
 });
 test("the app preserves auth callback URL fragment until the AI tab reads it",()=>{
-  assert.match(app,/access_token=\|error=\|error_code=/);
+  assert.match(app,/access_token=\|refresh_token=\|error=\|error_code=/);
+  assert.match(app,/history\.pushState/);
+  assert.match(app,/window\.addEventListener\("popstate",syncHistoryRoute\)/);
   assert.match(ai,/readUrlSession\(\)/);
   assert.match(ai,/sessionStorage/);
 });
