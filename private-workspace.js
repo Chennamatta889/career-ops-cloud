@@ -13,6 +13,7 @@
   let currentUser=null;
   let syncing=false;
   let vaultBusy=false;
+  let hasSavedResume=null;
   const safe=(x,max=200)=>typeof x==="string"?x.trim().slice(0,max):"";
   const status=(elementId,message,state)=>{
     const el=$(elementId);
@@ -63,9 +64,10 @@
     try{
       const rows=await request("careerops_resume_vault?select=label,source_filename,updated_at&user_id=eq."+qs(currentUser.id)+"&limit=1");
       if(Array.isArray(rows)&&rows.length){
+        hasSavedResume=true;
         const d=rows[0];
         status("vaultStatus","Saved resume: "+safe(d.label,100)+" · "+new Date(d.updated_at).toLocaleDateString()+". Tap Load saved resume to reuse the private text.","success");
-      }else status("vaultStatus","No private resume saved yet. Upload a PDF/DOCX/TXT (or paste text), verify it and tap Save resume privately.","idle");
+      }else {hasSavedResume=false;status("vaultStatus","No private resume saved yet. Upload a PDF/DOCX/TXT (or paste text), verify it and tap Save resume privately.","idle");}
     }catch(e){status("vaultStatus","Private vault unavailable: "+safe(e.message,200),"error");}
   }
   async function saveVault(){
@@ -83,6 +85,7 @@
         user_id:me.id,label:"Primary resume",resume_text:text,
         source_filename:filename,updated_at:new Date().toISOString()
       },{"Prefer":"resolution=merge-duplicates,return=minimal"});
+      hasSavedResume=true;
       status("vaultStatus","Resume text saved privately. You can load it after signing in on another device. No AI call was made.","success");
     } catch(e){status("vaultStatus","Could not save resume: "+safe(e.message,190),"error");}
     finally{$("vaultSave").disabled=false;vaultBusy=false;}
@@ -113,6 +116,7 @@
     vaultBusy=true;$("vaultDelete").disabled=true;
     try{
       await request("careerops_resume_vault?user_id=eq."+qs(me.id),"DELETE",undefined,{"Prefer":"return=minimal"});
+      hasSavedResume=false;
       status("vaultStatus","Saved resume deleted from the private vault. Text currently open in the editor remains until you clear it.","success");
     }catch(e){status("vaultStatus","Could not delete resume: "+safe(e.message,190),"error");}
     finally{$("vaultDelete").disabled=false;vaultBusy=false;}
@@ -207,8 +211,17 @@
   });
   window.addEventListener("careerops:signed-out",()=>{
     currentUser=null;
+    hasSavedResume=null;
     status("vaultStatus","Sign in with Google to access your private resume text.","idle");
     status("cloudTrackingStatus","Signed out. Browser-local job statuses remain on this device; cloud sync is paused.","idle");
+  });
+  // Job card → AI Studio: reuse a previously saved private resume without
+  // repeating file uploads. Only authenticated sessions can retrieve it.
+  // This never invokes Gemini; AI processing still needs consent and a click.
+  window.addEventListener("careerops:job-selected",()=>{
+    if(currentUser && hasSavedResume!==false && !$("aiResume").value.trim() && !vaultBusy){
+      loadVault().catch(e=>status("vaultStatus",safe(e.message,160),"error"));
+    }
   });
   window.addEventListener("careerops:resume-parse-result",event=>{
     if(event.detail?.success){
