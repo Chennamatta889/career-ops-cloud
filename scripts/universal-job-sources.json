@@ -430,12 +430,6 @@
     },
     {
       "provider": "lever",
-      "slug": "cgsfederal",
-      "name": "Contact Government Services",
-      "sector": "Technology & Services"
-    },
-    {
-      "provider": "lever",
       "slug": "fantom-corporation",
       "name": "Fantom Corporation",
       "sector": "Technology & Services"
