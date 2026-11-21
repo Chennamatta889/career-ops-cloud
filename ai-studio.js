@@ -17,7 +17,7 @@
   let authEpoch=0; // invalidates callbacks from old sign-in sessions
   let googleProviderEnabled = null; // true/false/null: verified/disabled/unknown
   let googleRedirectStarted = false;
-  const siteRedirect = "https://chennamatta889.github.io/career-ops-cloud/";
+  const siteRedirect = "https://chennamatta889.github.io/";
   const siteOrigin = new URL(siteRedirect).origin;
   const text = (v,n=10000) => typeof v==="string" ? v.trim().slice(0,n) : "";
   const cleanJobDescription=(value,max=16000)=>
