@@ -50,7 +50,7 @@ Reviewed 21 November 2026. Implementation is read-only; not legal advice.
 
 ## Graduate and apprenticeship employer-board leads
 
-- New 15-entry employer candidate list: `scripts/india-early-career-candidates.json`, with public career-board reference URLs and fresher focus. Actual jobs are imported exclusively by direct anonymous employer ATS requests, not by reusing third-party datasets or unlicensed scraped vacancies.
+- New 19-entry employer candidate list: `scripts/india-early-career-candidates.json`, with public career-board reference URLs and fresher focus. Actual jobs are imported exclusively by direct anonymous employer ATS requests, not by reusing third-party datasets or unlicensed scraped vacancies.
 - Public SmartRecruiters company-postings API supports `country=IN` to reduce global result pagination. Only explicitly `indiaOnly:true` sources use this parameter, followed by the existing local India filter: https://developers.smartrecruiters.com/reference/v1listpostings
 - A candidate board remains unverified until its own public API returns recent India vacancies. Candidate 404, auth requirements, over-budget pages or no recent India openings never create public jobs.
 - Continue requiring the latest 30 calendar days, real employer application URLs, no automatic applications or fees, and no modification of existing users' saved opportunities.
