@@ -14,6 +14,7 @@
   let reviewReady = false;
   let jobFetchVersion=0;
   let authCallbackError = "";
+  let authEpoch=0; // invalidates callbacks from old sign-in sessions
   let googleProviderEnabled = null; // true/false/null: verified/disabled/unknown
   let googleRedirectStarted = false;
   const siteRedirect = "https://chennamatta889.github.io/career-ops-cloud/";
@@ -174,6 +175,7 @@
     const expiresIn=Number(hash.get("expires_in"));
     const expiry=Number.isFinite(expiresAt)&&expiresAt>0?expiresAt:
       Math.floor(Date.now()/1000)+(Number.isFinite(expiresIn)&&expiresIn>0?expiresIn:3600);
+    authEpoch++;
     saveSession({
       access_token:hash.get("access_token"),
       refresh_token:hash.get("refresh_token") || "",
@@ -197,20 +199,38 @@
   }
   async function refreshAuth() {
     if(!ready){byId("aiLogin").hidden=true;byId("aiWorkspace").hidden=true;status("Backend not connected. A dedicated Supabase project and server-side Gemini key are required.");return;}
+    const epoch=authEpoch;
     byId("aiLogin").hidden=false;
     const token=await getAccessToken();
-    if(!token){byId("aiWorkspace").hidden=true;byId("aiSignOut").hidden=true;status(authCallbackError || "Private backend connected. Continue with Google to sign in without an email link.");return;}
+    if(epoch!==authEpoch)return;
+    if(!token){
+      window.dispatchEvent(new CustomEvent("careerops:signed-out"));
+      byId("aiWorkspace").hidden=true;byId("aiSignOut").hidden=true;
+      status(authCallbackError || "Private backend connected. Continue with Google to sign in without an email link.");
+      return;
+    }
     try{
       const user=await api("/auth/v1/user",{headers:headers(token)});
+      // An old account's response must never restore its private workspace
+      // after signout, token refresh or an account change.
+      if(epoch!==authEpoch || session?.access_token!==token)return;
       set("aiSignedUser",user.email || "Signed in");
-      if (typeof user.id === "string") window.dispatchEvent(new CustomEvent("careerops:authenticated",{detail:{id:user.id,email:user.email||""}}));
+      if(typeof user.id==="string")window.dispatchEvent(new CustomEvent("careerops:authenticated",{detail:{id:user.id,email:user.email||""}}));
       byId("aiWorkspace").hidden=false;
       byId("aiSignOut").hidden=false;
       byId("aiLogin").hidden=true;
       status("Signed in. Checking whether AI Review is enabled...");
       await checkReviewConnection(token);
-    }catch(_){
-      saveSession(null);byId("aiWorkspace").hidden=true;byId("aiLogin").hidden=false;byId("aiSignOut").hidden=true;
+    }catch(e){
+      if(epoch!==authEpoch)return;
+      if(/Failed to fetch|network|TimeoutError/i.test(String(e?.message||e))){
+        status("Unable to verify the session due to a network issue. Check your connection and retry.");
+        return;
+      }
+      authEpoch++;
+      saveSession(null);
+      window.dispatchEvent(new CustomEvent("careerops:signed-out"));
+      byId("aiWorkspace").hidden=true;byId("aiLogin").hidden=false;byId("aiSignOut").hidden=true;
       status("Session expired. Please sign in again.");
     }
   }
@@ -335,11 +355,19 @@
     }
   });
   byId("aiSignOut").addEventListener("click",async()=>{
-    try{const jwt=await getAccessToken();if(jwt)await api("/auth/v1/logout",{method:"POST",headers:headers(jwt)});}catch(_){}
+    // Hide sensitive data immediately; don't wait for the remote logout API.
+    let jwt=null;
+    try{jwt=await getAccessToken();}catch(_){}
+    authEpoch++;
     jobFetchVersion++;
+    saveSession(null);
     window.dispatchEvent(new CustomEvent("careerops:signed-out"));
-    saveSession(null);activeResult=null;byId("aiResume").value="";byId("aiJd").value="";byId("aiConsent").checked=false;byId("aiResult").replaceChildren();byId("aiResult").hidden=true;byId("aiDownload").hidden=true;byId("aiPrint").hidden=true;
-    await refreshAuth();
+    activeResult=null;byId("aiResume").value="";byId("aiJd").value="";byId("aiConsent").checked=false;
+    byId("aiResult").replaceChildren();byId("aiResult").hidden=true;
+    byId("aiDownload").hidden=true;byId("aiPrint").hidden=true;
+    byId("aiWorkspace").hidden=true;byId("aiLogin").hidden=false;byId("aiSignOut").hidden=true;
+    status("Signed out. Private resume and application data are hidden.");
+    if(jwt)try{await api("/auth/v1/logout",{method:"POST",headers:headers(jwt)});}catch(_){}
   });
   let resumeParseInProgress=false;
   function showResumeFeedback() {
