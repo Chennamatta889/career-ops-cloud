@@ -361,6 +361,90 @@
       "provider": "ashby",
       "slug": "linear",
       "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "anaplan",
+      "name": "Anaplan",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "guidepointsecurity",
+      "name": "GuidePoint Security",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "xohealthinc",
+      "name": "XO Health",
+      "sector": "Healthcare"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "ltconsulting",
+      "name": "LT Consulting",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "thtbc",
+      "name": "THTBC",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "cipherminingtechnologiesinc",
+      "name": "Cipher Mining",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "rapdev",
+      "name": "RapDev",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "knox-systems",
+      "name": "Knox Systems",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "norsemanservices",
+      "name": "Norseman Services",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "ttecdigital",
+      "name": "TTEC Digital",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "thinkahead",
+      "name": "AHEAD",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "cgsfederal",
+      "name": "Contact Government Services",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "fantom-corporation",
+      "name": "Fantom Corporation",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "synergyecp",
+      "name": "Synergy ECP",
+      "sector": "Technology & Services"
     }
   ]
 }
