@@ -84,3 +84,10 @@
 .ai-field-count{font-size:11px;color:#a7c3d1;margin:5px 0 12px}
 .ai-checklist{flex-basis:100%;width:100%;background:#162d3d;color:#bfd0de;border:1px solid #3a566a;border-radius:9px;padding:10px 13px;font-size:11px;line-height:1.6}
 @media(max-width:620px){#aiCheckConnection{width:100%}}
+
+/* Resume file extraction status: always visible on mobile */
+.resume-parse-status{margin-top:12px!important;padding:12px 14px;border-radius:10px;border:1px solid #3b5268;background:#142b3f;color:#cadcec!important;line-height:1.6;overflow-wrap:anywhere}
+.resume-parse-status[data-state="loading"]{border-color:#3baf98;background:#123735;color:#c7fff1!important}
+.resume-parse-status[data-state="success"]{border-color:#2a806a;background:#123d31;color:#ceffed!important}
+.resume-parse-status[data-state="error"]{border-color:#aa6953;background:#3b2729;color:#ffdbd0!important}
+#aiResumeTxtFile:disabled + .resume-parse-status{opacity:.85}
