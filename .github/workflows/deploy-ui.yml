@@ -10,6 +10,8 @@ on:
       - app.js
       - match-engine.js
       - ai-studio.js
+      - private-workspace.js
+      - scripts/private-workspace.test.cjs
       - resume-parser.js
       - careerops-config.js
       - scripts/ai-studio.test.cjs
@@ -183,11 +185,12 @@ jobs:
           node --check app.js
           node --check match-engine.js
           node --check ai-studio.js
+          node --check private-workspace.js
           node --check resume-parser.js
           node --check supabase/functions/careerops-ai-review/job-fetch.mjs
           node --check careerops-config.js
           node --check scripts/check-google-provider.mjs
-          node --test scripts/export-scan-feed.test.mjs scripts/match-engine.test.cjs scripts/ai-studio.test.cjs scripts/auth-email-limit.test.cjs scripts/google-oauth.test.cjs scripts/resume-parser.test.cjs scripts/resume-upload-ui.test.cjs scripts/job-fetch.test.mjs
+          node --test scripts/export-scan-feed.test.mjs scripts/match-engine.test.cjs scripts/ai-studio.test.cjs scripts/auth-email-limit.test.cjs scripts/google-oauth.test.cjs scripts/private-workspace.test.cjs scripts/resume-parser.test.cjs scripts/resume-upload-ui.test.cjs scripts/job-fetch.test.mjs
 
       - name: Verify Google provider is enabled in Career-Ops Supabase
         id: google_auth_check
@@ -222,7 +225,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p public
-          cp index.html styles.css match-engine.js careerops-config.js app.js resume-parser.js ai-studio.js public/
+          cp index.html styles.css match-engine.js careerops-config.js app.js resume-parser.js ai-studio.js private-workspace.js public/
           mkdir -p public/vendor
           cp "$RUNNER_TEMP/career-ops-vendor/node_modules/pdfjs-dist/build/pdf.min.mjs" public/vendor/
           cp "$RUNNER_TEMP/career-ops-vendor/node_modules/pdfjs-dist/build/pdf.worker.min.mjs" public/vendor/
