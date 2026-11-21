@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {createRequire} from "node:module";
-import {scanBoard,balanceJobs,runScan} from "./universal-job-scan.mjs";
+import {scanBoard,balanceJobs,runScan,readPreviousCandidateHealth} from "./universal-job-scan.mjs";
 import {discoverIndiaCandidates,checkCandidateCatalog,mergeIndiaCandidates}
   from "./india-candidate-expansion.mjs";
 const require=createRequire(import.meta.url);
@@ -187,4 +187,71 @@ test("large global SmartRecruiters employer is queried with India server-side lo
   assert.equal(result.jobs[0].title,"Apprentice - Hotel Operations");
   assert.equal(result.report.outdated_excluded,1);
   assert.equal(result.report.fresher_focus_activated,1);
+});
+
+test("phase 10 repeated 404 boards are quarantined, not permanently deleted, and retried",async()=>{
+  const board={provider:"greenhouse",slug:"missingboard",name:"Missing Board"};
+  let calls=0;
+  const fetchImpl=async()=>{calls++;return {ok:false,status:404};};
+  const args={candidates:[board],curatedSources:[],scanBoard,isIndiaLocation,
+    fetchImpl,now:new Date("2026-11-21T10:00:00Z")};
+  const first=await discoverIndiaCandidates(args);
+  assert.equal(first.report.checked,1);
+  assert.equal(first.report.unavailable,1);
+  assert.equal(first.history["greenhouse:missingboard"].consecutive_failures,1);
+  const second=await discoverIndiaCandidates({...args,previousHealth:first.history});
+  assert.equal(second.history["greenhouse:missingboard"].consecutive_failures,2);
+  assert.equal(second.history["greenhouse:missingboard"].retry_after,"2026-11-28");
+  const third=await discoverIndiaCandidates({...args,previousHealth:second.history});
+  assert.equal(third.report.checked,0);
+  assert.equal(third.report.quarantined,1);
+  assert.equal(calls,2,"quarantined board must not generate network calls");
+  const retry=await discoverIndiaCandidates({...args,now:new Date("2026-11-28T10:00:00Z"),
+    previousHealth:third.history});
+  assert.equal(retry.report.checked,1,"retry automatically after quarantine expires");
+  assert.equal(calls,3);
+});
+test("phase 10 transient failures retry next day, success clears failure streak",async()=>{
+  const board={provider:"greenhouse",slug:"recoveringboard",name:"Recovering"};
+  let attempts=0;
+  const fetchImpl=async()=>{
+    attempts++;
+    if(attempts<3)return {ok:false,status:503};
+    return fakeResponse({jobs:[{id:9876501,title:"DevOps Engineer",
+      location:{name:"Hyderabad, India"},first_published:"2026-11-21T00:00:00Z"}]});
+  };
+  const args={candidates:[board],curatedSources:[],scanBoard,isIndiaLocation,fetchImpl};
+  const one=await discoverIndiaCandidates({...args,now:new Date("2026-11-21T10:00:00Z")});
+  const two=await discoverIndiaCandidates({...args,now:new Date("2026-11-21T11:00:00Z"),previousHealth:one.history});
+  const skipped=await discoverIndiaCandidates({...args,now:new Date("2026-11-21T12:00:00Z"),previousHealth:two.history});
+  assert.equal(skipped.report.quarantined,1);
+  assert.equal(skipped.history["greenhouse:recoveringboard"].retry_after,"2026-11-22");
+  const recovered=await discoverIndiaCandidates({...args,now:new Date("2026-11-22T10:00:00Z"),
+    previousHealth:skipped.history});
+  assert.equal(recovered.report.activated,1);
+  assert.equal(recovered.history["greenhouse:recoveringboard"].consecutive_failures,0);
+  assert.equal(attempts,3);
+});
+test("phase 10 ignores arbitrary stale health keys and never skips a new board",async()=>{
+  const board={provider:"greenhouse",slug:"newboard",name:"New Board"};
+  const result=await discoverIndiaCandidates({candidates:[board],curatedSources:[],
+    scanBoard,isIndiaLocation,now:new Date("2026-11-21T10:00:00Z"),
+    previousHealth:{"greenhouse:otherboard":{status:"quarantined",
+      consecutive_failures:100,retry_after:"2099-01-01"}},
+    fetchImpl:async()=>fakeResponse({jobs:[]})});
+  assert.equal(result.report.checked,1);
+  assert.equal(result.report.quarantined,0);
+  assert.deepEqual(Object.keys(result.history),["greenhouse:newboard"]);
+});
+
+test("phase 10 only imports previous health from a validated India public feed",async()=>{
+  const valid={schema:"careerops.public-jobs.v1",market:"IN",scan:{india_only:true,
+    candidate_health:{"greenhouse:board":{status:"unavailable",consecutive_failures:2,
+      retry_after:"2026-11-28",kind:"not_found"}}}};
+  const fetchImpl=async()=>({ok:true,headers:{get:()=>null},text:async()=>JSON.stringify(valid)});
+  assert.deepEqual(await readPreviousCandidateHealth(fetchImpl),valid.scan.candidate_health);
+  const invalid=async()=>({ok:true,headers:{get:()=>null},
+    text:async()=>JSON.stringify({...valid,market:"US"})});
+  assert.deepEqual(await readPreviousCandidateHealth(invalid),{});
+  assert.deepEqual(await readPreviousCandidateHealth(async()=>{throw Error("offline")}),{});
 });
