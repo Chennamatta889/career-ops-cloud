@@ -63,7 +63,8 @@
           return { id: str(j.id) || newId(), title: str(j.title), company: str(j.company), location: str(j.location), category:jobCategory(j), department:str(j.department), skills: Array.isArray(j.skills) ? j.skills.slice(0,12).map(str) : [], description: readableJobText(j.description,6000), url: safeUrl(j.url), demo: !!j.demo, manual: !!j.manual || (x.mode === "manual" && !j.demo), source: str(j.source), requiredExperience: str(j.requiredExperience),
             stage: STAGES.some(function (s) { return s.name === j.stage; }) ? j.stage : "",
             openedAt:str(j.openedAt||j.opened_at),appliedOn:str(j.appliedOn||j.applied_on),
-            trackingUpdatedAt:str(j.trackingUpdatedAt||j.updated_at),addedAt: str(j.addedAt) };
+            trackingUpdatedAt:str(j.trackingUpdatedAt||j.updated_at),emailEvidenceAt:str(j.emailEvidenceAt),
+            listingCheck:str(j.listingCheck),addedAt: str(j.addedAt) };
         }),
         prefs: Object.assign({}, DEFAULT_PREFS, x.prefs || {}),
         activity: Array.isArray(x.activity) ? x.activity.slice(0,100) : [],
@@ -75,6 +76,8 @@
   let state = load(GUEST_STORAGE_KEY);
   let activeJobId = null;
   let pendingConfirmationId = null;
+  let emailReviewAnalysis=null;
+  let emailReviewJobId="";
   const localToday = function(date=new Date()){
     const local=new Date(date.getTime()-date.getTimezoneOffset()*60000);
     return local.toISOString().slice(0,10);
@@ -265,7 +268,15 @@
     if(j.appliedOn)items.push("Applied "+formatTrackingDate(j.appliedOn+"T12:00:00"));
     else if(["Applied","Interview","Offer","Rejected"].includes(j.stage))
       items.push("Application date not recorded");
+    if(j.emailEvidenceAt)items.push("Email reviewed "+formatTrackingDate(j.emailEvidenceAt)+" (user-provided)");
     return items;
+  };
+  // A saved role can disappear from a board temporarily. Never claim that
+  // absence alone proves a vacancy is closed.
+  const listingNotice=function(job){
+    if(job.listingCheck==="missing")return "Not in the latest employer feed — check the original posting";
+    if(job.listingCheck==="unverified")return "Employer board unavailable — listing could not be rechecked";
+    return "";
   };
   const priorityBadge = function(j){
     if(!state.prefs.roles.trim()&&!state.prefs.locations.trim()&&!state.prefs.skills.trim())
@@ -297,7 +308,9 @@
     const open = url
       ? '<a class="text-link open-job-link" data-action="open-listing" data-id="' + escapeHtml(j.id) + '" href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer" aria-label="Open job listing for ' + escapeHtml(j.title) + ' at ' + escapeHtml(j.company) + '">Open listing ↗</a>'
       : '<span class="no-url-label">' + (j.demo ? 'Sample job — no link' : 'Posting link unavailable') + '</span>';
-    return '<article class="job-card"><div class="job-card-top"><div class="company-symbol">' + escapeHtml(companyInitials(j.company)) + '</div><button class="save-button ' + (j.stage ? 'saved' : '') + '" data-action="save" data-id="' + escapeHtml(j.id) + '">' + (j.stage ? '✓ Tracking' : '+ Save') + '</button></div>' + ranking + '<h3>' + escapeHtml(j.title) + '</h3><p class="company-line">' + escapeHtml(j.company) + ' · ' + escapeHtml(j.location) + '</p><p class="description">' + escapeHtml(readableJobText(j.description,220) || 'A description is not available in this listing. Open the employer website for details.') + '</p><div class="chip-wrap"><span class="skill-chip category-chip">' + escapeHtml(categoryName) + '</span>' + experienceBadge + chips(j.skills) + '</div><div class="card-tracking-summary">'+trackingSummary(j).map(function(value){return '<span>'+escapeHtml(value)+'</span>';}).join("")+'</div><div class="card-footer"><span class="job-date">' + escapeHtml(jobSource(j)) + '</span><div class="card-action-group">' + details + aiReview + open + '</div></div></article>';
+    return '<article class="job-card"><div class="job-card-top"><div class="company-symbol">' + escapeHtml(companyInitials(j.company)) + '</div><button class="save-button ' + (j.stage ? 'saved' : '') + '" data-action="save" data-id="' + escapeHtml(j.id) + '">' + (j.stage ? '✓ Tracking' : '+ Save') + '</button></div>' + ranking + '<h3>' + escapeHtml(j.title) + '</h3><p class="company-line">' + escapeHtml(j.company) + ' · ' + escapeHtml(j.location) + '</p><p class="description">' + escapeHtml(readableJobText(j.description,220) || 'A description is not available in this listing. Open the employer website for details.') + '</p><div class="chip-wrap"><span class="skill-chip category-chip">' + escapeHtml(categoryName) + '</span>' + experienceBadge + chips(j.skills) + '</div><div class="card-tracking-summary">'+trackingSummary(j).map(function(value){return '<span>'+escapeHtml(value)+'</span>';}).join("")+'</div>' +
+      (listingNotice(j)?'<p class="listing-health-notice" role="status">'+escapeHtml(listingNotice(j))+'</p>':"")+
+      '<div class="card-footer"><span class="job-date">' + escapeHtml(jobSource(j)) + '</span><div class="card-action-group">' + details + aiReview + open + '</div></div></article>';
   };
   const pipelineCount = function (stage) { return state.jobs.filter(function (j) { return j.stage === stage; }).length; };
   const renderOverview = function () {
@@ -341,6 +354,15 @@
     $("dataModeTag").textContent = state.mode === "demo" ? "Examples" : state.mode === "live" ? "Published vacancies" : "Your job list";
     $("dataModeTag").classList.toggle("real", state.mode !== "demo");
   };
+  const renderEmailReviewChoices=function(){
+    const select=$("emailReviewJob");
+    if(!select)return;
+    const previous=select.value||"";
+    const tracked=state.jobs.filter(j=>!j.demo&&!!j.stage);
+    select.innerHTML='<option value="">Select a tracked job</option>'+
+      tracked.map(j=>'<option value="'+escapeHtml(j.id)+'">'+escapeHtml(j.title+" · "+j.company)+'</option>').join("");
+    select.value=tracked.some(j=>j.id===previous)?previous:"";
+  };
   const renderBoard = function () {
     $("applicationsBoard").innerHTML=STAGES.map(function(stage){
       const jobs=state.jobs.filter(function(j){return j.stage===stage.name;});
@@ -371,6 +393,7 @@
         '"></i><strong>'+stage.name+'</strong><b>'+jobs.length+'</b></div>'+
         (cards||'<div class="board-empty">No jobs in this stage</div>')+'</section>';
     }).join("");
+    renderEmailReviewChoices();
   };
   const renderActivity = function () {
     $("activityList").innerHTML = state.activity.length ? state.activity.map(function (a) {
@@ -441,6 +464,8 @@
       : "This job record has no valid posting URL. Open the employer's career site to locate it.");
     $("dialogSave").textContent = j.stage ? "✓ Tracking" : "+ Save job";
     $("dialogTracking").textContent=trackingSummary(j).join(" · ")||"Not tracked yet";
+    $("dialogAvailability").textContent=listingNotice(j);
+    $("dialogAvailability").hidden=!listingNotice(j);
     $("dialogConfirmApplied").hidden=j.demo;
     $("dialogConfirmApplied").textContent=j.appliedOn?"Edit application date":"Yes, I applied";
     $("dialogLink").hidden = !url;
@@ -472,6 +497,14 @@
     $("confirmAppliedDate").max=localToday();
     $("confirmAppliedDate").value=job.appliedOn||localToday();
     $("applicationFollowupError").textContent="";
+    const duplicates=state.jobs.filter(other=>
+      other.id!==job.id && other.company && other.title &&
+      normalizeSearch(other.company)===normalizeSearch(job.company) &&
+      normalizeSearch(other.title)===normalizeSearch(job.title) &&
+      (other.appliedOn || ["Applied","Interview","Offer","Rejected"].includes(other.stage)));
+    $("applicationDuplicateWarning").hidden=duplicates.length===0;
+    $("applicationDuplicateWarning").textContent=duplicates.length?
+      "Possible duplicate: you already track an application for the same company and role. Confirm this is a different employer posting before recording another application.":"";
     $("applicationFollowup").hidden=false;
   };
   const closeApplicationFollowup=function(){
@@ -592,6 +625,8 @@
         j.openedAt=previous?.openedAt||"";
         j.appliedOn=previous?.appliedOn||"";
         j.trackingUpdatedAt=previous?.trackingUpdatedAt||"";
+        j.emailEvidenceAt=previous?.emailEvidenceAt||"";
+        j.listingCheck=previous?.listingCheck||"";
       });
       const importedKeys = new Set(jobs.map(function (j) { return j.url || (j.company + "/" + j.title + "/" + j.location).toLowerCase(); }));
       const previousTrackedJobs = keep.filter(function (j) { return !importedKeys.has(j.url || (j.company + "/" + j.title + "/" + j.location).toLowerCase()); });
@@ -839,6 +874,8 @@
         job.openedAt=existing?.openedAt||"";
         job.appliedOn=existing?.appliedOn||"";
         job.trackingUpdatedAt=existing?.trackingUpdatedAt||"";
+        job.emailEvidenceAt=existing?.emailEvidenceAt||"";
+        job.listingCheck="listed";
         job.source = "cloud";
         job.manual = false;
         const date = str(raw.posted_at || raw.addedAt);
@@ -846,8 +883,30 @@
         cloud.push(job);
       });
       // Retain manually added and tracked jobs even if a later scan misses them.
+      const boardChecks=new Map((Array.isArray(feed.source_health)?feed.source_health:[])
+        .filter(source=>source&&source.board&&source.provider)
+        .map(source=>[source.provider+":"+String(source.board).toLowerCase(),source.status]));
+      const providerBoard=function(job){
+        const url=safeUrl(job.url);
+        if(!url)return "";
+        try{
+          const parsed=new URL(url);
+          const host=parsed.hostname.toLowerCase();
+          const parts=parsed.pathname.split("/").filter(Boolean);
+          if(["job-boards.greenhouse.io","boards.greenhouse.io"].includes(host)&&parts[1]==="jobs")
+            return "greenhouse:"+String(parts[0]||"").toLowerCase();
+          if(host==="jobs.ashbyhq.com"&&parts.length>=2)
+            return "ashby:"+String(parts[0]||"").toLowerCase();
+        }catch(_){}
+        return "";
+      };
       const savedLocal = previous.filter(function (j) {
         return (j.manual || !!j.stage || (oldMode === "manual" && j.source !== "cloud")) && !seen.has(feedKey(j));
+      }).map(function(j){
+        if(j.manual && j.source!=="cloud-tracking")return j;
+        const status=boardChecks.get(providerBoard(j));
+        j.listingCheck=status==="ok"?"missing":"unverified";
+        return j;
       });
       const isNewScan = state.feedGeneratedAt !== feed.generated_at;
       // Keep every available public role plus the user's own manual/tracked jobs.
