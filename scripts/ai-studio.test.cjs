@@ -25,7 +25,7 @@ test("only browser-safe values for the dedicated Career-Ops project are publishe
   assert.match(ai,/if\(!ready\)/);
 });
 test("the app preserves auth callback URL fragment until the AI tab reads it",()=>{
-  assert.match(app,/!location\.hash\.startsWith\("#access_token="\)/);
+  assert.match(app,/access_token=\|error=\|error_code=/);
   assert.match(ai,/readUrlSession\(\)/);
   assert.match(ai,/sessionStorage/);
 });
@@ -94,6 +94,16 @@ test("PDF/DOCX extraction and ATS source fetching are wired to AI Studio",()=>{
   assert.match(workflow,/pdfjs-dist@5\.4\.624 mammoth@1\.11\.0/);
   assert.match(workflow,/public\/vendor\/pdf\.min\.mjs/);
   assert.match(workflow,/public\/vendor\/mammoth\.browser\.min\.js/);
+});
+test("Google Sign-In is primary with an email-link fallback and no client secret",()=>{
+  assert.match(html,/id="aiGoogleSignIn"/);
+  assert.match(html,/Continue with Google/);
+  assert.match(html,/class="ai-email-fallback"/);
+  assert.match(ai,/\/auth\/v1\/authorize/);
+  assert.match(ai,/url\.searchParams\.set\("provider","google"\)/);
+  assert.match(ai,/url\.searchParams\.set\("redirect_to",siteRedirect\)/);
+  assert.match(ai,/location\.origin !== siteOrigin/);
+  assert.doesNotMatch(read("careerops-config.js"),/client_secret|google_client_secret|AIza[A-Za-z0-9_-]{15}/i);
 });
 test("AI review does not send applications or persist resume text",()=>{
   assert.doesNotMatch(ai,/localStorage\.setItem\([^\n]*resume/i);
