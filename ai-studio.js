@@ -215,7 +215,13 @@
     if(!token){status("Sign in again to review this job.");await refreshAuth();return;}
     if(!reviewReady && !(await checkReviewConnection(token)))return;
     this.disabled=true;activeResult=null;byId("aiDownload").hidden=true;
-    status("Requesting a private AI review. No application will be submitted.");
+    const started=Date.now();
+    const showProgress=()=>{
+      const sec=Math.max(0,Math.floor((Date.now()-started)/1000));
+      status("Gemini is preparing your review ("+sec+"s). The request may take up to 100 seconds. Please avoid tapping Review again.");
+    };
+    showProgress();
+    const progressTimer=setInterval(showProgress,1000);
     try{
       const x=await api("/functions/v1/careerops-ai-review",{
         method:"POST",headers:headers(token),
@@ -225,7 +231,13 @@
       renderResult(x.result);
       status("AI draft received. Check every claim, skill and figure before sending to any employer.");
       byId("aiResult").scrollIntoView({behavior:"smooth"});
-    }catch(e){status("AI review failed: "+text(e.message,250));}finally{this.disabled=false;}
+    }catch(e){
+      const err=text(e?.message||e,260);
+      status("AI review failed: "+err);
+    }finally{
+      clearInterval(progressTimer);
+      this.disabled=false;
+    }
   });
   window.addEventListener("careerops:job-selected",event=>{
     const j=event.detail||{};
