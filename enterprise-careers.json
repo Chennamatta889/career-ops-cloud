@@ -1,0 +1,111 @@
+{
+  "schema": "careerops.enterprise-careers.v1",
+  "verified_on": "2026-11-21",
+  "description": "Verified official job-search and careers entry points. These are NOT job postings. Opening a portal is not evidence of applying.",
+  "companies": [
+    {
+      "id": "tcs",
+      "name": "TCS",
+      "group": "IT services",
+      "url": "https://www.tcs.com/careers/india/lateral-hiring",
+      "location": "India",
+      "method": "official_portal"
+    },
+    {
+      "id": "accenture",
+      "name": "Accenture",
+      "group": "IT services",
+      "url": "https://www.accenture.com/in-en/careers/jobsearch",
+      "location": "India",
+      "method": "official_portal"
+    },
+    {
+      "id": "wipro",
+      "name": "Wipro",
+      "group": "IT services",
+      "url": "https://careers.wipro.com/viewalljobs/?locale=en_US",
+      "location": "Global",
+      "method": "official_portal"
+    },
+    {
+      "id": "infosys",
+      "name": "Infosys",
+      "group": "IT services",
+      "url": "https://www.infosys.com/careers/apply/",
+      "location": "India and global",
+      "method": "official_portal"
+    },
+    {
+      "id": "ibm",
+      "name": "IBM",
+      "group": "IT services",
+      "url": "https://www.ibm.com/in-en/careers/search",
+      "location": "India and global",
+      "method": "official_portal"
+    },
+    {
+      "id": "capgemini",
+      "name": "Capgemini",
+      "group": "IT services",
+      "url": "https://careers.capgemini.com/",
+      "location": "Global",
+      "method": "official_portal"
+    },
+    {
+      "id": "google",
+      "name": "Google",
+      "group": "Product companies",
+      "url": "https://www.google.com/about/careers/applications/jobs/results/",
+      "location": "Global",
+      "method": "official_portal"
+    },
+    {
+      "id": "microsoft",
+      "name": "Microsoft",
+      "group": "Product companies",
+      "url": "https://careers.microsoft.com/v2/global/en/locations/india.html",
+      "location": "India",
+      "method": "official_portal"
+    },
+    {
+      "id": "amazon",
+      "name": "Amazon / AWS",
+      "group": "Product companies",
+      "url": "https://www.amazon.jobs/en/search?country%5B%5D=IND",
+      "location": "India",
+      "method": "official_portal"
+    },
+    {
+      "id": "oracle",
+      "name": "Oracle",
+      "group": "Product companies",
+      "url": "https://careers.oracle.com/en/sites/jobsearch/jobs?hl=en-IN",
+      "location": "India and global",
+      "method": "official_portal"
+    },
+    {
+      "id": "adobe",
+      "name": "Adobe",
+      "group": "Product companies",
+      "url": "https://careers.adobe.com/us/en/search-results/",
+      "location": "Global",
+      "method": "official_portal"
+    },
+    {
+      "id": "servicenow",
+      "name": "ServiceNow",
+      "group": "Product companies",
+      "url": "https://careers.servicenow.com/jobs/",
+      "location": "Global",
+      "method": "official_portal"
+    },
+    {
+      "id": "atlassian",
+      "name": "Atlassian",
+      "group": "Product companies",
+      "url": "https://www.atlassian.com/company/careers/all-jobs",
+      "location": "Global",
+      "method": "official_portal"
+    }
+  ]
+}
