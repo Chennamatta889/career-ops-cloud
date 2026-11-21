@@ -16,6 +16,15 @@ try{
   await page.waitForFunction(()=>document.querySelector("#dataModeTag")?.textContent.includes("Published"),null,{timeout:45000});
   await page.waitForFunction(()=>document.querySelectorAll("#jobsGrid .job-card").length>0,null,{timeout:25000});
   assert.ok(await page.locator("#jobsGrid .job-card").count()>0,"live published job cards missing");
+  await page.locator("#jobSearch").fill("ServiceNow");
+  const liveMatches=await page.locator("#jobsGrid .job-card h3").allTextContents();
+  assert.ok(liveMatches.some(title=>/\bservice[\s-]?now\b/i.test(title)),
+    "expanded live feed must contain at least one real ServiceNow-titled job");
+  await page.locator("#sectorFilter").selectOption("it");
+  const itMatches=await page.locator("#jobsGrid .job-card h3").allTextContents();
+  assert.ok(itMatches.some(title=>/\bservice[\s-]?now\b/i.test(title)),
+    "IT-only filtering must retain real ServiceNow roles");
+  await page.locator("#resetDiscoverFilters").click();
   assert.ok(await page.locator('#experienceFilter option[value="3-5"]').count()===1);
   await page.locator("#experienceFilter").selectOption("3-5");
   await page.locator("#resetDiscoverFilters").click();
