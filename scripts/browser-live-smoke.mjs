@@ -30,6 +30,23 @@ try{
   await page.locator("#resetDiscoverFilters").click();
   assert.equal(await page.locator("#experienceFilter").inputValue(),"");
 
+  // Phase 10B: verify separately labeled official company links, never fake jobs.
+  await page.waitForFunction(()=>
+    document.querySelectorAll("#enterpriseCareerCards .enterprise-career-card").length===13,
+    null,{timeout:20000});
+  await page.locator("#enterpriseCareerDirectory summary").click();
+  assert.equal(await page.locator("#enterpriseCareerCards .enterprise-career-card").count(),13);
+  await page.locator("#enterpriseCareerSearch").fill("TCS");
+  const portal=page.locator("#enterpriseCareerCards .enterprise-career-card");
+  assert.equal(await portal.count(),1);
+  assert.match(await portal.first().locator("a").getAttribute("href"),/^https:\/\/www\.tcs\.com\//);
+  assert.match(await portal.first().textContent(),/individual jobs are not imported/);
+  await page.locator("#enterpriseCareerSearch").fill("");
+  await page.locator("#enterpriseCareerKind").selectOption("Product companies");
+  assert.equal(await portal.count(),7);
+  await page.locator("#enterpriseCareerKind").selectOption("");
+  assert.equal(await portal.count(),13);
+
   // Exercise only a synthetic browser-local job in an unsigned-in session.
   await page.locator("#openAddJob").click();
   await page.locator('#addJobForm input[name="title"]').fill("Career-Ops QA Example Job");
