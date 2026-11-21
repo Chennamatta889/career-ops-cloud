@@ -117,7 +117,28 @@
     if(selected==="10+")return minimum>=10;
     return true;
   }
-  const api=Object.freeze({plainText,decodeEntities,experienceRequirement,experienceMatches});
+  /**
+   * Evidence-based fresher / early-career discovery. A role title alone
+   * suggests an audience, not a confirmed zero-year hiring requirement.
+   * Never label senior or explicitly 3+ year roles as fresher openings.
+   */
+  function entryOpportunity(job){
+    const title=typeof job?.title==="string"?job.title:"";
+    const explicit=experienceRequirement(job?.requiredExperience)||
+      experienceRequirement(job?.description);
+    const minYears=explicit?.minYears;
+    const senior=/\b(?:senior|staff|principal|director|lead|manager|architect|head|vice president|sr\.?|expert)\b/i.test(title);
+    const fresherTitle=/\b(?:intern(?:ship)?|apprentice(?:ship)?|trainee|freshers?|new[ -]?grad(?:uate)?s?|graduate[ -](?:engineer|trainee|program(?:me)?|associate|hire|intern|analyst)|campus[ -](?:graduate|hire|recruit(?:ment)?)|entry[ -]?level)\b/i.test(title);
+    const earlyTitle=/\b(?:junior|associate[ -](?:software|engineer|developer|analyst|consultant)|(?:software[ -])?engineer[ -]?(?:i|1)|analyst[ -]?(?:i|1))\b/i.test(title);
+    if(senior||minYears>2)return {level:"unknown",basis:"",minYears:minYears??null};
+    if(minYears===0)return {level:"fresher",basis:"explicit",minYears:0};
+    if(fresherTitle&&minYears==null)return {level:"fresher",basis:"title",minYears:null};
+    if(fresherTitle&&minYears===1)return {level:"early",basis:"title",minYears:1};
+    if(minYears>=1&&minYears<=2)return {level:"early",basis:"explicit",minYears};
+    if(earlyTitle&&minYears==null)return {level:"early",basis:"title",minYears:null};
+    return {level:"unknown",basis:"",minYears:minYears??null};
+  }
+  const api=Object.freeze({plainText,decodeEntities,experienceRequirement,experienceMatches,entryOpportunity});
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
   root.CareerOpsJobText=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
