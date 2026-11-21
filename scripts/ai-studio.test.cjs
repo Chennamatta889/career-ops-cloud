@@ -1,0 +1,51 @@
+const test=require("node:test");
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const path=require("node:path");
+const read=p=>fs.readFileSync(path.resolve(__dirname,"..",p),"utf8");
+const html=read("index.html");
+const app=read("app.js");
+const ai=read("ai-studio.js");
+const config=read("careerops-config.js");
+const backend=read("supabase/functions/careerops-ai-review/index.ts");
+const workflow=read(".github/workflows/deploy-ui.yml");
+
+test("AI Studio controls exist and are connected to its navigation",()=>{
+  const ids=[...new Set([...ai.matchAll(/byId\("([a-zA-Z0-9]+)"\)/g)].map(m=>m[1]))];
+  assert.ok(ids.length>=13);
+  for(const id of ids)assert.match(html,new RegExp('id="'+id+'"'),"Missing "+id);
+  assert.match(html,/data-nav="ai"/);
+  assert.match(app,/ai:"AI Studio"/);
+  assert.match(app,/data-action="ai"/);
+});
+test("only publishable config is allowed and is disabled by default",()=>{
+  assert.match(config,/supabaseUrl: ""/);
+  assert.match(config,/publishableKey: ""/);
+  assert.doesNotMatch(config,/eyJhbG|sk-[A-Za-z0-9]{12}|AIza[A-Za-z0-9_-]{15}/);
+  assert.match(ai,/if\(!ready\)/);
+});
+test("the app preserves auth callback URL fragment until the AI tab reads it",()=>{
+  assert.match(app,/!location\.hash\.startsWith\("#access_token="\)/);
+  assert.match(ai,/readUrlSession\(\)/);
+  assert.match(ai,/sessionStorage/);
+});
+test("the private AI function explicitly enforces user email allowlist, auth and consent boundary",()=>{
+  assert.match(backend,/getAuthUser\(req\)/);
+  assert.match(backend,/ALLOWED_EMAIL/);
+  assert.match(backend,/AI_CALLS_ENABLED/);
+  assert.match(backend,/GEMINI_API_KEY/);
+  assert.match(backend,/user\.email\.trim\(\)\.toLowerCase\(\)!==approved/);
+  assert.match(ai,/aiConsent/);
+  assert.match(backend,/NEVER invent/);
+});
+test("GitHub Pages packages AI files but does not ship server files or user data",()=>{
+  assert.match(workflow,/cp index\.html styles\.css match-engine\.js careerops-config\.js app\.js ai-studio\.js public\//);
+  assert.doesNotMatch(workflow,/cp .*supabase\/functions/);
+  assert.match(html,/src="\.\/ai-studio\.js"/);
+  assert.match(html,/src="\.\/careerops-config\.js"/);
+});
+test("AI review does not send applications or persist resume text",()=>{
+  assert.doesNotMatch(ai,/localStorage\.setItem\([^\n]*resume/i);
+  assert.match(html,/Nothing is submitted automatically/);
+  assert.match(ai,/No application will be submitted/);
+});
