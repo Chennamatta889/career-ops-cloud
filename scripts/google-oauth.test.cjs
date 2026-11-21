@@ -29,10 +29,11 @@ function harness({hash="",search="",pathname="/career-ops-cloud/",origin="https:
     CAREEROPS_PRIVATE_CONFIG:{
       supabaseUrl:connected?"https://nnhzihcugvifhegsfmua.supabase.co":"",
       publishableKey:connected?"sb_publishable_public_test_1234567890":""
-    },addEventListener(){}
+    },addEventListener(){},dispatchEvent(){}
   };
   const context={
     URL,URLSearchParams,Date,location,document,window,
+    CustomEvent:class CustomEvent{constructor(type,init){this.type=type;this.detail=init?.detail}},
     localStorage:{getItem:()=>null,setItem(){},removeItem(){}},
     sessionStorage:{
       getItem:k=>store.get(k)||null,
