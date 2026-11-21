@@ -8,6 +8,8 @@ on:
       - index.html
       - styles.css
       - app.js
+      - match-engine.js
+      - scripts/match-engine.test.cjs
       - scripts/export-scan-feed.mjs
       - scripts/export-scan-feed.test.mjs
       - .github/workflows/deploy-ui.yml
@@ -41,6 +43,8 @@ jobs:
           node-version: '24'
 
       - name: Checkout pinned public Career-Ops scanner
+        id: upstream
+        continue-on-error: true
         uses: actions/checkout@v4
         with:
           repository: career-ops-hq/career-ops
@@ -49,6 +53,9 @@ jobs:
           persist-credentials: false
 
       - name: Install scanner dependencies
+        id: scanner_dependencies
+        if: steps.upstream.outcome == 'success'
+        continue-on-error: true
         working-directory: upstream
         run: |
           if [ -f package-lock.json ]; then
@@ -153,10 +160,14 @@ jobs:
           job_boards: []
           EOF
 
-      - name: Validate public-feed conversion
-        run: node --test scripts/export-scan-feed.test.mjs
+      - name: Validate dashboard and public-feed features
+        run: |
+          node --check app.js
+          node --check match-engine.js
+          node --test scripts/export-scan-feed.test.mjs scripts/match-engine.test.cjs
 
       - name: Scan public job listings
+        if: steps.upstream.outcome == 'success' && steps.scanner_dependencies.outcome == 'success'
         id: scan
         working-directory: upstream
         shell: bash
@@ -173,6 +184,7 @@ jobs:
         shell: bash
         run: |
           node --check app.js
+          node --check match-engine.js
           node --check scripts/export-scan-feed.mjs
           SCAN_RECEIPT="$RUNNER_TEMP/career-ops-scan.json" \
           FEED_OUTPUT="public/data/jobs.json" \
@@ -182,7 +194,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p public
-          cp index.html styles.css app.js public/
+          cp index.html styles.css match-engine.js app.js public/
           test -s public/data/jobs.json
 
       - name: Configure Pages
