@@ -5,11 +5,15 @@
  * No resume or AI response is persisted by this function.
  */
 const fallbackOrigin = "https://chennamatta889.github.io";
+function allowedOrigin() {
+  try { return new URL(Deno.env.get("APP_ORIGIN")?.trim() || fallbackOrigin).origin; }
+  catch { return fallbackOrigin; }
+}
 const recent = new Map<string,number>();
 const readText = (v:unknown,max:number) => typeof v==="string" ? v.trim().slice(0,max) : "";
 const readList = (v:unknown,n:number,size:number) => Array.isArray(v) ? v.map(x=>readText(x,size)).filter(Boolean).slice(0,n) : [];
 function cors(origin:string|null) {
-  const allowed=Deno.env.get("APP_ORIGIN")?.trim() || fallbackOrigin;
+  const allowed=allowedOrigin();
   return origin===allowed ? {
     "Access-Control-Allow-Origin":allowed,"Vary":"Origin",
     "Access-Control-Allow-Headers":"authorization,apikey,content-type",
@@ -23,7 +27,10 @@ async function getAuthUser(req:Request) {
   const base=Deno.env.get("SUPABASE_URL") || "";
   const publishable=Deno.env.get("SUPABASE_PUBLISHABLE_KEYS") || "";
   const map=publishable ? JSON.parse(publishable) as Record<string,string> : null;
-  const key=(map?.default ? Deno.env.get(map.default) : "") || Deno.env.get("SUPABASE_ANON_KEY") || "";
+  // SUPABASE_PUBLISHABLE_KEYS is a JSON object containing actual key values,
+  // not names of environment variables. Prefer it over the legacy anon key.
+  const key=(typeof map?.default==="string" ? map.default : "") ||
+    Deno.env.get("SUPABASE_ANON_KEY") || "";
   const auth=req.headers.get("Authorization") || "";
   if (!base || !key || !/^Bearer \S+$/.test(auth)) return null;
   const result=await fetch(base+"/auth/v1/user", {headers:{"apikey":key,"Authorization":auth},signal:AbortSignal.timeout(8000)});
@@ -51,23 +58,34 @@ function sanitize(json:Record<string,unknown>,model:string) {
 }
 Deno.serve(async (req:Request) => {
   const origin=req.headers.get("Origin");
-  const allowed=Deno.env.get("APP_ORIGIN")?.trim() || fallbackOrigin;
+  const allowed=allowedOrigin();
   if (origin && origin!==allowed) return respond(origin,403,{error:"Origin not permitted."});
   if (req.method==="OPTIONS") return new Response(null,{status:204,headers:cors(origin)});
   if (req.method!=="POST") return respond(origin,405,{error:"POST required."});
-  if (Deno.env.get("AI_CALLS_ENABLED")!=="true") return respond(origin,503,{error:"AI is not activated by the project owner."});
-  const apiKey=Deno.env.get("GEMINI_API_KEY") || "";
-  const approved=(Deno.env.get("ALLOWED_EMAIL")||"").trim().toLowerCase();
-  if (!apiKey || !approved) return respond(origin,503,{error:"Private backend secrets are missing."});
   try {
+    // Authenticate BEFORE showing activation status. The diagnostic never
+    // returns secret values, resumes, or personal account details.
     const user=await getAuthUser(req);
-    if (!user) return respond(origin,401,{error:"Sign in before using AI."});
-    if (user.email.trim().toLowerCase()!==approved) return respond(origin,403,{error:"Account is not approved for AI use."});
-    if (Date.now()-(recent.get(user.id)||0)<60000) return respond(origin,429,{error:"Wait 60 seconds before another AI review."});
+    if (!user) return respond(origin,401,{error:"Sign in again before using AI.",code:"AUTH_REQUIRED"});
+    const approved=(Deno.env.get("ALLOWED_EMAIL")||"").trim().toLowerCase();
+    if (!approved) return respond(origin,503,{error:"Career-Ops account allowlist is not configured.",code:"ALLOWLIST_SETUP_REQUIRED"});
+    if (user.email.trim().toLowerCase()!==approved) return respond(origin,403,{error:"Signed-in email is not authorized for AI review. Check ALLOWED_EMAIL.",code:"EMAIL_NOT_ALLOWED"});
+
     const bodyText=await req.text();
-    if (bodyText.length>40000) return respond(origin,413,{error:"Input exceeds size limit."});
+    if (bodyText.length>40000) return respond(origin,413,{error:"Input exceeds size limit.",code:"INPUT_TOO_LARGE"});
     let body:Record<string,unknown>;
     try { body=JSON.parse(bodyText); } catch {return respond(origin,400,{error:"Invalid JSON."});}
+
+    const missing:string[]=[];
+    if (Deno.env.get("AI_CALLS_ENABLED")!=="true") missing.push("AI_CALLS_ENABLED");
+    const apiKey=Deno.env.get("GEMINI_API_KEY") || "";
+    if (!apiKey) missing.push("GEMINI_API_KEY");
+    if (body.action==="status") {
+      return respond(origin,200,{ok:true,ready:missing.length===0,missing,
+        message:missing.length ? "AI setup needs private secrets in Career-Ops Supabase Edge Functions." : "AI endpoint is configured. Ready for resume review."});
+    }
+    if (missing.length) return respond(origin,503,{error:"AI review is not yet enabled. Configure: "+missing.join(", "),code:"AI_SETUP_INCOMPLETE"});
+    if (Date.now()-(recent.get(user.id)||0)<60000) return respond(origin,429,{error:"Wait 60 seconds before another AI review.",code:"RATE_LIMITED"});
     const resume=readText(body.resume,16000);
     const jd=readText(body.jobDescription,16000);
     const title=readText(body.jobTitle,160);
@@ -91,7 +109,7 @@ Deno.serve(async (req:Request) => {
     const api=await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+model+":generateContent",{
       method:"POST",
       headers:{"Content-Type":"application/json","x-goog-api-key":apiKey},
-      body:JSON.stringify({contents:[{role:"user",parts:[{text:instructions}]}],generationConfig:{temperature:0.1,responseMimeType:"application/json",maxOutputTokens:2600}}),
+      body:JSON.stringify({contents:[{role:"user",parts:[{text:instructions}]}],generationConfig:{temperature:0.1,responseMimeType:"application/json",maxOutputTokens:5000}}),
       signal:AbortSignal.timeout(42000)
     });
     if(!api.ok) return respond(origin,502,{error:api.status===429?"AI provider rate limit reached.":"AI service returned HTTP "+api.status+"; verify private model and key settings."});
