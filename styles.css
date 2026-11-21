@@ -401,3 +401,13 @@ a:focus-visible,button:focus-visible,[role="button"]:focus-visible{outline:2px s
 .listing-health-notice[hidden],.application-duplicate-warning[hidden]{display:none!important}
 :where(.job-card,.board-card,.email-review-panel,.application-followup) :is(button,a,input,select,textarea,summary):focus-visible{outline:2px solid #8af1cb;outline-offset:3px}
 @media(max-width:640px){.email-review-panel .form-stack{grid-template-columns:1fr}.email-review-panel .form-stack label:last-child{grid-column:auto}.email-review-actions .btn{flex:1 1 100%}}
+
+/* Role-focused keyword searching: never silently mix incidental tool mentions. */
+.search-scope{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:7px 0 12px;font-size:12px;color:#b1c8d5;line-height:1.6}
+.search-scope>span:first-child{font-weight:700;color:#dceee7}
+.search-scope label{display:inline-flex;align-items:center;gap:7px;cursor:pointer;padding:7px 10px;border:1px solid #35596b;border-radius:9px;background:#193046;color:#e0f0f5;font-size:12px}
+.search-scope input[type=checkbox]{accent-color:#4bdbba;width:16px;height:16px;margin:0}
+.search-scope label:focus-within{outline:2px solid #7bf2c7;outline-offset:3px}
+.search-scope-tip{font-size:11px;color:#94b0bf}
+.description-search-tag{display:inline-flex;align-items:center;border:1px dashed #77879d;border-radius:8px;padding:5px 8px;font-size:11px;color:#bed4e3}
+@media(max-width:600px){.search-scope{align-items:flex-start;flex-direction:column;gap:7px}.search-scope label{max-width:100%}}
