@@ -16,13 +16,13 @@
     const place=PLACES[String(location||"").toLowerCase()]||"India";
     if(!q)return Object.freeze({
       naukri:"https://www.naukri.com/",
-      linkedin:"https://www.linkedin.com/jobs/",
+      linkedin:"https://www.linkedin.com/",
       indeed:"https://in.indeed.com/"
     });
     const keyword=encodeURIComponent(q),where=encodeURIComponent(place);
     return Object.freeze({
       naukri:"https://www.naukri.com/jobs?keyword="+keyword+"&location="+where,
-      linkedin:"https://www.linkedin.com/jobs/search/?keywords="+keyword+"&location="+where,
+      linkedin:"https://www.linkedin.com/",
       indeed:"https://in.indeed.com/jobs?q="+keyword+"&l="+where
     });
   }
