@@ -1,5 +1,16 @@
 # Career-Ops Cloud Sandbox
 
+## Universal IT and Non-IT Job Discovery (November 21, 2026)
+
+The website now **collects all published job titles** from its selected public Greenhouse and Ashby employer boards. It no longer filters jobs at the scanner by DevOps/Cloud/SRE keywords, seniority, years of experience, or country. Source catalog: `scripts/universal-job-sources.json`, currently **57 verified public employer boards** spanning IT, marketing, customer support, finance, HR, sales, retail, education, manufacturing, healthcare, logistics and hospitality. Scan implementation: `scripts/universal-job-scan.mjs`.
+
+**Scope limitation:** This is not a search of *every* job on the internet. Public Greenhouse/Ashby boards are one subset of employers and the published feed is capped at **500** real job records per run. The all-role scanner uses category round-robin selection to avoid allowing one job category to crowd out all others. It fetches only publicly listed employer vacancies and never submits job applications, sends messages, uses your resume, or bypasses login gates.
+
+**User controls:** Discover Jobs now offers an explicit **All IT + non-IT / IT / Non-IT** selector, a 13-category menu, keyword search, location filters, and newest-first sorting. Optional personal role/skills/location preferences influence local priority ranking **only when deliberately used**; they do not determine which jobs the scanner collects. New users start with blank preferences; existing users retain theirs without removing any non-IT jobs from the feed. `job-categories.js` assigns approximate browse labels based on titles and department text; an unusual role may be placed in "Other", never excluded by category inference. Use an actual job URL and full description to confirm requirements.
+
+**Availability:** CI tests sector classification, senior/manager/intern inclusion, India and overseas locations, source validation, no private-data leakage, deduplication and category balancing; live smoke test verifies the public artifact and anonymous AI access denial. See GitHub Actions deployment for current job counts and category distribution. Public job APIs are supplied by Greenhouse and Ashby; other job portals (including Workday and Naukri) are not automatically indexed in this release.
+
+
 ## Phase 4.5 — Stability, security, and read-only diagnostics (November 21, 2026)
 
 ### Included fixes
@@ -41,7 +52,7 @@ A standalone experiment running the original [Career-Ops](https://github.com/car
 - To preview locally, clone/download the repository and open index.html in a browser.
 - To enable hosting: open **Settings → Pages → Build and deployment → Source: GitHub Actions**. Then run **Publish Career-Ops dashboard** in the Actions tab, or push an edit to the UI. This is a one-time repository setting.
 
-## Phase 4 — Private Resume Vault, Cross-Device Tracking and 32-Source Discovery
+## Phase 4 — Private Resume Vault, Cross-Device Tracking and Initial Discovery (historical)
 
 This phase uses the separate Supabase project **career-ops-private**. It does not use or modify DraftflowAI.
 
@@ -51,7 +62,7 @@ This phase uses the separate Supabase project **career-ops-private**. It does no
 
 **Privacy and security:** Tables careerops_resume_vault and careerops_job_tracking have Row Level Security with owner-only policies for SELECT, INSERT, UPDATE and DELETE. Anonymous privileges are revoked; user access uses the signed-in JWT, not a public secret key. Postgres storage is not end-to-end encrypted; project administrators with elevated privileges may access it. No resume text is committed to public GitHub files. Database schema is tracked at supabase/migrations/20261121_phase4_private_vault_tracking.sql.
 
-**Discovery expansion:** Scanning includes 32 publicly accessible Greenhouse/Ashby boards (up from 21), adding New Era Technology, Arcana Analytics, Instawork, Teikametrics, WPP, MerQube, Sarvam, OpenObserve, ScienceLogic, Arkose Labs and Lyric. Matches still depend on location, experience, title and deduplication filters and are not guaranteed. Selecting AI Review on a supported ATS job card attempts to fetch its public full job description while the private vault can refill the resume editor.
+**Initial discovery expansion (superseded by Universal Discovery above):** Scanning previously included 32 publicly accessible Greenhouse/Ashby boards (up from 21), adding New Era Technology, Arcana Analytics, Instawork, Teikametrics, WPP, MerQube, Sarvam, OpenObserve, ScienceLogic, Arkose Labs and Lyric. Matches still depend on location, experience, title and deduplication filters and are not guaranteed. Selecting AI Review on a supported ATS job card attempts to fetch its public full job description while the private vault can refill the resume editor.
 
 **What remains:** Generative AI reviews are still on-demand after explicit consent, not automatic batch Gemini scoring. AI Review offers text draft download plus browser **Print / Save as PDF** (using the device's print dialog; not a server-generated PDF). Native DOCX export and automatic job submissions are not activated. User-specific RLS operations require a real authenticated account to verify end to end.
 
@@ -152,7 +163,7 @@ This is a UI prototype, not a production application agent. Sample jobs are fict
 
 ## Scanner
 
-The dashboard publishing workflow now checks **21 publicly accessible Greenhouse/Ashby career boards** (expanded from 3) for India-based DevOps, Cloud, SRE, Platform, Infrastructure, Build, and Release openings. Employer sources include Cohere Health, Ivanti, HackerRank, CrashPlan, Motive, Zenoti, BusPatrol, Encord, and other boards validated as real public career sites. This is deliberately not an exhaustive India-wide job search. A listing is included only when it survives role, level, experience, location, and deduplication filters; the count may still be small.
+**Historical note (superseded):** The dashboard once checked **21 IT-focused Greenhouse/Ashby career boards** for India-based DevOps, Cloud, SRE, Platform, Infrastructure, Build, and Release openings. Current scanner behavior and sources are described in **Universal IT and Non-IT Job Discovery** at the top of this README. Employer sources include Cohere Health, Ivanti, HackerRank, CrashPlan, Motive, Zenoti, BusPatrol, Encord, and other boards validated as real public career sites. This is deliberately not an exhaustive India-wide job search. A listing is included only when it survives role, level, experience, location, and deduplication filters; the count may still be small.
 
 The **Publish Career-Ops dashboard** workflow scans public postings during its deployment and is scheduled daily for **10:00 AM IST** (GitHub scheduled jobs can run late). It exports posting title, employer, region and public URL only; private resumes and application details are never deployed. The website's Refresh jobs button re-fetches the latest *published* feed and does not start a new scan. To run an extra scan, manually dispatch the publishing workflow from GitHub Actions.
 
