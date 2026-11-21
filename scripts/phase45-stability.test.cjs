@@ -40,7 +40,7 @@ function dashboardHarness({initialLocal={},feedPromise}={}){
     createElement:()=>({click(){},remove(){},setAttribute(){}}),
     body:{appendChild(){},classList:{add(){},remove(){},toggle(){},contains(){return false}}}
   };
-  const win={CareerOpsCategories:{
+  const win={CareerOpsJobText:require("../job-text.js"),CareerOpsCategories:{
     categories:["IT & Software","Sales & Business","Other"],
     classify:(title)=>/software|developer|devops/i.test(title)?"IT & Software":/sales/i.test(title)?"Sales & Business":"Other"
   },CareerOpsMatch:{
@@ -292,4 +292,43 @@ test("Phase 6 shows useful messages when a feed is still loading or unavailable"
   assert.equal(h.el("discoverFeedStatus").hidden,false);
   assert.match(h.el("discoverFeedStatus").textContent,/couldn't be loaded/);
   assert.equal(h.el("retryDiscoverFeed").hidden,false);
+});
+
+test("Experience filter shows matching job cards and explicit unknowns without guessing",async()=>{
+  const feed={schema:"careerops.public-jobs.v1",generated_at:"2026-11-21T10:00:00Z",
+    scan:{status:"success",scanned:3,found:3,error_count:0},
+    jobs:[
+      {title:"Cloud Engineer",company:"Cloud Co",location:"India",
+        url:"https://example.com/cloud",requiredExperience:"3–5 years",
+        description:"Requirements: three years of experience and Kubernetes"},
+      {title:"Support Associate",company:"Support Co",location:"India",
+        url:"https://example.com/support",requiredExperience:"1–2 years",
+        description:"1–2 years of customer service experience"},
+      {title:"Marketing Specialist",company:"Marketing Co",location:"Remote",
+        url:"https://example.com/marketing",description:"Senior creative thinker with excellent writing"}
+    ]};
+  const h=dashboardHarness({feedPromise:Promise.resolve({ok:true,json:async()=>feed})});
+  await tick();await tick();
+  assert.match(h.el("jobsGrid").innerHTML,/Experience: 3–5 years/);
+  assert.match(h.el("jobsGrid").innerHTML,/Experience: 1–2 years/);
+  assert.match(h.el("jobsGrid").innerHTML,/Experience: Not specified/);
+  h.el("experienceFilter").value="3-5";
+  h.el("experienceFilter").listeners.get("change")();
+  assert.match(h.el("jobsGrid").innerHTML,/Cloud Engineer/);
+  assert.doesNotMatch(h.el("jobsGrid").innerHTML,/Support Associate|Marketing Specialist/);
+  h.el("experienceFilter").value="unspecified";
+  h.el("experienceFilter").listeners.get("change")();
+  assert.match(h.el("jobsGrid").innerHTML,/Marketing Specialist/);
+  assert.doesNotMatch(h.el("jobsGrid").innerHTML,/Cloud Engineer|Support Associate/);
+  h.el("resetDiscoverFilters").listeners.get("click")();
+  assert.equal(h.el("experienceFilter").value,"");
+  assert.match(h.el("jobsGrid").innerHTML,/Support Associate/);
+});
+test("Experience control exists in Discover and the details dialog",()=>{
+  const html=fs.readFileSync(path.resolve(__dirname,"../index.html"),"utf8");
+  assert.match(html,/id="experienceFilter"/);
+  assert.match(html,/value="fresher">Fresher/);
+  assert.match(html,/value="unspecified">Not specified/);
+  assert.match(html,/id="dialogExperience"/);
+  assert.doesNotMatch(html,/id="resultsCount"[^>]*>[\d,]+/);
 });
