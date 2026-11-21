@@ -7,6 +7,9 @@ on:
       - 'scripts/universal-job-scan.test.mjs'
       - 'scripts/universal-job-sources.json'
       - 'job-search.js'
+      - 'external-job-search.js'
+      - 'scripts/external-job-search.test.cjs'
+      - 'index.html'
       - 'scripts/job-search.test.cjs'
       - 'job-categories.js'
       - 'job-text.js'
@@ -14,6 +17,7 @@ on:
   push:
     branches:
       - 'fix/servicenow-smartrecruiters-india-20261121'
+      - 'feat/india-job-portals-workable-20261121'
 
 permissions:
   contents: read
@@ -32,5 +36,6 @@ jobs:
           node --check scripts/universal-job-scan.mjs
           node --check scripts/universal-job-scan.test.mjs
           node --check job-search.js
+          node --check external-job-search.js
           node --check scripts/job-search.test.cjs
-          node --test scripts/universal-job-scan.test.mjs scripts/job-search.test.cjs
+          node --test scripts/universal-job-scan.test.mjs scripts/job-search.test.cjs scripts/external-job-search.test.cjs
