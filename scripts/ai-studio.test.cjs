@@ -38,6 +38,11 @@ test("the private AI function explicitly enforces user email allowlist, auth and
   assert.match(ai,/aiConsent/);
   assert.match(backend,/NEVER invent/);
 });
+test("the deployed function requires a real Supabase user JWT at the gateway",()=>{
+  const configToml=read("supabase/config.toml");
+  assert.match(configToml,/verify_jwt\s*=\s*true/);
+  assert.match(backend,/getAuthUser\(req\)/);
+});
 test("GitHub Pages packages AI files but does not ship server files or user data",()=>{
   assert.match(workflow,/cp index\.html styles\.css match-engine\.js careerops-config\.js app\.js ai-studio\.js public\//);
   assert.doesNotMatch(workflow,/cp .*supabase\/functions/);
