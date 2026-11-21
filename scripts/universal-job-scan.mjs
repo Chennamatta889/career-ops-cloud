@@ -12,7 +12,7 @@ import {createHash} from "node:crypto";
 
 const require=createRequire(import.meta.url);
 const {classify,categories}=require("../job-categories.js");
-const {plainText}=require("../job-text.js");
+const {plainText,experienceRequirement}=require("../job-text.js");
 const MAX_RESPONSE_BYTES=10*1024*1024;
 const clean=(value,n=200)=>typeof value==="string" ? value.replace(/[\u0000-\u001f\u007f]+/g," ").replace(/\s+/g," ").trim().slice(0,n):"";
 function date(value){
@@ -39,7 +39,11 @@ function normalize(source,job){
   const location=clean(plainText(gh?job.location?.name:(job.location||job.locationName||job.workplaceType),160),160)||"Not specified";
   // Keep paragraph breaks and bullet points in the published excerpt.
   // The browser applies the same sanitizer again to legacy saved listings.
-  const desc=plainText(gh?job.content:(job.descriptionPlain||job.descriptionHtml||""),2500);
+  const rawDescription=gh?job.content:(job.descriptionPlain||job.descriptionHtml||"");
+  const desc=plainText(rawDescription,2500);
+  // Inspect a larger excerpt for employer-stated requirements, even when the
+  // short card excerpt ends before the qualifications section.
+  const requirement=experienceRequirement(plainText(rawDescription,16000));
   const published=date(gh?job.first_published||job.updated_at:job.publishedAt||job.updatedAt);
   const publicUrl=gh?
     "https://job-boards.greenhouse.io/"+source.slug+"/jobs/"+rawId:
@@ -48,7 +52,7 @@ function normalize(source,job){
     id:"ats-"+createHash("sha256").update(source.provider+":"+source.slug+":"+rawId).digest("hex").slice(0,20),
     title,company:clean(source.name,120),location,department,
     category:classify(title,department),description:desc,
-    url:publicUrl,skills:[],requiredExperience:"",
+    url:publicUrl,skills:[],requiredExperience:requirement?.label||"",
     posted_at:published,addedAt:published,source:gh?"Greenhouse public board":"Ashby public board"
   };
 }
