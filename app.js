@@ -195,7 +195,14 @@
     const sort=$("sortFilter").value;
     const priorityFilter=$("matchFilter").value;
     const jobs=state.jobs.filter(function(job){
-      const result=searchApi.evaluate(job,query,{includeDescription});
+      // Fall back to strict role-field matching if a browser blocks the small
+      // relevance module; never let a missing script blank the job grid.
+      const result=searchApi?.evaluate?.(job,query,{includeDescription})||{
+        matches:!normalizeSearch(query)||normalizeSearch([
+          job.title,job.company,job.department,job.location
+        ].concat(job.skills||[]).join(" ")).includes(normalizeSearch(query)),
+        score:0,source:"primary"
+      };
       if(!result.matches)return false;
       relevanceScores.set(job,result.score);
       const loc=String(job.location||"").toLowerCase();
@@ -314,7 +321,7 @@
     const experienceBadge='<span class="job-experience-badge" title="Based on an explicit employer requirement; verify the original posting">Experience: '+
       escapeHtml(experience?.label||"Not specified")+'</span>';
     const descriptionOnly=Boolean($("searchDescriptions").checked&&$("jobSearch").value.trim()&&
-      window.CareerOpsJobSearch.evaluate(j,$("jobSearch").value,{includeDescription:true}).source==="description");
+      window.CareerOpsJobSearch?.evaluate?.(j,$("jobSearch").value,{includeDescription:true})?.source==="description");
     const searchNote=descriptionOnly?
       '<span class="description-search-tag" title="This keyword appears in the description, not the job title or core fields">Mentioned in description</span>':"";
     const details = '<button class="text-link secondary-link" type="button" data-action="details" data-id="' + escapeHtml(j.id) + '">View details</button>';
