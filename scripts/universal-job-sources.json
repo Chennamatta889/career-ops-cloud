@@ -343,6 +343,24 @@
       "provider": "greenhouse",
       "slug": "lighthouse",
       "sector": "Hospitality"
+    },
+    {
+      "name": "Ashby",
+      "provider": "ashby",
+      "slug": "ashby",
+      "sector": "Recruitment & Business Software"
+    },
+    {
+      "name": "Ramp",
+      "provider": "ashby",
+      "slug": "ramp",
+      "sector": "Finance & Fintech"
+    },
+    {
+      "name": "Linear",
+      "provider": "ashby",
+      "slug": "linear",
+      "sector": "Technology & Services"
     }
   ]
 }
