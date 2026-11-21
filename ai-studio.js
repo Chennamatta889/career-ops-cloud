@@ -474,8 +474,18 @@
     byId("aiJd").value=text(j.description,15000);
     byId("aiResult").hidden=true;byId("aiDownload").hidden=true;activeResult=null;
     prerequisites();
-    status("Job selected. The public scanner may not contain the full job description; paste it here, add your resume and consent, then request AI review.");
+    status("Job selected. Preparing available public job details. Verify your resume and the full description before requesting AI Review.");
     document.querySelector('[data-nav="ai"]')?.click();
+    // A job-card click is an explicit request to prepare that job. Fetch only
+    // its public ATS description, never login-protected pages or Gemini.
+    const link=byId("aiJobUrl").value.trim();
+    if(byId("aiJd").value.trim().length<200 &&
+       /^https:\/\/(?:jobs\.ashbyhq\.com|boards\.greenhouse\.io|job-boards\.greenhouse\.io|boards\.eu\.greenhouse\.io|job-boards\.eu\.greenhouse\.io|jobs\.lever\.co|jobs\.eu\.lever\.co)\//i.test(link)){
+      getAccessToken().then(jwt=>{
+        if(jwt)byId("aiFetchJob").click();
+        else byId("aiJobFetchStatus").textContent="Sign in with Google to load public employer job details.";
+      }).catch(()=>{byId("aiJobFetchStatus").textContent="Could not load job automatically. Use Fetch job description after signing in.";});
+    }
   });
   try{const stored=sessionStorage.getItem(tokenKey);if(stored)session=JSON.parse(stored);}catch(_){session=null;}
   window.CareerOpsAuth = Object.freeze({getAccessToken:()=>getAccessToken()});
