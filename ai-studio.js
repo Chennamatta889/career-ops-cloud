@@ -202,6 +202,7 @@
     try{
       const user=await api("/auth/v1/user",{headers:headers(token)});
       set("aiSignedUser",user.email || "Signed in");
+      if (typeof user.id === "string") window.dispatchEvent(new CustomEvent("careerops:authenticated",{detail:{id:user.id,email:user.email||""}}));
       byId("aiWorkspace").hidden=false;
       byId("aiSignOut").hidden=false;
       byId("aiLogin").hidden=true;
@@ -334,6 +335,7 @@
   });
   byId("aiSignOut").addEventListener("click",async()=>{
     try{const jwt=await getAccessToken();if(jwt)await api("/auth/v1/logout",{method:"POST",headers:headers(jwt)});}catch(_){}
+    window.dispatchEvent(new CustomEvent("careerops:signed-out"));
     saveSession(null);activeResult=null;byId("aiResume").value="";byId("aiJd").value="";byId("aiConsent").checked=false;byId("aiResult").replaceChildren();byId("aiResult").hidden=true;byId("aiDownload").hidden=true;
     await refreshAuth();
   });
@@ -476,6 +478,7 @@
     document.querySelector('[data-nav="ai"]')?.click();
   });
   try{const stored=sessionStorage.getItem(tokenKey);if(stored)session=JSON.parse(stored);}catch(_){session=null;}
+  window.CareerOpsAuth = Object.freeze({getAccessToken:()=>getAccessToken()});
   readUrlSession();
   prerequisites();
   updateEmailButton();
