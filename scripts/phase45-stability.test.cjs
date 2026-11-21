@@ -254,8 +254,8 @@ test("Phase 6 Discover view shows cards, not public job totals, and mixes job ty
     assert.ok(html.includes('id="'+legacyId+'" hidden'),
       "legacy scripts must find an invisible compatibility element");
   }
-  assert.ok(html.includes("app.js?v=20261121-jobcards-recovery-v1"));
-  assert.ok(html.includes("styles.css?v=20261121-jobcards-recovery-v1"));
+  assert.ok(html.includes("app.js?v=20261121-experience-filter-v1"));
+  assert.ok(html.includes("styles.css?v=20261121-experience-filter-v1"));
   assert.ok(html.includes('id="discoverFeedStatus"'));
   assert.ok(html.includes('id="retryDiscoverFeed"'));
   assert.match(html,/value="variety">Explore all industries/);
