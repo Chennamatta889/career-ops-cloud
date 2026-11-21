@@ -72,7 +72,20 @@ function dashboardHarness({initialLocal={},feedPromise}={}){
     changeStage(id,stage){docListeners.get("change")({target:{
       value:stage,matches:q=>q==="[data-stage-id]",
       getAttribute:k=>k==="data-stage-id"?id:null
-    }})}
+    }})},
+    clickListing(id){
+      docListeners.get("click")({
+        defaultPrevented:false,preventDefault(){throw Error("External navigation was blocked");},
+        target:{closest(selector){
+          if(selector==="[data-action]")return {
+            getAttribute:key=>key==="data-action"?"open-listing":key==="data-id"?id:null
+          };
+          return null;
+        }}
+      });
+    },
+    clickButton(id){const fn=el(id).listeners.get("click");assert.ok(fn,"No button handler for "+id);fn();}
+
   };
 }
 const oldLocalJSON=JSON.stringify({mode:"manual",jobs:[{
@@ -254,8 +267,8 @@ test("Phase 6 Discover view shows cards, not public job totals, and mixes job ty
     assert.ok(html.includes('id="'+legacyId+'" hidden'),
       "legacy scripts must find an invisible compatibility element");
   }
-  assert.ok(html.includes("app.js?v=20261121-experience-filter-v1"));
-  assert.ok(html.includes("styles.css?v=20261121-experience-filter-v1"));
+  assert.ok(html.includes("app.js?v=20261121-application-confirmation-v1"));
+  assert.ok(html.includes("styles.css?v=20261121-application-confirmation-v1"));
   assert.ok(html.includes('id="discoverFeedStatus"'));
   assert.ok(html.includes('id="retryDiscoverFeed"'));
   assert.match(html,/value="variety">Explore all industries/);
@@ -331,4 +344,77 @@ test("Experience control exists in Discover and the details dialog",()=>{
   assert.match(html,/value="unspecified">Not specified/);
   assert.match(html,/id="dialogExperience"/);
   assert.doesNotMatch(html,/id="resultsCount"[^>]*>[\d,]+/);
+});
+
+test("clicking an employer listing records Opened but never silently records Applied",async()=>{
+  const h=dashboardHarness({feedPromise:Promise.resolve({ok:true,json:async()=>({
+    schema:"careerops.public-jobs.v1",generated_at:"2026-11-21T10:00:00Z",
+    scan:{status:"success",scanned:1,found:1,error_count:0},
+    jobs:[{id:"sample-123",title:"Platform Engineer",company:"Example Ltd",location:"India",
+      url:"https://job-boards.greenhouse.io/example/jobs/123123"}]
+  })})});
+  h.auth(USER_A);await tick();await tick();
+  const id="sample-123";
+  h.clickListing(id);
+  const saved=JSON.parse(h.session.getItem("career-ops-session-account-v1-"+USER_A)).jobs[0];
+  assert.equal(saved.stage,"Opened");
+  assert.ok(saved.openedAt,"opening timestamp saved");
+  assert.equal(saved.appliedOn,"");
+  assert.equal(h.el("applicationFollowup").hidden,false);
+  assert.match(h.el("confirmApplicationTitle").textContent,/successfully submit/);
+  const event=h.events.filter(e=>e.type==="careerops:tracking-changed").at(-1);
+  assert.equal(event.detail.job.stage,"Opened");
+  assert.ok(event.detail.job.openedAt);
+  assert.equal(event.detail.job.appliedOn,"");
+  h.clickButton("confirmNotYet");
+  assert.equal(h.el("applicationFollowup").hidden,true);
+  assert.equal(h.window.CareerOpsDashboard.getTrackedJobs()[0].stage,"Opened");
+  assert.equal(h.window.CareerOpsDashboard.getTrackedJobs()[0].applied_on,null);
+});
+test("user confirms application date, rejects future dates, and keeps cloud date after refresh",async()=>{
+  const h=dashboardHarness();
+  h.auth(USER_A);
+  h.window.CareerOpsDashboard.mergeRemoteTracking([{
+    job_key:"https://example.com/jobs/cloud",job_url:"https://example.com/jobs/cloud",
+    title:"Cloud Engineer",company:"Example",location:"India",stage:"Opened"
+  }]);
+  const id=JSON.parse(h.session.getItem("career-ops-session-account-v1-"+USER_A)).jobs[0].id;
+  h.changeStage(id,"Applied");
+  assert.equal(h.window.CareerOpsDashboard.getTrackedJobs()[0].stage,"Opened");
+  assert.equal(h.el("applicationFollowup").hidden,false);
+  h.el("confirmAppliedDate").value="2999-01-01";
+  h.clickButton("confirmApplied");
+  assert.equal(h.window.CareerOpsDashboard.getTrackedJobs()[0].stage,"Opened");
+  assert.match(h.el("applicationFollowupError").textContent,/valid application date/);
+  const today=new Date();
+  h.el("confirmAppliedDate").value=new Date(today.getTime()-today.getTimezoneOffset()*60000).toISOString().slice(0,10);
+  h.clickButton("confirmApplied");
+  const applied=h.window.CareerOpsDashboard.getTrackedJobs()[0];
+  assert.equal(applied.stage,"Applied");
+  assert.match(applied.applied_on,/^\d{4}-\d{2}-\d{2}$/);
+  assert.equal(h.el("applicationFollowup").hidden,true);
+  assert.match(h.el("applicationsBoard").innerHTML,/Edit application date/);
+  assert.match(h.el("applicationsBoard").innerHTML,/Applied/);
+  const event=h.events.filter(e=>e.type==="careerops:tracking-changed").at(-1);
+  assert.equal(event.detail.job.appliedOn,applied.applied_on);
+  // Later employer feed refresh cannot drop user-entered confirmation dates.
+  h.window.CareerOpsDashboard.mergeRemoteTracking([{
+    job_key:applied.job_key,job_url:applied.job_url,title:applied.title,company:applied.company,
+    stage:"Applied",applied_on:applied.applied_on,opened_at:applied.opened_at,
+    updated_at:new Date(Date.now()+1000).toISOString()
+  }]);
+  assert.equal(h.window.CareerOpsDashboard.getTrackedJobs()[0].applied_on,applied.applied_on);
+});
+test("application confirmation data remains isolated when Google accounts switch",()=>{
+  const h=dashboardHarness();
+  h.auth(USER_A);
+  h.window.CareerOpsDashboard.mergeRemoteTracking([{
+    job_key:"https://example.com/a",job_url:"https://example.com/a",title:"Cloud Developer",company:"A",
+    stage:"Applied",opened_at:"2026-11-20T11:00:00Z",applied_on:"2026-11-21"
+  }]);
+  assert.equal(h.window.CareerOpsDashboard.getTrackedJobs()[0].applied_on,"2026-11-21");
+  h.auth(USER_B);
+  assert.equal(h.window.CareerOpsDashboard.getTrackedJobs().length,0);
+  h.auth(USER_A);
+  assert.equal(h.window.CareerOpsDashboard.getTrackedJobs()[0].applied_on,"2026-11-21");
 });
