@@ -55,7 +55,69 @@
       .replace(/ *\n */g,"\n").replace(/\n{3,}/g,"\n\n").trim();
     return content.slice(0,max).trimEnd();
   }
-  const api=Object.freeze({plainText,decodeEntities});
+  /**
+   * Extract only explicit experience requirements from employer text.
+   * Never guess years from a job title or seniority term.
+   */
+  function experienceRequirement(input){
+    const text=plainText(input,16000);
+    if(!text)return null;
+    const lines=text.split(/\n/);
+    for(const line of lines){
+      if(/\b(?:no (?:prior |previous |professional |relevant |work )?experience (?:is )?(?:required|necessary|needed)|freshers? (?:are )?(?:welcome|encouraged|eligible)|(?:zero|0)\s+years?\s+(?:of\s+)?experience)\b/i.test(line)){
+        return {label:"No experience required",minYears:0};
+      }
+    }
+    // A normalized field from our own scanner is already a requirement.
+    const directRange=/^(\d{1,2})\s*[-–—]\s*(\d{1,2})\s*years?$/i.exec(text);
+    if(directRange){
+      const low=Number(directRange[1]),high=Number(directRange[2]);
+      if(low<=high&&high<=40)return {label:low+"–"+high+" years",minYears:low};
+    }
+    const directSingle=/^(\d{1,2})(\+)?\s*years?$/i.exec(text);
+    if(directSingle&&Number(directSingle[1])<=40){
+      const low=Number(directSingle[1]);
+      return {label:low+(directSingle[2]?"+":"")+" years",minYears:low};
+    }
+    const range=/\b(\d{1,2})\s*(?:[-–—]|to)\s*(\d{1,2})\s*(?:years?|yrs?)\b/gi;
+    const single=/\b(\d{1,2})\s*(\+)?\s*(?:years?|yrs?)\b/gi;
+    const credible=function(line,start,end){
+      // Prevent "20 years in business" from being treated as job experience.
+      const context=line.slice(Math.max(0,start-110),Math.min(line.length,end+105)).toLowerCase();
+      return /\b(?:experience|experienced|professional|hands.on|relevant|qualification|requirement|working with|working in|expertise|development|engineering|practice)\b/.test(context);
+    };
+    for(const line of lines){
+      for(const found of line.matchAll(range)){
+        const low=Number(found[1]),high=Number(found[2]);
+        if(low<=high && high<=40 && credible(line,found.index,found.index+found[0].length)){
+          return {label:low+"–"+high+" years",minYears:low};
+        }
+      }
+      for(const found of line.matchAll(single)){
+        const low=Number(found[1]);
+        if(low>40||!credible(line,found.index,found.index+found[0].length))continue;
+        const context=line.slice(Math.max(0,found.index-40),found.index).toLowerCase();
+        const minimum=Boolean(found[2])||/\b(?:at least|minimum(?: of)?|a minimum of|over|more than)\s*$/.test(context);
+        return {label:low+(minimum?"+":"")+" years",minYears:low};
+      }
+    }
+    return null;
+  }
+  // Filter by an employer's minimum requirement, not the visitor's own years.
+  function experienceMatches(requirement,selected){
+    if(!selected)return true;
+    const result=experienceRequirement(requirement);
+    if(selected==="unspecified")return !result;
+    if(!result)return false;
+    const minimum=result.minYears;
+    if(selected==="fresher")return minimum===0;
+    if(selected==="1-2")return minimum>=1&&minimum<=2;
+    if(selected==="3-5")return minimum>=3&&minimum<=5;
+    if(selected==="6-9")return minimum>=6&&minimum<=9;
+    if(selected==="10+")return minimum>=10;
+    return true;
+  }
+  const api=Object.freeze({plainText,decodeEntities,experienceRequirement,experienceMatches});
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
   root.CareerOpsJobText=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
