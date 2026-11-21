@@ -52,9 +52,9 @@
     }
     return mammothPromise;
   }
-  async function fromPdf(file){
+  async function fromPdf(buffer){
     const lib=await pdfLibrary();
-    const data=new Uint8Array(await file.arrayBuffer());
+    const data=new Uint8Array(buffer);
     const loading=lib.getDocument({
       data,isEvalSupported:false,enableScripting:false,
       stopAtErrors:true
@@ -81,9 +81,9 @@
       else await loading.destroy().catch(()=>{});
     }
   }
-  async function fromDocx(file){
+  async function fromDocx(buffer){
     const mammoth=await mammothLibrary();
-    const result=await mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()});
+    const result=await mammoth.extractRawText({arrayBuffer:buffer});
     return {text:result.value||"",notes:(result.messages||[]).slice(0,3).map(m=>String(m.message||m)).filter(Boolean)};
   }
   async function parseFile(file){
@@ -93,8 +93,13 @@
     if(file.size<=0||file.size>MAX_FILE_BYTES)throw new Error("Resume must be under 6 MB and must not be empty.");
     let out;
     if(type==="txt")out={text:await file.text(),notes:[]};
-    else if(type==="pdf")out=await fromPdf(file);
-    else out=await fromDocx(file);
+    else {
+      // Read user-selected Android content:// file immediately, before
+      // asynchronous library imports. Delayed file access can fail after
+      // the system document picker returns to the browser.
+      const buffer=await file.arrayBuffer();
+      out=type==="pdf" ? await fromPdf(buffer) : await fromDocx(buffer);
+    }
     const content=tidy(out.text);
     if(content.length<80)throw new Error("No readable text was extracted. Scanned/image-only PDFs need OCR; use a text-based PDF, DOCX, or paste your resume.");
     const truncated=content.length>MAX_TEXT;
