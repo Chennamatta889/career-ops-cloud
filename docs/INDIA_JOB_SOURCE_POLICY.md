@@ -40,6 +40,14 @@ Reviewed 21 November 2026. Implementation is read-only; not legal advice.
 - Workable direct widget path: https://apply.workable.com/api/v1/widget/accounts/{subdomain}?details=true. The previously failing eight Workable employers are **not** silently re-enabled.
 - Run statistics include `scan.candidate_discovery`; only actually responding candidates with verified India jobs contribute to the public feed.
 
+## Freshers and entry-level opportunities
+
+- Keep `scripts/india-fresher-candidates.json` separate from the established vetted source list. These board slugs originate from official employer posting URLs and must respond with genuine, recent India vacancies before contributing any public cards.
+- Only public anonymous employer jobs feeds are read, with bounded request count, deadline, and no authentication, password, proxy, or scraping of Indian job portals.
+- `entryOpportunity()` in `job-text.js` is a **conservative search signal**, not a confirmed employer decision that fresh graduates qualify. Distinct graduate/intern/trainee role titles and explicitly low required experience are searchable, while explicit senior/3+ year requirements override optimistic title signals.
+- National Career Service, AICTE Internship Portal and the official Apprenticeship India website are available as user-initiated **external portals only**. Their postings are not rehosted or counted.
+- The 30-day publication/creation cutoff, India-only location test, URL deduplication and original employer application URLs remain mandatory. Existing user tracked applications and resumes are unchanged.
+
 ## Future expansion criteria
 
 Before ingesting more portal postings: (1) document the provider's written API/feed permissions and permitted display use, (2) verify the exact company/source endpoint and public job board, (3) test location, deduplication, pagination and freshness, (4) cap response size and fail without fabricating results, and (5) verify production source health. Do not use unofficial scrape APIs, stealth automation, CAPTCHA bypass, or a logged-in user's session as a replacement for permission.
