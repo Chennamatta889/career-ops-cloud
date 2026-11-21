@@ -203,6 +203,13 @@ test("Lever scan excludes invalid postings and refuses malformed or private API 
   assert.deepEqual(results.map(x=>x.title),["ServiceNow Developer"]);
   await assert.rejects(scanBoard(board,async()=>fakeResponse({jobs:[]})),/postings array/);
 });
+test("ServiceNow and Salesforce platform titles are classified as IT, even when labeled consultant",()=>{
+  assert.equal(classify("ServiceNow Developer",""),"IT & Software");
+  assert.equal(classify("Senior Consultant – ServiceNow",""),"IT & Software");
+  assert.equal(classify("Salesforce Consultant","CRM Implementation"),"IT & Software");
+  assert.equal(classify("Service Now Platform Engineer",""),"IT & Software");
+  assert.equal(classify("Sales Associate",""),"Sales & Business");
+});
 test("ServiceNow-focused public employer source catalog includes supported ATS providers",()=>{
   const expected=[
     ["greenhouse","anaplan"],["greenhouse","guidepointsecurity"],
