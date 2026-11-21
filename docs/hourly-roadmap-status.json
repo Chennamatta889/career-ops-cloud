@@ -79,7 +79,7 @@
     {
       "number": 12,
       "title": "Fresher and Indian MNC source expansion",
-      "status": "pending",
+      "status": "in_progress",
       "definition_of_done": "Integrate only permitted anonymous company feeds, prioritize verifiable zero-to-two-year India vacancies, prevent duplicates and stale postings, report real additions"
     },
     {
@@ -169,6 +169,15 @@
         44938843349,
         44938947352
       ]
+    },
+    {
+      "phase": 12,
+      "status": "in_progress",
+      "note": "Evidence-based fresher/early-career India posting counts and proven-board prioritization merged in PR #19. CI passed. Production deploy and live browser QA pending; MNC expansion and independently verified new live job counts still outstanding. Do not advance.",
+      "pr": "https://github.com/Chennamatta889/career-ops-cloud/pull/19",
+      "merge_commit": "d42d5944161139098a902232d52183faac87465a",
+      "pr_ci_run": "44943567503",
+      "deployment_run": "44943592547"
     }
   ]
 }
