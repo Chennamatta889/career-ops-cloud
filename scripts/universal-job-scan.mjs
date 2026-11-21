@@ -15,7 +15,7 @@ import {MAX_JOB_AGE_DAYS,isoDay,filterRecentJobs} from "./job-freshness.mjs";
 
 const require=createRequire(import.meta.url);
 const {classify,categories}=require("../job-categories.js");
-const {plainText,experienceRequirement}=require("../job-text.js");
+const {plainText,experienceRequirement,entryOpportunity}=require("../job-text.js");
 const {isIndiaLocation}=require("../india-jobs.js");
 const MAX_RESPONSE_BYTES=10*1024*1024;
 const clean=(value,n=200)=>typeof value==="string" ? value.replace(/[\u0000-\u001f\u007f]+/g," ").replace(/\s+/g," ").trim().slice(0,n):"";
@@ -98,6 +98,8 @@ function normalize(source,job){
     "https://job-boards.greenhouse.io/"+source.slug+"/jobs/"+rawId:
     lever?"https://jobs.lever.co/"+source.slug+"/"+rawId:
     "https://jobs.ashbyhq.com/"+source.slug+"/"+rawId;
+  const entry=entryOpportunity({title,requiredExperience:requirement?.label||"",
+    description:desc});
   return {
     id:"ats-"+createHash("sha256").update(source.provider+":"+source.slug+":"+rawId).digest("hex").slice(0,20),
     title,company:clean(source.name,120),location,department,
@@ -106,6 +108,7 @@ function normalize(source,job){
     posted_at:published,addedAt:published,
     freshness_date:freshnessDate,
     freshness_basis:published?"published":created?"created":"unknown",
+    entry_level:entry.level,entry_evidence:entry.basis,
     source:recruitee?"Recruitee public board":workable?"Workable public board":
       smart?"SmartRecruiters public board":gh?"Greenhouse public board":
       lever?"Lever public board":"Ashby public board"
@@ -284,7 +287,13 @@ async function main(){
   let feed=await runScan({sources,now});
   if(feed.scan.status!=="failed"&&process.env.DISABLE_INDIA_CANDIDATE_DISCOVERY!=="1"){
     const candidateFile=process.env.JOB_CANDIDATES_FILE||"scripts/india-employer-candidates.json";
-    const candidates=JSON.parse(readFileSync(candidateFile,"utf8")).candidates;
+    const legacyCandidates=JSON.parse(readFileSync(candidateFile,"utf8")).candidates;
+    const fresherFile=process.env.FRESHER_JOB_CANDIDATES_FILE||
+      "scripts/india-fresher-candidates.json";
+    const fresherCandidates=JSON.parse(readFileSync(fresherFile,"utf8")).candidates;
+    // Fresher employer leads go first but must pass the same India-only,
+    // real-source, 30-day eligibility gates as every other employer.
+    const candidates=[...fresherCandidates,...legacyCandidates];
     const expansion=await discoverIndiaCandidates({candidates,curatedSources:sources,
       scanBoard,isIndiaLocation,now});
     feed=mergeIndiaCandidates(feed,expansion,balanceJobs);
@@ -292,6 +301,16 @@ async function main(){
     if(expansion.errors.length)
       console.warn("Sample unavailable candidate boards:",JSON.stringify(expansion.errors));
   }
+  const fresherLevels={fresher:0,early:0,unknown:0};
+  for(const job of feed.jobs){
+    const key=entryOpportunity(job).level;
+    fresherLevels[key]=(fresherLevels[key]||0)+1;
+  }
+  feed.scan.entry_opportunities={
+    fresher:fresherLevels.fresher,early_career:fresherLevels.early,
+    unspecified_or_other:fresherLevels.unknown
+  };
+  console.log("India fresher opportunity evidence:",JSON.stringify(feed.scan.entry_opportunities));
   mkdirSync(path.dirname(output),{recursive:true});
   writeFileSync(output,JSON.stringify(feed)+"\n",{mode:0o644});
   console.log(JSON.stringify({status:feed.scan.status,boards:feed.scan.scanned,
