@@ -28,7 +28,7 @@ function createHarness(initialHash="#overview"){
       const attributes=new Map(),listeners=new Map();
       const el={
         id,hidden:false,disabled:false,open:false,innerHTML:"",textContent:"",
-        value:id==="matchFilter"?"all":id==="sortFilter"?"newest":"",
+        value:id==="matchFilter"?"all":id==="sortFilter"?"variety":"",
         dataset:{},classList:classList(),attributes,listeners,
         addEventListener(name,cb){listeners.set(name,cb)},
         getAttribute(name){return attributes.get(name)||null},
