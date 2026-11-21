@@ -7,6 +7,7 @@ const supabase="https://nnhzihcugvifhegsfmua.supabase.co";
 const checks=[
   {path:"",contains:'id="runHealthChecks"'},
   {path:"app.js",contains:"ACCOUNT_STORAGE_PREFIX"},
+  {path:"job-categories.js",contains:"CareerOpsCategories"},
   {path:"ai-studio.js",contains:"jobFetchVersion"},
   {path:"private-workspace.js",contains:"accountVersion"},
   {path:"health-check.js",contains:"runHealthChecks"},
@@ -26,9 +27,9 @@ async function check(item){
   if(item.head)return;
   if(item.json){
     const data=await r.json();
-    if(data.schema!=="careerops.public-jobs.v1" || !Array.isArray(data.jobs))
+    if(data.schema!=="careerops.public-jobs.v1" || !Array.isArray(data.jobs) || !data.category_counts)
       throw Error("Public feed JSON has invalid schema.");
-    console.log("Public postings:",data.jobs.length,"source scan:",data.scan?.status||"unknown");
+    console.log("All-role postings:",data.jobs.length,"employer boards:",data.scan?.scanned,"categories:",JSON.stringify(data.category_counts),"scan:",data.scan?.status);
   }else{
     const source=await r.text();
     if(!source.includes(item.contains))throw Error((item.path||"index.html")+" does not contain the latest version.");
