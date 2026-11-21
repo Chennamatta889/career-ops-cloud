@@ -213,6 +213,14 @@
       "merge_commit": "2a00a593af29340c915919d156b3911772e82bab",
       "pr_ci_run": "44953869699",
       "deployment_run": "44953893089"
+    },
+    {
+      "phase": 12,
+      "status": "in_progress",
+      "note": "Phase 12 PR #21 production deploy 44953893089 and live Chromium QA 44953987846 passed. Added PR #22 to independently audit MNC/fresher counts from final published feed and expose them in Actions summary; PR CI and release verification pending. No independently observed additional MNC jobs, so do not advance.",
+      "pr": "https://github.com/Chennamatta889/career-ops-cloud/pull/22",
+      "previous_deployment_run": 44953893089,
+      "previous_browser_qa_run": 44953987846
     }
   ]
 }
