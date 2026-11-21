@@ -9,7 +9,7 @@
   const apiKey=String(config.publishableKey||"");
   const $=id=>document.getElementById(id);
   const MAX_RESUME=16000;
-  const STAGES=["Saved","Review","Applied","Interview","Offer","Rejected"];
+  const STAGES=["Opened","Saved","Review","Applied","Interview","Offer","Rejected"];
   let currentUser=null;
   let syncing=false;
   let vaultBusy=false;
@@ -142,10 +142,17 @@
     const url=safe(job.job_url,1500);
     let safeURL="";
     try{const u=new URL(url);if(["http:","https:"].includes(u.protocol))safeURL=u.href.slice(0,1500);}catch(_){}
+    const opened=safe(job.opened_at||job.openedAt,50);
+    const openedAt=opened && Number.isFinite(Date.parse(opened))?new Date(opened).toISOString():null;
+    const date=safe(job.applied_on||job.appliedOn,20);
+    const validDate=/^\d{4}-\d{2}-\d{2}$/.test(date) && 
+      !Number.isNaN(new Date(date+"T12:00:00Z").getTime()) &&
+      new Date(date+"T12:00:00Z").toISOString().slice(0,10)===date;
     return {
       user_id:currentUser.id,job_key:key,title:safe(job.title,160),
       company:safe(job.company,130),location:safe(job.location,160),
-      job_url:safeURL,stage:job.stage,updated_at:new Date().toISOString()
+      job_url:safeURL,stage:job.stage,opened_at:openedAt,
+      applied_on:validDate?date:null,updated_at:new Date().toISOString()
     };
   }
   function trackedPayload(job){
@@ -155,7 +162,8 @@
       job_key:safe(job.job_key,1500) || safe(job.url,1500) ||
         ("manual:"+[job.company,job.title,job.location].map(x=>safe(x,140).toLowerCase()).join("/")),
       title:job.title,company:job.company,location:job.location,
-      job_url:job.url,stage:job.stage
+      job_url:job.url,stage:job.stage,
+      opened_at:job.opened_at||job.openedAt||null,applied_on:job.applied_on||job.appliedOn||null
     };
     return validTracked(raw);
   }
@@ -164,7 +172,7 @@
     syncing=true;$("cloudRefreshTracking").disabled=true;
     status("cloudTrackingStatus","Loading your private tracked-job records…","loading");
     try {
-      const rows=await request("careerops_job_tracking?select=job_key,title,company,location,job_url,stage,updated_at&order=updated_at.desc&limit=300");
+      const rows=await request("careerops_job_tracking?select=job_key,title,company,location,job_url,stage,opened_at,applied_on,updated_at&order=updated_at.desc&limit=300");
       const list=Array.isArray(rows)?rows:[];
       const merged=window.CareerOpsDashboard?.mergeRemoteTracking(list)||0;
       status("cloudTrackingStatus","Cloud tracking connected · "+list.length+" saved records · "+merged+" matched or restored on this device. New changes sync when signed in.","success");
@@ -186,7 +194,7 @@
       } else {
         await request("careerops_job_tracking?on_conflict=user_id,job_key","POST",payload,{"Prefer":"resolution=merge-duplicates,return=minimal"});
       }
-      status("cloudTrackingStatus","Saved job status synced privately to Supabase.","success");
+      status("cloudTrackingStatus","Job tracking, employer opens and user-confirmed application dates synced privately.","success");
     }catch(e){status("cloudTrackingStatus","Job saved locally, but cloud sync failed: "+safe(e.message,160)+". Use Sync tracked jobs after fixing the connection.","error");}
   }
   async function importLocal(){
