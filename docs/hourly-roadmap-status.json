@@ -1,8 +1,8 @@
 {
   "schema": "careerops.hourly-roadmap.v1",
   "project": "Career-Ops, India-only, free-API job discovery",
-  "active_phase": 9,
-  "last_completed_phase": 8,
+  "active_phase": 10,
+  "last_completed_phase": 9,
   "verification_required": [
     "PR regression tests pass",
     "production GitHub Pages deployment succeeds",
@@ -21,8 +21,16 @@
     {
       "number": 9,
       "title": "Mobile stability and real-browser QA",
-      "status": "in_progress",
-      "definition_of_done": "Browser QA checks correct deployed path, mobile bottom tabs, expanded filters, application tracking, no horizontal overflow; PR tests, deployment and live Chromium QA all succeed"
+      "status": "completed",
+      "definition_of_done": "Browser QA checks correct deployed path, mobile bottom tabs, expanded filters, application tracking, no horizontal overflow; PR tests, deployment and live Chromium QA all succeed",
+      "verified_at": "2026-11-21T17:00:00Z",
+      "evidence": {
+        "pr": "https://github.com/Chennamatta889/career-ops-cloud/pull/14",
+        "commit": "98a807f97777c6a8569ac6b16b77fe4d94f40f8e",
+        "pr_ci_run": "44927334821",
+        "deployment_run": "44927422154",
+        "live_browser_qa_run": "44927516917"
+      }
     },
     {
       "number": 10,
@@ -65,6 +73,16 @@
     {
       "phase": 9,
       "note": "Real-browser QA fixes developed on feature branch; live verification pending."
+    },
+    {
+      "phase": 9,
+      "status": "completed",
+      "note": "PR CI, release job/feed guard, live deploy smoke and independent Chromium desktop+mobile QA all succeeded",
+      "run_ids": [
+        44927334821,
+        44927422154,
+        44927516917
+      ]
     }
   ]
 }
