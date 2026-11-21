@@ -269,7 +269,7 @@
     const started=Date.now();
     const showProgress=()=>{
       const sec=Math.max(0,Math.floor((Date.now()-started)/1000));
-      status("Gemini is preparing your review ("+sec+"s). The request may take up to 100 seconds. Please avoid tapping Review again.");
+      status("Gemini is preparing your review ("+sec+"s). The request may take up to 100 seconds. No application will be submitted. Please avoid tapping Review again.");
     };
     showProgress();
     const progressTimer=setInterval(showProgress,1000);
