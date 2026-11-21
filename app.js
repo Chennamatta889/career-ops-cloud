@@ -92,6 +92,7 @@
   const hideMobileMenu = function () {
     $("sidebar").classList.remove("open"); $("mobileScrim").classList.remove("show");
     $("mobileMenu").setAttribute("aria-expanded", "false");
+    document.body.classList.remove("nav-open");
   };
   const closeOpenDialogs = function(){
     for(const id of ["jobDialog","addDialog"]){
@@ -391,7 +392,16 @@
   });
   ["jobSearch","sectorFilter","categoryFilter","locationFilter","matchFilter","sortFilter"].forEach(function (id) { $(id).addEventListener(id === "jobSearch" ? "input" : "change", renderDiscover); });
   $("clearFilters").addEventListener("click", function () { $("jobSearch").value = ""; $("categoryFilter").value = ""; $("sectorFilter").value = ""; $("locationFilter").value = ""; $("matchFilter").value = "all"; renderDiscover(); });
-  $("mobileMenu").addEventListener("click", function () { const open = $("sidebar").classList.toggle("open"); $("mobileScrim").classList.toggle("show",open); $("mobileMenu").setAttribute("aria-expanded", String(open)); });
+  $("mobileMenu").addEventListener("click", function () {
+    const open=$("sidebar").classList.toggle("open");
+    $("mobileScrim").classList.toggle("show",open);
+    document.body.classList.toggle("nav-open",open);
+    $("mobileMenu").setAttribute("aria-expanded",String(open));
+    $("mobileMenu").setAttribute("aria-label",open?"Close navigation":"Open navigation");
+  });
+  window.addEventListener("keydown",function(event){
+    if(event.key==="Escape" && $("sidebar").classList.contains("open"))hideMobileMenu();
+  });
   $("mobileScrim").addEventListener("click", hideMobileMenu);
   // popstate handles history.pushState entries; hashchange also handles links
   // or manual URL edits. Idempotent rendering prevents duplicate transitions.
