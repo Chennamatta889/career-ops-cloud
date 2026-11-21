@@ -276,6 +276,11 @@ jobs:
         with:
           path: public
 
+      - name: Allow Pages artifact metadata to propagate
+        # upload-pages-artifact may succeed before the Actions artifact index
+        # is queryable by deploy-pages. This reduces transient "0 artifacts" errors.
+        run: sleep 12
+
       - name: Deploy public dashboard
         id: deployment
         uses: actions/deploy-pages@v4
