@@ -13,6 +13,9 @@ on:
       - private-workspace.js
       - scripts/private-workspace.test.cjs
       - scripts/phase45-stability.test.cjs
+      - scripts/health-check.test.cjs
+      - scripts/live-smoke.mjs
+      - health-check.js
       - resume-parser.js
       - careerops-config.js
       - scripts/ai-studio.test.cjs
@@ -220,11 +223,13 @@ jobs:
           node --check match-engine.js
           node --check ai-studio.js
           node --check private-workspace.js
+          node --check health-check.js
+          node --check scripts/live-smoke.mjs
           node --check resume-parser.js
           node --check supabase/functions/careerops-ai-review/job-fetch.mjs
           node --check careerops-config.js
           node --check scripts/check-google-provider.mjs
-          node --test scripts/export-scan-feed.test.mjs scripts/match-engine.test.cjs scripts/ai-studio.test.cjs scripts/auth-email-limit.test.cjs scripts/google-oauth.test.cjs scripts/private-workspace.test.cjs scripts/phase45-stability.test.cjs scripts/resume-parser.test.cjs scripts/resume-upload-ui.test.cjs scripts/job-fetch.test.mjs
+          node --test scripts/export-scan-feed.test.mjs scripts/match-engine.test.cjs scripts/ai-studio.test.cjs scripts/auth-email-limit.test.cjs scripts/google-oauth.test.cjs scripts/private-workspace.test.cjs scripts/phase45-stability.test.cjs scripts/health-check.test.cjs scripts/resume-parser.test.cjs scripts/resume-upload-ui.test.cjs scripts/job-fetch.test.mjs
 
       - name: Verify Google provider is enabled in Career-Ops Supabase
         id: google_auth_check
@@ -259,7 +264,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p public
-          cp index.html styles.css match-engine.js careerops-config.js app.js resume-parser.js ai-studio.js private-workspace.js public/
+          cp index.html styles.css match-engine.js careerops-config.js app.js resume-parser.js ai-studio.js private-workspace.js health-check.js public/
           mkdir -p public/vendor
           cp "$RUNNER_TEMP/career-ops-vendor/node_modules/pdfjs-dist/build/pdf.min.mjs" public/vendor/
           cp "$RUNNER_TEMP/career-ops-vendor/node_modules/pdfjs-dist/build/pdf.worker.min.mjs" public/vendor/
@@ -285,3 +290,6 @@ jobs:
       - name: Deploy public dashboard
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Verify public deployment and anonymous AI denial
+        run: node scripts/live-smoke.mjs
