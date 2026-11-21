@@ -127,7 +127,7 @@
     const explicit=experienceRequirement(job?.requiredExperience)||
       experienceRequirement(job?.description);
     const minYears=explicit?.minYears;
-    const senior=/\b(?:senior|staff|principal|director|lead|manager|architect|head|vice president|sr\.?|expert)\b/i.test(title);
+    const senior=/\b(?:senior|staff|principal|director|lead|manager|supervisor|team[ -]?(?:lead|leader)|architect|head|vice[ -]president|vp|svp|evp|avp|agm|dgm|gm|tl|sr\.?|expert)\b/i.test(title);
     const fresherTitle=/\b(?:intern(?:ship)?|apprentice(?:ship)?|trainee|freshers?|new[ -]?grad(?:uate)?s?|graduate[ -](?:engineer|trainee|program(?:me)?|associate|hire|intern|analyst)|campus[ -](?:graduate|hire|recruit(?:ment)?)|entry[ -]?level)\b/i.test(title);
     const earlyTitle=/\b(?:junior|associate[ -](?:software|engineer|developer|analyst|consultant)|(?:software[ -])?engineer[ -]?(?:i|1)|analyst[ -]?(?:i|1))\b/i.test(title);
     if(senior||minYears>2)return {level:"unknown",basis:"",minYears:minYears??null};

@@ -120,7 +120,12 @@ test("fresher filter recognizes internships, apprenticeships and campus graduate
     [{title:"Lead Intern",requiredExperience:"No experience required"}, "unknown",""],
     [{title:"AI Researcher Intern",requiredExperience:"2–3 years"}, "early","explicit"],
     [{title:"Software Engineer",description:"Working with Linux."},"unknown",""],
-    [{title:"Recruitment Intern",requiredExperience:"5 years"}, "unknown",""]
+    [{title:"Recruitment Intern",requiredExperience:"5 years"}, "unknown",""],
+    [{title:"VP Design & Brand",requiredExperience:"0+ years"}, "unknown",""],
+    [{title:"TL Sourcing AGM Channel Sales",requiredExperience:"0+ years"}, "unknown",""],
+    [{title:"Supervisor - Managed Services",requiredExperience:"1–2 years"}, "unknown",""],
+    [{title:"Team Leader - Customer Experience",requiredExperience:"0+ years"}, "unknown",""],
+    [{title:"Management Trainee",requiredExperience:"No experience required"}, "fresher","explicit"]
   ];
   for(const [job,expected,basis] of sample){
     const signal=entryOpportunity(job);
