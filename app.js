@@ -487,9 +487,12 @@
     // Opening a link must never create a confirmed application.
     if(!job.stage)job.stage="Opened";
     log("Employer listing opened",job.title+" · "+job.company+" · application not confirmed");
-    save();render();broadcastStage(job);
+    save();broadcastStage(job);
     if(!job.appliedOn && !["Applied","Interview","Offer","Rejected"].includes(job.stage))
       showApplicationFollowup(job);
+    // Do not remove the clicked anchor before its native target=_blank
+    // activation has completed; that can cancel navigation in browsers.
+    setTimeout(function(){render();},0);
     toast("Employer page opened. Only confirm after submitting your application.");
   };
   const confirmApplication=function(){
