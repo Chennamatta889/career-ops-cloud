@@ -6,10 +6,16 @@
 import {readFileSync} from "node:fs";
 import {pathToFileURL} from "node:url";
 import path from "node:path";
+import {createRequire} from "node:module";
+const {isIndiaLocation}=createRequire(import.meta.url)("../india-jobs.js");
 export function judgeFeed(next,previous){
   if(next?.schema!=="careerops.public-jobs.v1" || !Array.isArray(next?.jobs))
     return {ok:false,reason:"Invalid public job feed schema"};
+  if(next.market!=="IN"||next.scan?.india_only!==true)
+    return {ok:false,reason:"Refusing to publish a feed without an India-only scope"};
   if(!next.jobs.length)return {ok:false,reason:"Refusing to publish an empty job feed"};
+  if(next.jobs.some(job=>!isIndiaLocation(job?.location)))
+    return {ok:false,reason:"Public feed includes non-India or unverified job locations"};
   if(next.scan?.status==="failed")return {ok:false,reason:"Every employer source failed"};
   const sources=Array.isArray(next.source_health)?next.source_health:[];
   if(sources.length>5){
@@ -17,10 +23,14 @@ export function judgeFeed(next,previous){
     if(healthy<Math.ceil(sources.length*0.4))
       return {ok:false,reason:"Most employer boards could not be reached"};
   }
-  if(previous?.schema==="careerops.public-jobs.v1"&&Array.isArray(previous.jobs)&&
-    previous.jobs.length>=100&&next.jobs.length<previous.jobs.length*.20&&
+  // During the one-time global-to-India transition compare only prior India
+  // postings; the expected removal of overseas jobs is not source degradation.
+  const previousIndiaCount=previous?.schema==="careerops.public-jobs.v1"&&
+    Array.isArray(previous.jobs) ?
+    previous.jobs.filter(job=>isIndiaLocation(job?.location)).length : 0;
+  if(previousIndiaCount>=100&&next.jobs.length<previousIndiaCount*.20&&
     Number(next.scan?.error_count)>0)
-      return {ok:false,reason:"Large job-feed drop during a partial source outage"};
+      return {ok:false,reason:"Large India job-feed drop during a partial source outage"};
   return {ok:true,reason:"Feed passes safe-publication checks"};
 }
 async function run(){
