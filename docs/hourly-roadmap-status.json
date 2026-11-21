@@ -1,0 +1,70 @@
+{
+  "schema": "careerops.hourly-roadmap.v1",
+  "project": "Career-Ops, India-only, free-API job discovery",
+  "active_phase": 9,
+  "last_completed_phase": 8,
+  "verification_required": [
+    "PR regression tests pass",
+    "production GitHub Pages deployment succeeds",
+    "live smoke and browser QA pass where applicable"
+  ],
+  "safety": [
+    "Do not break existing production functionality",
+    "Do not publish fabricated, non-India or >30-day jobs",
+    "Never bypass authentication, CAPTCHA or platform restrictions",
+    "Do not incur paid costs",
+    "Never submit applications without a user review and approval for each application",
+    "Never store applicant secrets in public GitHub files",
+    "If a check fails, repair the active phase before advancing; if blocked by permissions or unknowns, stop and ask"
+  ],
+  "phases": [
+    {
+      "number": 9,
+      "title": "Mobile stability and real-browser QA",
+      "status": "in_progress",
+      "definition_of_done": "Browser QA checks correct deployed path, mobile bottom tabs, expanded filters, application tracking, no horizontal overflow; PR tests, deployment and live Chromium QA all succeed"
+    },
+    {
+      "number": 10,
+      "title": "Job source optimization and invalid API quarantine",
+      "status": "pending",
+      "definition_of_done": "Track provider errors, quarantine repeatedly failing boards, prefer working India boards, keep public feed guard and 30-day freshness, add tests and live metrics"
+    },
+    {
+      "number": 11,
+      "title": "Security and account protection",
+      "status": "pending",
+      "definition_of_done": "Audit auth, Supabase RLS and migrations, private resume isolation, quota/CORS, add non-destructive integration tests, remediate verified issues safely"
+    },
+    {
+      "number": 12,
+      "title": "Fresher and Indian MNC source expansion",
+      "status": "pending",
+      "definition_of_done": "Integrate only permitted anonymous company feeds, prioritize verifiable zero-to-two-year India vacancies, prevent duplicates and stale postings, report real additions"
+    },
+    {
+      "number": 13,
+      "title": "Evidence-based matching and resume tailoring",
+      "status": "pending",
+      "definition_of_done": "Improve relevance and career eligibility without inventing experience or application claims; add tests and private-by-design controls"
+    },
+    {
+      "number": 14,
+      "title": "Smart Auto Apply with per-application approval",
+      "status": "pending",
+      "definition_of_done": "Implement supported application preparation, one review-and-approval per submission, deduplication and receipts, no bypass and no auto-submission without approval"
+    },
+    {
+      "number": 15,
+      "title": "SEO, accessibility, performance and AdSense readiness",
+      "status": "pending",
+      "definition_of_done": "Verify quality content, canonical paths, sitemap, robots, core Web Vitals, accessibility, consent/privacy and non-disruptive ad placement without promising acceptance"
+    }
+  ],
+  "progress_log": [
+    {
+      "phase": 9,
+      "note": "Real-browser QA fixes developed on feature branch; live verification pending."
+    }
+  ]
+}
