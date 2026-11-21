@@ -16,6 +16,8 @@ on:
       - scripts/navigation-ui.test.cjs
       - scripts/health-check.test.cjs
       - scripts/live-smoke.mjs
+      - scripts/browser-live-smoke.mjs
+      - .github/workflows/browser-live-qa.yml
       - health-check.js
       - resume-parser.js
       - careerops-config.js
@@ -128,6 +130,7 @@ jobs:
           node --check private-workspace.js
           node --check health-check.js
           node --check scripts/live-smoke.mjs
+          node --check scripts/browser-live-smoke.mjs
           node --check resume-parser.js
           node --check supabase/functions/careerops-ai-review/job-fetch.mjs
           node --check careerops-config.js
