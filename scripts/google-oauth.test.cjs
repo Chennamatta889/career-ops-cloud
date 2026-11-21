@@ -117,6 +117,8 @@ test("Google sign-in disabled by Supabase is visible and prevents redirect",asyn
   assert.equal(h.el("aiGoogleSignIn").disabled,false);
 });
 test("Google authentication errors are preserved until AI Studio reads them",()=>{
-  assert.match(app,/access_token=\|error=\|error_code=/);
+  assert.match(app,/access_token=\|refresh_token=\|error=\|error_code=/);
+  assert.match(app,/history\.pushState/);
+  assert.match(app,/window\.addEventListener\("popstate",syncHistoryRoute\)/);
   assert.doesNotMatch(code,/google.*(?:client_secret|AIza)[A-Za-z0-9_-]{15}/i);
 });
