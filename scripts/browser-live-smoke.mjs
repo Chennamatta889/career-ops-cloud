@@ -15,12 +15,13 @@ try{
   await page.goto(website+"/?browser-qa="+Date.now()+"#discover",{waitUntil:"domcontentloaded",timeout:35000});
   await page.waitForFunction(()=>document.querySelector("#dataModeTag")?.textContent.includes("Published"),null,{timeout:45000});
   await page.waitForFunction(()=>document.querySelectorAll("#jobsGrid .job-card").length>0,null,{timeout:25000});
-  assert.ok(await page.locator("#jobsGrid .job-card").count()>0,"live published job cards missing");
+  const initialLiveCount=await page.locator("#jobsGrid .job-card").count();
+  assert.ok(initialLiveCount>0,"live published job cards missing");
   await page.locator("#jobSearch").fill("ServiceNow");
   const liveMatches=await page.locator("#jobsGrid .job-card h3").allTextContents();
   // Search intentionally matches skills, department and company, not just title.
   // Real employer listings change daily; fixture below tests precise relevance.
-  assert.ok(liveMatches.length<=await page.locator("#jobsGrid .job-card").count());
+  assert.ok(liveMatches.length<=initialLiveCount,"search must not increase live results");
   await page.locator("#sectorFilter").selectOption("it");
   const itMatches=await page.locator("#jobsGrid .job-card h3").allTextContents();
   assert.ok(itMatches.length<=liveMatches.length,
