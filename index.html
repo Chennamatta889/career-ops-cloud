@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b1425">
+  <meta name="description" content="Career-Ops is an offline-first job discovery and application tracking workspace.">
+  <title>Career-Ops — Your job search command center</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='17' fill='%230b1425'/%3E%3Cpath d='m17 34 11 11 20-26' fill='none' stroke='%2342dfb6' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./styles.css">
+  <script defer src="./app.js"></script>
+</head>
+<body>
+<div class="app-shell" id="app">
+  <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+    <a class="brand" href="#overview" data-nav="overview" aria-label="Career-Ops home">
+      <span class="brand-icon"><span></span><span></span></span>
+      <span class="brand-copy"><strong>career<span>ops</span></strong><small>YOUR JOB SEARCH OS</small></span>
+    </a>
+    <div class="workspace-select"><span class="workspace-icon">C</span><span><strong>My workspace</strong><small>Personal sandbox</small></span><span class="workspace-arrow">⌄</span></div>
+    <div class="nav-label">WORKSPACE</div>
+    <nav class="nav-list" id="mainNav">
+      <button class="nav-link active" data-nav="overview"><span class="nav-icon">◫</span><span>Overview</span></button>
+      <button class="nav-link" data-nav="discover"><span class="nav-icon">⌕</span><span>Discover jobs</span><span class="nav-badge" id="navJobsCount">0</span></button>
+      <button class="nav-link" data-nav="applications"><span class="nav-icon">▥</span><span>Applications</span></button>
+      <button class="nav-link" data-nav="resume"><span class="nav-icon">▤</span><span>Resume lab</span></button>
+      <button class="nav-link" data-nav="activity"><span class="nav-icon">◷</span><span>Activity</span></button>
+      <div class="nav-label nav-label-secondary">PREFERENCES</div>
+      <button class="nav-link" data-nav="settings"><span class="nav-icon">⚙</span><span>Settings & data</span></button>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="sidebar-help"><span class="help-spark">✦</span><strong>Built to work smarter</strong><p>Review matches, tailor your approach, and track every opportunity.</p><button class="text-link" data-nav="resume">Set your preferences <span>→</span></button></div>
+      <div class="sidebar-footer"><span class="avatar">CO</span><span><strong>Career-Ops</strong><small>Private browser workspace</small></span><span class="online-dot"></span></div>
+    </div>
+  </aside>
+  <div class="mobile-scrim" id="mobileScrim"></div>
+  <div class="main-shell">
+    <header class="topbar">
+      <div class="topbar-left"><button class="mobile-menu" id="mobileMenu" aria-label="Open navigation" aria-expanded="false">☰</button><span class="breadcrumb">Workspace</span><span class="breadcrumb-divider">/</span><strong id="currentCrumb">Overview</strong></div>
+      <div class="topbar-actions"><span class="sync-pill"><span></span>Local workspace</span><button class="icon-button" data-nav="activity" aria-label="View activity">◷</button><span class="top-avatar">CO</span></div>
+    </header>
+    <main class="page-content">
+      <section class="page active" id="page-overview">
+        <div class="welcome-head"><div><div class="eyebrow"><span class="eyebrow-dot"></span> JOB SEARCH COMMAND CENTER</div><h1>A smarter way to land<br><span>your next role.</span></h1><p>Find the right opportunities, stay organized, and make every application count.</p><div class="welcome-ctas"><button class="btn btn-primary" data-nav="discover">Explore opportunities <span>↗</span></button><button class="btn btn-outline" data-nav="resume">Manage my resume <span>→</span></button></div></div><div class="hero-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="hero-center"><div class="hero-symbol">✧</div><strong>CAREER<br>OPS</strong></div><div class="floating-chip chip-one"><span>✓</span> Opportunity found</div><div class="floating-chip chip-two"><span>↗</span> Your next step</div></div></div>
+        <div class="notice" role="status"><span class="notice-icon">ⓘ</span><div><strong>Demo workspace</strong> — sample listings and scores are illustrative, not live job postings. Import your scanner's JSON output or add a real opportunity to begin tracking locally.</div><button class="notice-link" data-nav="settings">Import data →</button></div>
+        <div class="section-top"><div><div class="eyebrow">AT A GLANCE</div><h2>Workspace overview</h2></div><span class="muted small">Stored in this browser</span></div>
+        <div class="stats-grid">
+          <article class="stat-card"><div class="stat-icon stat-teal">⌕</div><div class="stat-number" id="statDiscovered">0</div><strong>Opportunities</strong><p>Jobs in your workspace</p></article>
+          <article class="stat-card"><div class="stat-icon stat-blue">✧</div><div class="stat-number" id="statSaved">0</div><strong>Saved jobs</strong><p>Worth a closer look</p></article>
+          <article class="stat-card"><div class="stat-icon stat-violet">▤</div><div class="stat-number" id="statApplied">0</div><strong>Applications sent</strong><p>Manually recorded</p></article>
+          <article class="stat-card"><div class="stat-icon stat-amber">◷</div><div class="stat-number" id="statInterviews">0</div><strong>Interviews</strong><p>Next conversations</p></article>
+        </div>
+        <div class="dashboard-grid">
+          <section class="panel opportunities-panel"><div class="panel-heading"><div><div class="eyebrow">SHORTLIST</div><h2>Recommended for you</h2></div><button class="text-link" data-nav="discover">See all jobs ↗</button></div><div id="overviewJobs" class="overview-jobs"></div></section>
+          <div class="side-stack"><section class="panel pipeline-panel"><div class="panel-heading"><div><div class="eyebrow">YOUR PROGRESS</div><h2>Application pipeline</h2></div></div><div class="pipeline-chart" id="pipelineChart"></div><div class="pipeline-legend" id="pipelineLegend"></div><button class="btn btn-subtle btn-full" data-nav="applications">Open application board →</button></section><section class="panel focus-panel"><div class="focus-icon">✦</div><div><strong>One focused step at a time.</strong><p>Use your actual resume and job description before making a decision. Sample scores aren't AI assessments.</p></div></section></div>
+        </div>
+      </section>
+      <section class="page" id="page-discover">
+        <div class="page-heading"><div><div class="eyebrow">DISCOVER</div><h1>Find your next <span>opportunity.</span></h1><p>Filter jobs, review details, and keep the ones that matter.</p></div><button class="btn btn-primary" id="openAddJob">+ Add job</button></div>
+        <div class="toolbar"><label class="search-wrap"><span>⌕</span><input id="jobSearch" type="search" placeholder="Search roles, companies, skills..." aria-label="Search jobs"></label><select id="roleFilter" aria-label="Filter by role"><option value="">All roles</option><option value="devops">DevOps</option><option value="cloud">Cloud</option><option value="site reliability">SRE</option><option value="platform">Platform</option></select><select id="locationFilter" aria-label="Filter by location"><option value="">All locations</option><option value="remote">Remote</option><option value="hyderabad">Hyderabad</option><option value="bengaluru">Bengaluru</option><option value="pune">Pune</option></select><select id="sortFilter" aria-label="Sort jobs"><option value="newest">Newest first</option><option value="company">Company A–Z</option><option value="role">Role A–Z</option></select></div>
+        <div class="results-line"><strong id="resultsCount">0 opportunities</strong><span class="sample-tag" id="dataModeTag">Sample data</span></div>
+        <div class="job-grid" id="jobsGrid"></div>
+        <div class="empty-state" id="emptyJobs" hidden><div class="empty-icon">⌕</div><h3>No jobs found</h3><p>Try another filter, or add an opportunity from a career portal.</p><button class="btn btn-outline" id="clearFilters">Clear filters</button></div>
+      </section>
+      <section class="page" id="page-applications">
+        <div class="page-heading"><div><div class="eyebrow">TRACK</div><h1>Your application <span>pipeline.</span></h1><p>Move jobs through your own workflow. No applications are submitted from this UI.</p></div><button class="btn btn-outline" data-nav="discover">Browse jobs ↗</button></div>
+        <div class="notice notice-compact"><span class="notice-icon">ⓘ</span><div>Statuses you change here are local tracking records, not confirmation from any employer.</div></div>
+        <div class="board" id="applicationsBoard"></div>
+      </section>
+      <section class="page" id="page-resume">
+        <div class="page-heading"><div><div class="eyebrow">YOUR PROFILE</div><h1>Resume & <span>preferences.</span></h1><p>Define your target roles and keep your application strategy consistent.</p></div></div>
+        <div class="form-grid"><section class="panel"><div class="panel-heading"><div><div class="eyebrow">RESUME</div><h2>Your document</h2></div></div><div class="upload-drop"><div class="upload-symbol">⇧</div><strong>Choose a resume to reference</strong><p>PDF or DOCX. Selection stays on this device; nothing is uploaded, analyzed, or saved to a server.</p><label class="btn btn-outline upload-btn" for="resumeFile">Choose file</label><input id="resumeFile" type="file" accept=".pdf,.docx" hidden><span class="muted small" id="resumeFileLabel">No file selected</span></div><p class="inline-note">AI tailoring and secure resume storage are planned integrations—not active in this preview.</p></section><section class="panel"><div class="panel-heading"><div><div class="eyebrow">ROLE PREFERENCES</div><h2>What you're targeting</h2></div></div><form id="preferencesForm" class="form-stack"><label>Target job titles<textarea id="targetRoles" rows="3" placeholder="DevOps Engineer, Cloud Engineer..."></textarea></label><label>Preferred locations<input id="targetLocations" placeholder="Hyderabad, Remote India..."></label><label>Experience level<input id="targetExperience" placeholder="2–4 years"></label><label>Key skills<textarea id="targetSkills" rows="3" placeholder="AWS, Jenkins, Kubernetes..."></textarea></label><button type="submit" class="btn btn-primary">Save preferences</button></form></section></div>
+      </section>
+      <section class="page" id="page-activity">
+        <div class="page-heading"><div><div class="eyebrow">HISTORY</div><h1>Activity <span>timeline.</span></h1><p>A simple log of actions within this browser.</p></div><button class="btn btn-outline" id="clearActivity">Clear activity</button></div><section class="panel"><div id="activityList" class="activity-list"></div></section>
+      </section>
+      <section class="page" id="page-settings">
+        <div class="page-heading"><div><div class="eyebrow">SETUP</div><h1>Settings & <span>data.</span></h1><p>Control what appears in your workspace and bring your scan results here.</p></div></div>
+        <div class="form-grid"><section class="panel"><div class="panel-heading"><div><div class="eyebrow">DATA CONNECTION</div><h2>Import scan results</h2></div></div><p class="panel-desc">Import a JSON file exported by Career-Ops. Supported inputs include an array of jobs, or an object with a <code>jobs</code>, <code>matches</code>, <code>results</code>, or <code>discovered_jobs</code> array. The import is local only.</p><label class="btn btn-primary upload-btn" for="scanImport">Choose JSON file ⇧</label><input id="scanImport" type="file" accept=".json,application/json" hidden><p class="inline-note" id="importMessage">No scanner connected. Import a file to replace sample jobs.</p></section><section class="panel"><div class="panel-heading"><div><div class="eyebrow">WORKSPACE</div><h2>Data & privacy</h2></div></div><p class="panel-desc">Jobs, preferences, and tracking statuses are stored in your browser's local storage. This prototype has no account authentication, server database, auto-apply integration, or resume analysis.</p><div class="setting-actions"><button class="btn btn-outline" id="exportData">Export workspace JSON ↓</button><button class="btn btn-danger" id="resetWorkspace">Reset demo workspace</button></div></section></div>
+        <div class="notice" style="margin-top:22px"><span class="notice-icon">ⓘ</span><div><strong>Safe by design:</strong> A public GitHub repository must never contain resumes, passwords, tokens, or private application information. This page only serves the UI; connect a private, authenticated backend before enabling account-level features.</div></div>
+      </section>
+    </main>
+  </div>
+</div>
+<dialog class="job-dialog" id="jobDialog" aria-labelledby="dialogTitle"><div class="dialog-inner"><button class="dialog-close" id="closeDialog" aria-label="Close dialog">×</button><div class="eyebrow" id="dialogEyebrow">OPPORTUNITY</div><h2 id="dialogTitle">Job details</h2><div class="dialog-meta" id="dialogMeta"></div><p class="dialog-desc" id="dialogDescription"></p><div class="chip-wrap" id="dialogSkills"></div><div class="dialog-bottom"><div id="dialogSource"></div><div class="dialog-actions"><button class="btn btn-outline" id="dialogSave">Save job</button><a class="btn btn-primary" id="dialogLink" href="#" target="_blank" rel="noopener noreferrer" hidden>Open original posting ↗</a></div></div></div></dialog>
+<dialog class="job-dialog add-dialog" id="addDialog" aria-labelledby="addDialogTitle"><form id="addJobForm" class="dialog-inner"><button type="button" class="dialog-close" id="closeAddDialog" aria-label="Close dialog">×</button><div class="eyebrow">MANUAL ENTRY</div><h2 id="addDialogTitle">Add an opportunity</h2><p class="dialog-desc">Save a job you found on an employer site. Add the official posting URL when available.</p><div class="form-stack"><label>Job title *<input name="title" required maxlength="120" placeholder="DevOps Engineer"></label><label>Company *<input name="company" required maxlength="100" placeholder="Company name"></label><label>Location<input name="location" maxlength="100" placeholder="Hyderabad / Remote"></label><label>Job posting URL<input name="url" type="url" placeholder="https://careers.example.com/..."></label><label>Skills (comma-separated)<input name="skills" maxlength="300" placeholder="AWS, Docker, Jenkins"></label><label>Notes<textarea name="description" rows="3" maxlength="2000" placeholder="Why this role is interesting..."></textarea></label></div><div class="dialog-bottom"><span class="muted small">Saved on this device only</span><button class="btn btn-primary" type="submit">Add to workspace</button></div></form></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
