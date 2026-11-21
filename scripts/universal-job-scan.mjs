@@ -228,7 +228,7 @@ async function main(){
   console.log("ServiceNow role titles in published employer scan:",serviceNowJobs.length);
   const serviceNowEmployer=feed.jobs.filter(j=>j.company==="ServiceNow");
   console.log("ServiceNow employer postings in public scan:",serviceNowEmployer.length,
-    "India:",serviceNowEmployer.filter(j=>/\\bIndia\\b/i.test(j.location)).length);
+    "India:",serviceNowEmployer.filter(j=>/\bIndia\b/i.test(j.location)).length);
   console.log("ServiceNow sample titles:",JSON.stringify(serviceNowJobs.slice(0,12).map(j=>
     ({title:j.title,company:j.company,location:j.location}))));
   if(feed.source_errors.length)
