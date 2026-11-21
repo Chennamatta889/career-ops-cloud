@@ -2,7 +2,7 @@ const test=require("node:test");
 const assert=require("node:assert/strict");
 const fs=require("node:fs");
 const path=require("node:path");
-const {plainText,decodeEntities}=require("../job-text.js");
+const {plainText,decodeEntities,experienceRequirement,experienceMatches}=require("../job-text.js");
 const repoFile=p=>fs.readFileSync(path.resolve(__dirname,"..",p),"utf8");
 
 test("Cohere Health-style rich job descriptions become readable paragraphs and bullets",()=>{
@@ -64,4 +64,41 @@ test("scheduled ATS feed shares safe text conversion and retains meaningful exce
   assert.match(scanner,/const desc=plainText\(/);
   assert.match(scanner,/2500\)/);
   assert.match(workflow,/cp index\.html styles\.css/);
+});
+
+test("explicit employer experience ranges and minimum years are extracted without inference",()=>{
+  const samples=[
+    ["<p>Qualifications: 3–5 years of relevant software engineering experience</p>","3–5 years",3],
+    ["Requirements: At least 4 years of professional experience","4+ years",4],
+    ["You have 2+ years of hands-on experience with cloud tools","2+ years",2],
+    ["Required: 6 to 9 years of industry experience","6–9 years",6],
+    ["We welcome freshers and offer training","No experience required",0],
+    ["No prior experience required for this position","No experience required",0],
+    ["1–2 years","1–2 years",1],
+    ["10+ years","10+ years",10]
+  ];
+  for(const [description,label,min] of samples){
+    const got=experienceRequirement(description);
+    assert.equal(got?.label,label,description);
+    assert.equal(got?.minYears,min,description);
+  }
+});
+test("unknown experience requirements stay unknown and are not inferred from titles or company history",()=>{
+  for(const description of [
+    "Senior DevOps Engineer. Familiarity with Kubernetes is desirable.",
+    "Our company has been in business for 20 years and works worldwide.",
+    "Great opportunity for an experienced developer.",
+    "Entry level position, flexible requirements.",
+    "Required: knowledge of JavaScript."
+  ])assert.equal(experienceRequirement(description),null,description);
+});
+test("experience levels filter explicit minimums and isolate unspecified requirements",()=>{
+  assert.equal(experienceMatches("3–5 years","3-5"),true);
+  assert.equal(experienceMatches("3–5 years","1-2"),false);
+  assert.equal(experienceMatches("4+ years","3-5"),true);
+  assert.equal(experienceMatches("10+ years","10+"),true);
+  assert.equal(experienceMatches("No experience required","fresher"),true);
+  assert.equal(experienceMatches("","unspecified"),true);
+  assert.equal(experienceMatches("","3-5"),false);
+  assert.equal(experienceMatches("", ""),true);
 });
