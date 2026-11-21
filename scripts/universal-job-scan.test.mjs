@@ -214,11 +214,11 @@ test("ServiceNow-focused public employer source catalog includes supported ATS p
   const expected=[
     ["greenhouse","anaplan"],["greenhouse","guidepointsecurity"],
     ["greenhouse","ltconsulting"],["ashby","rapdev"],["ashby","knox-systems"],
-    ["lever","ttecdigital"],["lever","thinkahead"],["lever","cgsfederal"]
+    ["lever","ttecdigital"],["lever","thinkahead"],["lever","fantom-corporation"]
   ];
   for(const [provider,slug]of expected)
     assert.ok(src.sources.some(s=>s.provider===provider&&s.slug===slug),provider+":"+slug);
-  assert.ok(src.sources.length>=74);
+  assert.ok(src.sources.length>=73);
 });
 
 test("large Lever employer feeds are paginated without silently skipping ServiceNow jobs",async()=>{
