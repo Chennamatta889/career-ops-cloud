@@ -86,6 +86,7 @@
   async function saveVault(){
     if(vaultBusy)return;
     const me=requireSignedIn();
+    const scope=snapshot();
     const text=$("aiResume").value.trim();
     if(text.length<250 || text.length>MAX_RESUME){
       status("vaultStatus","Paste or extract 250–16,000 characters of accurate resume text before saving.","error");return;
@@ -98,10 +99,11 @@
         user_id:me.id,label:"Primary resume",resume_text:text,
         source_filename:filename,updated_at:new Date().toISOString()
       },{"Prefer":"resolution=merge-duplicates,return=minimal"});
+      if(!stillCurrent(scope))return;
       hasSavedResume=true;
       status("vaultStatus","Resume text saved privately. You can load it after signing in on another device. No AI call was made.","success");
-    } catch(e){status("vaultStatus","Could not save resume: "+safe(e.message,190),"error");}
-    finally{$("vaultSave").disabled=false;vaultBusy=false;}
+    } catch(e){if(stillCurrent(scope))status("vaultStatus","Could not save resume: "+safe(e.message,190),"error");}
+    finally{if(stillCurrent(scope)){$("vaultSave").disabled=false;vaultBusy=false;}}
   }
   async function loadVault(onlyIfEmpty=false){
     if(vaultBusy)return;
@@ -133,14 +135,16 @@
   async function deleteVault(){
     if(vaultBusy)return;
     const me=requireSignedIn();
+    const scope=snapshot();
     if(!window.confirm("Delete your saved resume text permanently from your private Career-Ops vault? This does not delete files on your device."))return;
     vaultBusy=true;$("vaultDelete").disabled=true;
     try{
       await request("careerops_resume_vault?user_id=eq."+qs(me.id),"DELETE",undefined,{"Prefer":"return=minimal"});
+      if(!stillCurrent(scope))return;
       hasSavedResume=false;
       status("vaultStatus","Saved resume deleted from the private vault. Text currently open in the editor remains until you clear it.","success");
-    }catch(e){status("vaultStatus","Could not delete resume: "+safe(e.message,190),"error");}
-    finally{$("vaultDelete").disabled=false;vaultBusy=false;}
+    }catch(e){if(stillCurrent(scope))status("vaultStatus","Could not delete resume: "+safe(e.message,190),"error");}
+    finally{if(stillCurrent(scope)){$("vaultDelete").disabled=false;vaultBusy=false;}}
   }
   function validTracked(job){
     if(!job || !STAGES.includes(job.stage) || !safe(job.title,160) || !safe(job.company,130))return null;
@@ -190,6 +194,7 @@
   }
   async function sendTrackingChange(event){
     if(!currentUser)return;
+    const scope=snapshot();
     const raw=event.detail?.job;
     if(!raw || !safe(raw.title,160) || !safe(raw.company,130))return;
     // Use a validated key even when the user un-saves a job (stage="").
@@ -203,8 +208,8 @@
       } else {
         await request("careerops_job_tracking?on_conflict=user_id,job_key","POST",payload,{"Prefer":"resolution=merge-duplicates,return=minimal"});
       }
-      status("cloudTrackingStatus","Job tracking, employer opens and user-confirmed application dates synced privately.","success");
-    }catch(e){status("cloudTrackingStatus","Job saved locally, but cloud sync failed: "+safe(e.message,160)+". Use Sync tracked jobs after fixing the connection.","error");}
+      if(stillCurrent(scope))status("cloudTrackingStatus","Job tracking, employer opens and user-confirmed application dates synced privately.","success");
+    }catch(e){if(stillCurrent(scope))status("cloudTrackingStatus","Job saved locally, but cloud sync failed: "+safe(e.message,160)+". Use Sync tracked jobs after fixing the connection.","error");}
   }
   async function importLocal(){
     if(!currentUser)return;
