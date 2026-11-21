@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {createRequire} from "node:module";
-import {scanBoard,runScan,balanceJobs,MAX_PUBLISHED} from "./universal-job-scan.mjs";
+import {scanBoard,runScan,balanceJobs} from "./universal-job-scan.mjs";
 import {readFileSync} from "node:fs";
 const require=createRequire(import.meta.url);
 const {classify,categories}=require("../job-categories.js");
@@ -77,17 +77,31 @@ test("Ashby excludes unlisted job postings, but keeps all listed non-IT and seni
   assert.equal(feed.length,2);
   assert.equal(feed[0].category,"Finance & Accounting");
 });
-test("category balancing prevents an all-IT 500-job cap from concealing every non-IT role",()=>{
-  const many=Array.from({length:500},(_,i)=>({title:"Software Engineer",company:"A",
+test("scanner publishes every unique posting and interleaves all available categories",()=>{
+  const many=Array.from({length:720},(_,i)=>({title:"Software Engineer",company:"A",
     url:"https://job-boards.greenhouse.io/a/jobs/"+(1000+i),category:"IT & Software",posted_at:"2026-11-21"}));
   const nonIT=["Sales & Business","Customer Support","Marketing & Creative","Finance & Accounting",
-    "Healthcare & Life Sciences"].map((c,i)=>({title:"Other role",company:"B",
+    "Healthcare & Life Sciences","Hospitality & Retail"].map((c,i)=>({title:"Other role",company:"B",
     url:"https://job-boards.greenhouse.io/b/jobs/"+(1000+i),category:c,posted_at:"2026-11-21"}));
-  const picked=balanceJobs([...many,...nonIT],40);
-  assert.equal(picked.length,40);
-  assert.ok(picked.some(j=>j.category==="IT & Software"));
-  for(const kind of nonIT)assert.ok(picked.some(j=>j.category===kind.category),kind.category);
-  assert.equal(MAX_PUBLISHED,500);
+  const picked=balanceJobs([...many,...nonIT,many[0]]);
+  assert.equal(picked.length,726,"no fixed publishing cap and duplicated URLs are removed");
+  assert.equal(new Set(picked.map(j=>j.url)).size,picked.length);
+  for(const kind of nonIT)assert.ok(picked.slice(0,30).some(j=>j.category===kind.category),kind.category);
+  assert.equal(picked.filter(j=>j.category==="IT & Software").length,720);
+});
+test("complete scan publishes more than 500 unique jobs without title, seniority or category exclusions",async()=>{
+  const roles=Array.from({length:725},(_,i)=>({
+    id:100000+i,title:i%3===0?"Junior Sales Associate":i%3===1?"DevOps Engineer":"Nurse Practitioner",
+    location:{name:"India"},updated_at:"2026-11-21T00:00:00Z"
+  }));
+  const feed=await runScan({sources:[{provider:"greenhouse",slug:"sample",name:"Sample"}],
+    fetchImpl:async()=>fakeResponse({jobs:roles})});
+  assert.equal(feed.jobs.length,725);
+  assert.equal(feed.scan.matched,725);
+  assert.equal(feed.scan.max_published,undefined,"the former publishing ceiling is removed");
+  assert.ok(feed.jobs.some(j=>j.category==="Healthcare & Life Sciences"));
+  assert.ok(feed.jobs.some(j=>j.category==="Sales & Business"));
+  assert.ok(feed.jobs.some(j=>j.category==="IT & Software"));
 });
 test("one employer failure becomes partial; no private applicant fields reach public JSON",async()=>{
   const sources=[
