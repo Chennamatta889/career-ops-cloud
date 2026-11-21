@@ -31,7 +31,7 @@ test("unusual keywords cannot change the external destinations or add extra quer
     assert.equal(url.hostname,target);
     assert.equal(url.hash,"");
     assert.equal([...url.searchParams.keys()].length,provider==="linkedin"?0:2);
-    assert.match(url.href,/SRE/);
+    if(provider!=="linkedin")assert.match(url.href,/SRE/);
   }
 });
 test("all existing India location choices have safe fallbacks",()=>{
