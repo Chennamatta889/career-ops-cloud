@@ -183,12 +183,18 @@
     $("targetSkills").value = str(state.prefs.skills);
   };
   const render = function () { renderOverview(); renderDiscover(); renderBoard(); renderActivity(); renderPreferences(); };
+  const broadcastStage = function(job) {
+    if(!job || job.demo) return;
+    window.dispatchEvent(new CustomEvent("careerops:tracking-changed",{detail:{job:{
+      title:job.title,company:job.company,location:job.location,url:job.url,stage:job.stage
+    }}}));
+  };
   const track = function (id) {
     const job = find(id); if (!job) return;
     if (job.stage && job.stage !== "Saved") { toast("Already tracked as " + job.stage + ". Change it in Applications."); return; }
     job.stage = job.stage === "Saved" ? "" : "Saved";
     log(job.stage ? "Job saved" : "Job removed from shortlist", job.title + " · " + job.company);
-    save(); render(); toast(job.stage ? "Job added to your pipeline" : "Job removed from shortlist");
+    save(); render(); broadcastStage(job); toast(job.stage ? "Job added to your pipeline" : "Job removed from shortlist");
   };
   const openDetails = function (id) {
     const j = find(id); if (!j) return; activeJobId = id;
@@ -228,7 +234,7 @@
     const previous = j.stage;
     j.stage = stage;
     log("Application status changed", j.title + " · " + (previous || "Not tracking") + " → " + (stage || "Not tracking"));
-    save(); render(); toast("Status updated locally");
+    save(); render(); broadcastStage(j); toast("Status updated — syncing when signed in");
   };
   const normalise = function (j) {
     if (!j || typeof j !== "object") return null;
@@ -455,6 +461,48 @@
     }
   };
   $("refreshCloud").addEventListener("click", function () { syncCloudFeed(true); });
+
+  // Private sync integration: UI-generated statuses are local until signed in.
+  // Never allow fake/demo jobs to be uploaded to the private account.
+  const privateJobKey = function(j) {
+    const url=safeUrl(j.url);
+    if(url)return url.slice(0,1500);
+    return ("manual:"+[j.company,j.title,j.location].map(x=>str(x).toLowerCase().trim()).join("|")).slice(0,1500);
+  };
+  window.CareerOpsDashboard=Object.freeze({
+    getTrackedJobs:function(){
+      return state.jobs.filter(j=>!j.demo && !!j.stage).map(j=>({
+        job_key:privateJobKey(j),title:j.title,company:j.company,location:j.location,
+        job_url:j.url,stage:j.stage
+      }));
+    },
+    mergeRemoteTracking:function(rows){
+      if(!Array.isArray(rows))return 0;
+      let merged=0;
+      for(const raw of rows.slice(0,500)){
+        if(!raw || !STAGES.some(s=>s.name===raw.stage))continue;
+        const title=str(raw.title).slice(0,160),company=str(raw.company).slice(0,130);
+        const key=str(raw.job_key).slice(0,1500);
+        if(!title || !company || key.length<6)continue;
+        const url=safeUrl(raw.job_url);
+        const existing=state.jobs.find(j=>!j.demo && privateJobKey(j)===key);
+        if(existing){existing.stage=raw.stage;merged++;continue;}
+        if(state.jobs.length>=500){
+          const idx=state.jobs.findIndex(j=>!j.stage && !j.manual);
+          if(idx<0)break;
+          state.jobs.splice(idx,1);
+        }
+        state.jobs.push({
+          id:newId(),title,company,location:str(raw.location).slice(0,160)||"Not specified",
+          url,stage:raw.stage,skills:[],description:"",demo:false,manual:true,
+          source:"cloud-tracking",addedAt:str(raw.updated_at)||stamp()
+        });
+        merged++;
+      }
+      if(merged){save();render();}
+      return merged;
+    }
+  });
 
   if (memoryOnly) toast("Local storage unavailable; changes may not persist.");
   render();
