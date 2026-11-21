@@ -98,6 +98,8 @@ test("complete scan publishes more than 500 unique jobs without title, seniority
     fetchImpl:async()=>fakeResponse({jobs:roles})});
   assert.equal(feed.jobs.length,725);
   assert.equal(feed.scan.matched,725);
+  assert.equal(feed.market,"IN");
+  assert.equal(feed.scan.india_only,true);
   assert.equal(feed.scan.max_published,undefined,"the former publishing ceiling is removed");
   assert.ok(feed.jobs.some(j=>j.category==="Healthcare & Life Sciences"));
   assert.ok(feed.jobs.some(j=>j.category==="Sales & Business"));
@@ -147,7 +149,7 @@ test("Phase 10 source-health retains successful and failed board identity withou
   ];
   const feed=await runScan({sources,fetchImpl:async url=>{
     if(url.includes("boardtwo"))throw Error("HTTP 404");
-    return fakeResponse({jobs:[{id:122334,title:"Operations Assistant",updated_at:"2026-11-20T00:00:00Z"}]});
+    return fakeResponse({jobs:[{id:122334,title:"Operations Assistant",location:{name:"Pune, India"},updated_at:"2026-11-20T00:00:00Z"}]});
   }});
   assert.equal(feed.scan.status,"partial");
   assert.equal(feed.jobs.length,1);
@@ -356,4 +358,56 @@ test("unreachable Workable sources use employer career links instead of false jo
   }
   assert.match(html,/These are original employer boards, not imported job cards/);
   assert.ok(src.sources.length>=80);
+});
+
+test("publishes only India-based employer jobs while counting all inspected records",async()=>{
+  const source={provider:"greenhouse",slug:"mixedregion",name:"Example Employer"};
+  const raw=[
+    {id:70001,title:"DevOps Engineer",location:{name:"Hyderabad, Telangana, India"}},
+    {id:70002,title:"Remote SRE",location:{name:"Remote - India"}},
+    {id:70003,title:"Finance Manager",location:{name:"New Delhi"}},
+    {id:70004,title:"Platform Engineer",location:{name:"Remote - US"}},
+    {id:70005,title:"Software Engineer",location:{name:"London, United Kingdom"}},
+    {id:70006,title:"Unspecified Location"},
+    {id:70007,title:"Remote Global",location:{name:"Anywhere"}},
+    {id:70008,title:"Indianapolis Engineer",location:{name:"Indianapolis, IN, USA"}}
+  ];
+  const feed=await runScan({sources:[source],fetchImpl:async()=>fakeResponse({jobs:raw})});
+  assert.equal(feed.market,"IN");
+  assert.equal(feed.scan.india_only,true);
+  assert.equal(feed.scan.found,8);
+  assert.equal(feed.scan.matched,3);
+  assert.equal(feed.jobs.length,3);
+  assert.deepEqual(feed.jobs.map(j=>j.title).sort(),
+    ["DevOps Engineer","Finance Manager","Remote SRE"]);
+  assert.equal(feed.source_health[0].count,3);
+  assert.equal(feed.source_health[0].scanned_count,8);
+  assert.match(feed.scope,/India-only/);
+  assert.doesNotMatch(JSON.stringify(feed.jobs),/London|Indianapolis|Remote Global/);
+});
+test("India-only source selection works for structured SmartRecruiters countries",async()=>{
+  const source={provider:"smartrecruiters",slug:"ServiceNow",name:"ServiceNow"};
+  const positions=[
+    {id:"744000145000001",name:"Platform Engineer",location:{city:"Hyderabad",country:"IN"}},
+    {id:"744000145000002",name:"Software Engineer",location:{city:"San Diego",country:"US"}},
+    {id:"744000145000003",name:"Remote Engineer",location:{remote:true,country:"IN"}},
+    {id:"744000145000004",name:"Remote Global",location:{remote:true}}
+  ];
+  const feed=await runScan({sources:[source],
+    fetchImpl:async()=>fakeResponse({totalFound:positions.length,content:positions})});
+  assert.equal(feed.scan.found,4);
+  assert.deepEqual(feed.jobs.map(j=>j.title).sort(),["Platform Engineer","Remote Engineer"]);
+  assert.ok(feed.jobs.every(j=>/India/.test(j.location)));
+});
+test("all-global job boards remain healthy but publish zero India jobs",async()=>{
+  const feed=await runScan({sources:[{provider:"greenhouse",slug:"globalcompany",name:"Global Company"}],
+    fetchImpl:async()=>fakeResponse({jobs:[
+      {id:71001,title:"SRE",location:{name:"Remote / Worldwide"}},
+      {id:71002,title:"DevOps Engineer",location:{name:"United States"}}
+    ]})});
+  assert.equal(feed.scan.status,"success");
+  assert.equal(feed.scan.found,2);
+  assert.equal(feed.jobs.length,0);
+  assert.equal(feed.source_health[0].count,0);
+  assert.equal(feed.source_health[0].scanned_count,2);
 });
