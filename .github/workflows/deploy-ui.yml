@@ -8,7 +8,11 @@ on:
       - index.html
       - styles.css
       - app.js
+      - scripts/export-scan-feed.mjs
       - .github/workflows/deploy-ui.yml
+  schedule:
+    # 10:00 AM India Standard Time. GitHub schedules may run late.
+    - cron: '30 4 * * *'
 
 permissions:
   contents: read
@@ -17,24 +21,120 @@ permissions:
 
 concurrency:
   group: career-ops-ui-pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout dashboard repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Checkout pinned public Career-Ops scanner
+        uses: actions/checkout@v4
+        with:
+          repository: career-ops-hq/career-ops
+          ref: 87996a80abac26e39862117a79496952c83b5741
+          path: upstream
+          persist-credentials: false
+
+      - name: Install scanner dependencies
+        working-directory: upstream
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --ignore-scripts --no-audit --no-fund
+          else
+            npm install --ignore-scripts --no-audit --no-fund
+          fi
+
+      - name: Configure isolated public-job scan
+        shell: bash
+        run: |
+          echo "CAREER_OPS_ROOT=$RUNNER_TEMP/career-ops-data" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/career-ops-data"/{config,data,reports,output,jds,batch/tracker-additions}
+          cat > "$RUNNER_TEMP/career-ops-data/config/profile.yml" <<'EOF'
+          candidate:
+            years_of_experience: 3
+          target_roles:
+            primary: [DevOps Engineer, Cloud Engineer, Site Reliability Engineer, Platform Engineer]
+          location:
+            country: India
+            city: Hyderabad
+            timezone: Asia/Kolkata
+          spend_tier: economy
+          EOF
+          cat > "$RUNNER_TEMP/career-ops-data/portals.yml" <<'EOF'
+          title_filter:
+            positive: [DevOps, Cloud Engineer, Site Reliability, SRE, Platform Engineer, Infrastructure Engineer, Build Engineer, Release Engineer]
+            negative: ["word:Intern", Internship, "word:Director", "word:Principal", "word:Staff", "word:Senior", "word:Manager"]
+          location_filter:
+            strict: true
+            allow: [India, Hyderabad, Bengaluru, Bangalore, Pune, Mumbai, Chennai, Gurugram, Gurgaon, Noida, Delhi, Remote India]
+          experience_filter:
+            enabled: true
+            stretch_years: 1
+            action: label
+          tracked_companies:
+            - name: Glean
+              careers_url: https://job-boards.greenhouse.io/gleanwork
+              api: https://boards-api.greenhouse.io/v1/boards/gleanwork/jobs
+              enabled: true
+            - name: RZR
+              careers_url: https://job-boards.greenhouse.io/rzr
+              api: https://boards-api.greenhouse.io/v1/boards/rzr/jobs
+              enabled: true
+            - name: Temporal
+              careers_url: https://jobs.ashbyhq.com/temporal
+              enabled: true
+          job_boards: []
+          EOF
+
+      - name: Scan public job listings
+        id: scan
+        working-directory: upstream
+        shell: bash
+        run: |
+          set +e
+          node scan.mjs --json --quiet > "$RUNNER_TEMP/career-ops-scan.json"
+          scan_exit=$?
+          set -e
+          echo "SCAN_EXIT_CODE=$scan_exit" >> "$GITHUB_ENV"
+          echo "Scanner exit: $scan_exit (2 may mean partial source failures)"
+          test -s "$RUNNER_TEMP/career-ops-scan.json" || echo "Scanner returned no receipt"
+
+      - name: Build public-only job feed
+        shell: bash
+        run: |
+          node --check app.js
+          node --check scripts/export-scan-feed.mjs
+          SCAN_RECEIPT="$RUNNER_TEMP/career-ops-scan.json" \
+          FEED_OUTPUT="public/data/jobs.json" \
+          node scripts/export-scan-feed.mjs
+
       - name: Prepare static site
+        shell: bash
         run: |
           mkdir -p public
           cp index.html styles.css app.js public/
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+          test -s public/data/jobs.json
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload site bundle
+        uses: actions/upload-pages-artifact@v3
         with:
           path: public
-      - name: Deploy to GitHub Pages
+
+      - name: Deploy public dashboard
         id: deployment
         uses: actions/deploy-pages@v4
