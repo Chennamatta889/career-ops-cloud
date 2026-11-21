@@ -44,10 +44,10 @@ test("candidate discovery activates only real India vacancies; overseas, unknown
   const urls=[];
   const expansion=await discoverIndiaCandidates({candidates,curatedSources:[{
     provider:"greenhouse",slug:"currentboard",name:"Already Curated"}],
-    scanBoard,isIndiaLocation,concurrency:3,fetchImpl:async(url)=>{
+    scanBoard,isIndiaLocation,concurrency:3,now:new Date("2026-11-21T12:00:00Z"),fetchImpl:async(url)=>{
       urls.push(url);
       if(url.includes("indiaexample"))return fakeResponse({jobs:[
-        {id:777001,title:"Platform Engineer",location:{name:"Hyderabad, India"}},
+        {id:777001,title:"Platform Engineer",location:{name:"Hyderabad, India"},first_published:"2026-11-20T00:00:00Z"},
         {id:777002,title:"Cloud Engineer",location:{name:"London, UK"}},
         {id:777003,title:"Remote Engineer",location:{name:"Remote Worldwide"}}
       ]});
@@ -88,9 +88,9 @@ test("candidate board request budget prevents unbounded pagination",async()=>{
   assert.equal(expansion.jobs.length,0);
 });
 test("candidate jobs merge without deleting curated jobs, duplicates or India publication safety",async()=>{
-  const base=await runScan({sources:[{provider:"greenhouse",slug:"baseboard",name:"Base"}],
+  const base=await runScan({now:new Date("2026-11-21T12:00:00Z"),sources:[{provider:"greenhouse",slug:"baseboard",name:"Base"}],
     fetchImpl:async()=>fakeResponse({jobs:[
-      {id:1000,title:"DevOps Engineer",location:{name:"Bengaluru, India"}}
+      {id:1000,title:"DevOps Engineer",location:{name:"Bengaluru, India"},first_published:"2026-11-20T00:00:00Z"}
     ]})});
   const newJob={...base.jobs[0],id:"new-1",title:"SRE",company:"Additional",
     url:"https://jobs.lever.co/newcompany/new-1",location:"Hyderabad, India"};

@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - 'scripts/universal-job-scan.mjs'
+      - 'scripts/job-freshness.mjs'
+      - 'scripts/job-freshness.test.mjs'
       - 'scripts/universal-job-scan.test.mjs'
       - 'scripts/universal-job-sources.json'
       - 'scripts/india-employer-candidates.json'
@@ -50,6 +52,8 @@ jobs:
       - name: Syntax and public ATS test suite
         run: |
           node --check scripts/universal-job-scan.mjs
+          node --check scripts/job-freshness.mjs
+          node --check scripts/job-freshness.test.mjs
           node --check scripts/india-candidate-expansion.mjs
           node --check scripts/india-candidate-expansion.test.mjs
           node --check scripts/universal-job-scan.test.mjs
@@ -59,4 +63,4 @@ jobs:
           node --check app.js
           node --check external-job-search.js
           node --check scripts/job-search.test.cjs
-          node --test scripts/universal-job-scan.test.mjs scripts/india-candidate-expansion.test.mjs scripts/india-jobs.test.cjs scripts/guard-public-feed.test.mjs scripts/navigation-ui.test.cjs scripts/phase45-stability.test.cjs scripts/job-search.test.cjs scripts/external-job-search.test.cjs scripts/ai-studio.test.cjs scripts/enterprise-careers.test.cjs
+          node --test scripts/universal-job-scan.test.mjs scripts/job-freshness.test.mjs scripts/india-candidate-expansion.test.mjs scripts/india-jobs.test.cjs scripts/guard-public-feed.test.mjs scripts/navigation-ui.test.cjs scripts/phase45-stability.test.cjs scripts/job-search.test.cjs scripts/external-job-search.test.cjs scripts/ai-studio.test.cjs scripts/enterprise-careers.test.cjs

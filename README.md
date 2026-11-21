@@ -1,5 +1,17 @@
 # Career-Ops Cloud Sandbox
 
+## Last 30 days only — India job discovery (21 November 2026)
+
+The production employer scanner now applies a **rolling 30-day UTC freshness cutoff** before writing the public `data/jobs.json` feed. A job must be India-eligible **and** have reliable date evidence from the past 30 days, including today; published dates older than the cutoff, missing/malformed dates and future-dated records are excluded. The cutoff updates daily and is represented by `scan.max_job_age_days: 30`, `scan.date_cutoff_utc`, and exclusion counters. Users' saved/application-tracking records are **not deleted**.
+
+- Greenhouse: use `first_published`, **never** `updated_at` to make old jobs appear new.
+- Ashby: use `publishedAt` (last publication), **never** `updatedAt`.
+- SmartRecruiters: use `releasedDate`.
+- Workable and Recruitee: use `published_on` and `published_at`, respectively.
+- Lever: public postings expose `createdAt` but do not reliably expose a publication timestamp. A posting created within 30 days is eligible (it cannot have been published before creation); its publication date remains unknown and is **not displayed as a posting date**. Older or undated Lever posts are excluded.
+
+Both curated employer boards and the 254 candidate discovery leads use the same cutoff. CI and the live smoke test reject a feed containing an old, future or undated posting, or a feed without the current rolling freshness metadata. The first release may show fewer vacancies than previous all-age scans; a smaller feed is expected, not a data-loss bug. The deployment guard still refuses mass source outages or empty feeds.
+
 ## Free India employer expansion (November 21, 2026)
 
 Career-Ops now evaluates **254 additional candidate employer ATS board slugs** collected from the MIT-licensed [career-ops-india employer directory](https://github.com/AnojSKunte/career-ops-india/blob/main/portals/india.yml) (the 255 entries in that source include one already covered by our 80 curated employers). A candidate is **not** an active board or an actual vacancy until its public ATS feed responds with real India-eligible jobs. The registry lives separately in `scripts/india-employer-candidates.json`; no candidates are blindly added to `scripts/universal-job-sources.json`.

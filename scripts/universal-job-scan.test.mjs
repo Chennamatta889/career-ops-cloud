@@ -92,9 +92,9 @@ test("scanner publishes every unique posting and interleaves all available categ
 test("complete scan publishes more than 500 unique jobs without title, seniority or category exclusions",async()=>{
   const roles=Array.from({length:725},(_,i)=>({
     id:100000+i,title:i%3===0?"Junior Sales Associate":i%3===1?"DevOps Engineer":"Nurse Practitioner",
-    location:{name:"India"},updated_at:"2026-11-21T00:00:00Z"
+    location:{name:"India"},first_published:"2026-11-21T00:00:00Z"
   }));
-  const feed=await runScan({sources:[{provider:"greenhouse",slug:"sample",name:"Sample"}],
+  const feed=await runScan({now:new Date("2026-11-21T12:00:00Z"),sources:[{provider:"greenhouse",slug:"sample",name:"Sample"}],
     fetchImpl:async()=>fakeResponse({jobs:roles})});
   assert.equal(feed.jobs.length,725);
   assert.equal(feed.scan.matched,725);
@@ -110,10 +110,10 @@ test("one employer failure becomes partial; no private applicant fields reach pu
     {name:"Works",provider:"greenhouse",slug:"workingboard"},
     {name:"Unavailable",provider:"greenhouse",slug:"brokenboard"}
   ];
-  const result=await runScan({sources,fetchImpl:async(url)=>{
+  const result=await runScan({now:new Date("2026-11-21T12:00:00Z"),sources,fetchImpl:async(url)=>{
     if(url.includes("brokenboard"))throw Error("HTTP 404");
     return fakeResponse({jobs:[{id:12345,title:"Operations Coordinator",
-      location:{name:"Chennai, India"},updated_at:"2026-11-21T00:00:00Z"}]});
+      location:{name:"Chennai, India"},first_published:"2026-11-21T00:00:00Z"}]});
   }});
   assert.equal(result.scan.status,"partial");
   assert.equal(result.scan.found,1);
@@ -123,7 +123,7 @@ test("one employer failure becomes partial; no private applicant fields reach pu
   assert.ok(!JSON.stringify(result).includes("resume_text"));
 });
 test("all employer failures produce a failed feed and no fabricated positions",async()=>{
-  const result=await runScan({sources:[{name:"Bad Board",provider:"greenhouse",slug:"broken"}],
+  const result=await runScan({now:new Date("2026-11-21T12:00:00Z"),sources:[{name:"Bad Board",provider:"greenhouse",slug:"broken"}],
     fetchImpl:async()=>{throw Error("HTTP 500");}});
   assert.equal(result.scan.status,"failed");
   assert.equal(result.jobs.length,0);
@@ -147,9 +147,9 @@ test("Phase 10 source-health retains successful and failed board identity withou
     {name:"Board One",provider:"greenhouse",slug:"boardone"},
     {name:"Board Two",provider:"ashby",slug:"boardtwo"}
   ];
-  const feed=await runScan({sources,fetchImpl:async url=>{
+  const feed=await runScan({now:new Date("2026-11-21T12:00:00Z"),sources,fetchImpl:async url=>{
     if(url.includes("boardtwo"))throw Error("HTTP 404");
-    return fakeResponse({jobs:[{id:122334,title:"Operations Assistant",location:{name:"Pune, India"},updated_at:"2026-11-20T00:00:00Z"}]});
+    return fakeResponse({jobs:[{id:122334,title:"Operations Assistant",location:{name:"Pune, India"},first_published:"2026-11-20T00:00:00Z"}]});
   }});
   assert.equal(feed.scan.status,"partial");
   assert.equal(feed.jobs.length,1);
@@ -363,16 +363,16 @@ test("unreachable Workable sources use employer career links instead of false jo
 test("publishes only India-based employer jobs while counting all inspected records",async()=>{
   const source={provider:"greenhouse",slug:"mixedregion",name:"Example Employer"};
   const raw=[
-    {id:70001,title:"DevOps Engineer",location:{name:"Hyderabad, Telangana, India"}},
-    {id:70002,title:"Remote SRE",location:{name:"Remote - India"}},
-    {id:70003,title:"Finance Manager",location:{name:"New Delhi"}},
+    {id:70001,title:"DevOps Engineer",location:{name:"Hyderabad, Telangana, India"},first_published:"2026-11-20T00:00:00Z"},
+    {id:70002,title:"Remote SRE",location:{name:"Remote - India"},first_published:"2026-11-20T00:00:00Z"},
+    {id:70003,title:"Finance Manager",location:{name:"New Delhi"},first_published:"2026-11-20T00:00:00Z"},
     {id:70004,title:"Platform Engineer",location:{name:"Remote - US"}},
     {id:70005,title:"Software Engineer",location:{name:"London, United Kingdom"}},
     {id:70006,title:"Unspecified Location"},
     {id:70007,title:"Remote Global",location:{name:"Anywhere"}},
     {id:70008,title:"Indianapolis Engineer",location:{name:"Indianapolis, IN, USA"}}
   ];
-  const feed=await runScan({sources:[source],fetchImpl:async()=>fakeResponse({jobs:raw})});
+  const feed=await runScan({now:new Date("2026-11-21T12:00:00Z"),sources:[source],fetchImpl:async()=>fakeResponse({jobs:raw})});
   assert.equal(feed.market,"IN");
   assert.equal(feed.scan.india_only,true);
   assert.equal(feed.scan.found,8);
@@ -388,19 +388,19 @@ test("publishes only India-based employer jobs while counting all inspected reco
 test("India-only source selection works for structured SmartRecruiters countries",async()=>{
   const source={provider:"smartrecruiters",slug:"ServiceNow",name:"ServiceNow"};
   const positions=[
-    {id:"744000145000001",name:"Platform Engineer",location:{city:"Hyderabad",country:"IN"}},
+    {id:"744000145000001",name:"Platform Engineer",location:{city:"Hyderabad",country:"IN"},releasedDate:"2026-11-20T00:00:00Z"},
     {id:"744000145000002",name:"Software Engineer",location:{city:"San Diego",country:"US"}},
-    {id:"744000145000003",name:"Remote Engineer",location:{remote:true,country:"IN"}},
+    {id:"744000145000003",name:"Remote Engineer",location:{remote:true,country:"IN"},releasedDate:"2026-11-20T00:00:00Z"},
     {id:"744000145000004",name:"Remote Global",location:{remote:true}}
   ];
-  const feed=await runScan({sources:[source],
+  const feed=await runScan({now:new Date("2026-11-21T12:00:00Z"),sources:[source],
     fetchImpl:async()=>fakeResponse({totalFound:positions.length,content:positions})});
   assert.equal(feed.scan.found,4);
   assert.deepEqual(feed.jobs.map(j=>j.title).sort(),["Platform Engineer","Remote Engineer"]);
   assert.ok(feed.jobs.every(j=>/India/.test(j.location)));
 });
 test("all-global job boards remain healthy but publish zero India jobs",async()=>{
-  const feed=await runScan({sources:[{provider:"greenhouse",slug:"globalcompany",name:"Global Company"}],
+  const feed=await runScan({now:new Date("2026-11-21T12:00:00Z"),sources:[{provider:"greenhouse",slug:"globalcompany",name:"Global Company"}],
     fetchImpl:async()=>fakeResponse({jobs:[
       {id:71001,title:"SRE",location:{name:"Remote / Worldwide"}},
       {id:71002,title:"DevOps Engineer",location:{name:"United States"}}
@@ -433,8 +433,8 @@ test("Recruitee anonymous careers-site offers normalize only real public posting
   assert.equal(res[0].posted_at,"2026-11-20");
   assert.equal(res[0].source,"Recruitee public board");
   assert.equal(res[0].url,"https://examplecompany.recruitee.com/o/platform-engineer-123");
-  const feed=await runScan({sources:[company],fetchImpl:async()=>fakeResponse({offers:[
-    {slug:"platform-engineer-123",title:"Platform Engineer",locations:[{city:"Hyderabad",country:"India"}]},
+  const feed=await runScan({now:new Date("2026-11-21T12:00:00Z"),sources:[company],fetchImpl:async()=>fakeResponse({offers:[
+    {slug:"platform-engineer-123",title:"Platform Engineer",locations:[{city:"Hyderabad",country:"India"}],published_at:"2026-11-20T00:00:00Z"},
     {slug:"sales-manager-456",title:"Sales Manager",city:"London",country:"UK"}
   ]})});
   assert.equal(feed.jobs.length,1);
