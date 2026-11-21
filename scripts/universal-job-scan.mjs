@@ -11,6 +11,7 @@ import path from "node:path";
 import {pathToFileURL} from "node:url";
 import {createHash} from "node:crypto";
 import {discoverIndiaCandidates,mergeIndiaCandidates} from "./india-candidate-expansion.mjs";
+import {MAX_JOB_AGE_DAYS,isoDay,filterRecentJobs} from "./job-freshness.mjs";
 
 const require=createRequire(import.meta.url);
 const {classify,categories}=require("../job-categories.js");
@@ -18,11 +19,7 @@ const {plainText,experienceRequirement}=require("../job-text.js");
 const {isIndiaLocation}=require("../india-jobs.js");
 const MAX_RESPONSE_BYTES=10*1024*1024;
 const clean=(value,n=200)=>typeof value==="string" ? value.replace(/[\u0000-\u001f\u007f]+/g," ").replace(/\s+/g," ").trim().slice(0,n):"";
-function date(value){
-  if(typeof value!=="string"||!/^\d{4}-\d{2}-\d{2}/.test(value))return null;
-  const parsed=new Date(value);
-  return Number.isFinite(parsed.getTime())?parsed.toISOString().slice(0,10):null;
-}
+const date=isoDay;
 // Display ISO country names for discover's India location filter; no inferred location.
 function smartRecruitersLocation(location){
   if(!location || typeof location!=="object")return "Not specified";
@@ -87,10 +84,15 @@ function normalize(source,job){
     (job.descriptionPlain||job.descriptionHtml||"");
   const desc=plainText(rawDescription,2500);
   const requirement=experienceRequirement(plainText(rawDescription,16000));
-  // Lever's createdAt is a creation timestamp, NOT a published-on date.
+  // Never turn an employer edit (updated_at / updatedAt) into a fresh posting.
+  // Lever has createdAt but does not reliably expose public publication time:
+  // a creation within 30 days proves the posting cannot be older than that,
+  // although it is not shown as the posting's publication date.
   const published=date(recruitee?job.published_at:workable?job.published_on:
-    smart?job.releasedDate:gh?job.first_published||job.updated_at:
-    job.publishedAt||job.updatedAt);
+    smart?job.releasedDate:gh?job.first_published:
+    lever?null:job.publishedAt);
+  const created=lever?date(job.createdAt):null;
+  const freshnessDate=published||created;
   const publicUrl=recruitee?"https://"+source.slug+".recruitee.com/o/"+rawId:
     workable?"https://apply.workable.com/"+source.slug+"/j/"+rawId+"/":smart?"https://jobs.smartrecruiters.com/"+source.slug+"/"+rawId:gh?
     "https://job-boards.greenhouse.io/"+source.slug+"/jobs/"+rawId:
@@ -102,6 +104,8 @@ function normalize(source,job){
     category:classify(title,department),description:desc,
     url:publicUrl,skills:[],requiredExperience:requirement?.label||"",
     posted_at:published,addedAt:published,
+    freshness_date:freshnessDate,
+    freshness_basis:published?"published":created?"created":"unknown",
     source:recruitee?"Recruitee public board":workable?"Workable public board":
       smart?"SmartRecruiters public board":gh?"Greenhouse public board":
       lever?"Lever public board":"Ashby public board"
@@ -221,7 +225,7 @@ export function balanceJobs(all){
   }
   return output;
 }
-export async function runScan({sources,fetchImpl=fetch,concurrency=5}={}){
+export async function runScan({sources,fetchImpl=fetch,concurrency=5,now=new Date()}={}){
   if(!Array.isArray(sources)||sources.length<1)throw Error("No employer sources configured");
   const seenSources=new Set();
   for(const source of sources){
@@ -231,7 +235,7 @@ export async function runScan({sources,fetchImpl=fetch,concurrency=5}={}){
     seenSources.add(identity);
   }
   const jobs=[],errors=[],health=new Array(sources.length);
-  let found=0,next=0;
+  let found=0,next=0,undatedExcluded=0,outdatedExcluded=0,futureExcluded=0;
   await Promise.all(Array.from({length:Math.min(sources.length,Math.max(1,Math.min(8,concurrency)))},async()=>{
     while(next<sources.length){
       const sourceIndex=next++;
@@ -241,9 +245,13 @@ export async function runScan({sources,fetchImpl=fetch,concurrency=5}={}){
         const openings=await scanBoard(source,fetchImpl);
         found+=openings.length;
         const indiaJobs=openings.filter(job=>isIndiaLocation(job.location));
-        jobs.push(...indiaJobs);
-        health[sourceIndex]={...common,status:"ok",count:indiaJobs.length,
-          scanned_count:openings.length};
+        const recent=filterRecentJobs(indiaJobs,now);
+        jobs.push(...recent.jobs);
+        undatedExcluded+=recent.undated;
+        outdatedExcluded+=recent.outdated;
+        futureExcluded+=recent.future;
+        health[sourceIndex]={...common,status:"ok",count:recent.jobs.length,
+          scanned_count:openings.length,india_count:indiaJobs.length};
       }catch(e){
         errors.push({board:source.name,reason:clean(e?.message||"Source unavailable",140)});
         health[sourceIndex]={...common,status:"error",count:0};
@@ -255,11 +263,15 @@ export async function runScan({sources,fetchImpl=fetch,concurrency=5}={}){
   return {
     schema:"careerops.public-jobs.v1",generated_at:new Date().toISOString(),
     market:"IN",
-    scope:"India-only IT and non-IT roles from selected public employer ATS boards. Global remote and unknown locations excluded; not an exhaustive job search.",
+    scope:"India-only IT and non-IT employer postings from the last 30 days with verifiable public publication or conservative creation dates. Overseas, future-dated and undated postings excluded.",
     scan:{status,date:new Date().toISOString().slice(0,10),scanned:sources.length,
       found,matched:published.length,india_only:true,error_count:errors.length,
+      max_job_age_days:MAX_JOB_AGE_DAYS,
+      date_cutoff_utc:filterRecentJobs([],now).cutoff,
+      undated_excluded:undatedExcluded,outdated_excluded:outdatedExcluded,
+      future_excluded:futureExcluded,
       message:errors.length?"Some employers were unavailable; results may be incomplete.":
-        "Published only India-based jobs, without title, role, experience or seniority exclusions."},
+        "Published only India postings with reliable date evidence from the last 30 days."},
     category_counts:Object.fromEntries(categories.map(c=>[c,published.filter(j=>j.category===c).length])),
     source_errors:errors.slice(0,30),source_health:health,jobs:published
   };
@@ -268,12 +280,13 @@ async function main(){
   const sourceFile=process.env.JOB_SOURCES_FILE||"scripts/universal-job-sources.json";
   const output=process.env.FEED_OUTPUT||"public/data/jobs.json";
   const sources=JSON.parse(readFileSync(sourceFile,"utf8")).sources;
-  let feed=await runScan({sources});
+  const now=new Date();
+  let feed=await runScan({sources,now});
   if(feed.scan.status!=="failed"&&process.env.DISABLE_INDIA_CANDIDATE_DISCOVERY!=="1"){
     const candidateFile=process.env.JOB_CANDIDATES_FILE||"scripts/india-employer-candidates.json";
     const candidates=JSON.parse(readFileSync(candidateFile,"utf8")).candidates;
     const expansion=await discoverIndiaCandidates({candidates,curatedSources:sources,
-      scanBoard,isIndiaLocation});
+      scanBoard,isIndiaLocation,now});
     feed=mergeIndiaCandidates(feed,expansion,balanceJobs);
     console.log("India candidate discovery:",JSON.stringify(expansion.report));
     if(expansion.errors.length)
