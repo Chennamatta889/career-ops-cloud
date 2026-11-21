@@ -31,7 +31,7 @@
   const str = function (v) { return (typeof v === "string" || typeof v === "number") ? String(v).trim() : ""; };
   const newId = function () { return "job-" + Date.now() + "-" + Math.random().toString(36).slice(2,9); };
   let memoryOnly = false;
-  const defaultState = function () { return { mode: "demo", jobs: copy(SAMPLE), prefs: copy(DEFAULT_PREFS), activity: [], importedAt: null }; };
+  const defaultState = function () { return { mode: "demo", jobs: copy(SAMPLE), prefs: copy(DEFAULT_PREFS), activity: [], importedAt: null, feedGeneratedAt: null }; };
   const load = function () {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -39,13 +39,14 @@
       const x = JSON.parse(raw);
       if (!x || !Array.isArray(x.jobs)) return defaultState();
       return {
-        mode: x.mode === "imported" ? "imported" : (x.mode === "manual" ? "manual" : "demo"),
+        mode: ["imported","manual","live"].includes(x.mode) ? x.mode : "demo",
         jobs: x.jobs.slice(0,500).map(function (j) {
-          return { id: str(j.id) || newId(), title: str(j.title), company: str(j.company), location: str(j.location), skills: Array.isArray(j.skills) ? j.skills.slice(0,12).map(str) : [], description: str(j.description), url: safeUrl(j.url), demo: !!j.demo, stage: STAGES.some(function (s) { return s.name === j.stage; }) ? j.stage : "", addedAt: str(j.addedAt) };
+          return { id: str(j.id) || newId(), title: str(j.title), company: str(j.company), location: str(j.location), skills: Array.isArray(j.skills) ? j.skills.slice(0,12).map(str) : [], description: str(j.description), url: safeUrl(j.url), demo: !!j.demo, manual: !!j.manual || (x.mode === "manual" && !j.demo), source: str(j.source), stage: STAGES.some(function (s) { return s.name === j.stage; }) ? j.stage : "", addedAt: str(j.addedAt) };
         }),
         prefs: Object.assign({}, DEFAULT_PREFS, x.prefs || {}),
         activity: Array.isArray(x.activity) ? x.activity.slice(0,100) : [],
-        importedAt: str(x.importedAt) || null
+        importedAt: str(x.importedAt) || null,
+        feedGeneratedAt: str(x.feedGeneratedAt) || null
       };
     } catch (_) { memoryOnly = true; return defaultState(); }
   };
@@ -101,7 +102,7 @@
     const bits = String(company).split(/\s+/).filter(Boolean);
     return (bits.length >= 2 ? bits[0][0] + bits[1][0] : String(company).slice(0,2)).toUpperCase();
   };
-  const jobSource = function (j) { return j.demo ? "Illustrative job" : (j.url ? "Job URL attached" : "No source URL"); };
+  const jobSource = function (j) { return j.demo ? "Illustrative job" : j.source === "cloud" ? "Public scanner result" : (j.url ? "Job URL attached" : "No source URL"); };
   const chips = function (skills) { return (skills || []).slice(0,5).map(function (s) { return '<span class="skill-chip">' + escapeHtml(s) + '</span>'; }).join(""); };
   const find = function (id) { return state.jobs.find(function (j) { return j.id === id; }); };
   const overviewRow = function (j) {
@@ -126,6 +127,8 @@
     const notice = document.querySelector("#page-overview .notice");
     if (state.mode === "demo") {
       notice.querySelector("div").innerHTML = '<strong>Demo workspace</strong> — sample listings are illustrative, not live job postings. Import scanner JSON or add a real opportunity to start tracking locally.';
+    } else if (state.mode === "live") {
+      notice.querySelector("div").innerHTML = '<strong>Cloud scanner connected</strong> — job cards come from public career portals, not verified application availability. AI scoring, resume tailoring and automatic submissions are not enabled.';
     } else {
       notice.querySelector("div").innerHTML = '<strong>Local tracking mode</strong> — imported and manually added jobs are not verified live. No AI matching or application submission is connected.';
     }
@@ -135,7 +138,7 @@
     $("jobsGrid").innerHTML = jobs.map(card).join("");
     $("resultsCount").textContent = jobs.length + (jobs.length === 1 ? " opportunity" : " opportunities");
     $("emptyJobs").hidden = jobs.length !== 0;
-    $("dataModeTag").textContent = state.mode === "demo" ? "Sample listings" : "Local records";
+    $("dataModeTag").textContent = state.mode === "demo" ? "Sample listings" : state.mode === "live" ? "Cloud scanner" : "Local records";
     $("dataModeTag").classList.toggle("real", state.mode !== "demo");
   };
   const renderBoard = function () {
@@ -204,7 +207,7 @@
       skills: skills.map(str).filter(Boolean).slice(0,12),
       description: str(j.description || j.summary || j.job_description || "").slice(0,3000),
       url: safeUrl(j.apply_url || j.job_url || j.url || j.link || j.source_url),
-      demo: false, stage: "", addedAt: stamp()
+      demo: false, manual: false, source: "import", stage: "", addedAt: stamp()
     };
   };
   const extractJobs = function (data) {
@@ -277,9 +280,9 @@
     const rawUrl = str(form.get("url"));
     const url = safeUrl(rawUrl);
     if (rawUrl && !url) { toast("Please enter a valid http(s) job URL"); return; }
-    const job = { id:newId(),title:title.slice(0,160),company:company.slice(0,120),location:str(form.get("location")) || "Not specified",skills:str(form.get("skills")).split(",").map(function (s) { return s.trim(); }).filter(Boolean).slice(0,12),description:str(form.get("description")),url:url,demo:false,stage:"Saved",addedAt:stamp() };
+    const job = { id:newId(),title:title.slice(0,160),company:company.slice(0,120),location:str(form.get("location")) || "Not specified",skills:str(form.get("skills")).split(",").map(function (s) { return s.trim(); }).filter(Boolean).slice(0,12),description:str(form.get("description")),url:url,demo:false,manual:true,source:"manual",stage:"Saved",addedAt:stamp() };
     if (state.mode === "demo") state.jobs = state.jobs.filter(function (j) { return !j.demo; });
-    state.jobs.unshift(job); state.mode = "manual";
+    state.jobs.unshift(job); if (state.mode !== "live") state.mode = "manual";
     log("Opportunity added", title + " · " + company);
     save(); render(); $("addJobForm").reset(); $("addDialog").close(); toast("Opportunity added to your pipeline");
   });
@@ -314,7 +317,87 @@
     if (!confirm("Clear this browser's activity history?")) return;
     state.activity = []; save(); renderActivity(); toast("Activity cleared");
   });
+
+  // Public feed: scanner execution happens on the GitHub Actions runner, never
+  // in the browser. Only public employer job URLs and labels are transported.
+  const feedKey = function (j) {
+    return j.url || (j.company + "/" + j.title + "/" + j.location).toLowerCase();
+  };
+  const showFeedStatus = function (kind, title, description) {
+    $("feedIndicator").className = "feed-indicator" +
+      (kind === "success" ? " ok" : kind === "partial" ? " partial" : kind === "failed" ? " offline" : "");
+    $("feedTitle").textContent = title;
+    $("feedText").textContent = description;
+  };
+  const syncCloudFeed = async function (requestedByUser) {
+    $("refreshCloud").disabled = true;
+    showFeedStatus("loading", "Checking cloud scanner...", "Reading the latest published public-job feed");
+    try {
+      const response = await fetch("./data/jobs.json?v=" + Date.now(), {cache:"no-store"});
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const feed = await response.json();
+      if (!feed || feed.schema !== "careerops.public-jobs.v1" || !Array.isArray(feed.jobs)
+        || !feed.scan || !["success","partial","failed"].includes(feed.scan.status)) {
+        throw new Error("Unsupported scanner feed format");
+      }
+      const runTime = new Date(feed.generated_at);
+      if (!Number.isFinite(runTime.valueOf())) throw new Error("Scanner date is invalid");
+      const lastRun = runTime.toLocaleString(undefined,{dateStyle:"medium",timeStyle:"short"});
+      const scan = feed.scan;
+      const numErrors = Number(scan.error_count) || 0;
+      const summary = "Last run: " + lastRun + " · " + (Number(scan.found) || 0) + " scanned postings · " + numErrors + " source errors";
+      if (scan.status === "failed") {
+        showFeedStatus("failed", "Cloud scan failed", summary + ". Existing browser records are preserved.");
+        return;
+      }
+      if (state.mode === "imported" && !requestedByUser) {
+        showFeedStatus(scan.status, "Cloud feed available · local import selected", "Click Refresh jobs to switch to the latest cloud feed. " + summary);
+        return;
+      }
+      const oldMode = state.mode;
+      const previous = state.jobs.filter(function (j) { return !j.demo; });
+      const oldByKey = new Map(previous.map(function (j) { return [feedKey(j),j]; }));
+      const seen = new Set();
+      const cloud = [];
+      feed.jobs.slice(0,500).forEach(function (raw) {
+        const job = normalise(raw);
+        if (!job || !safeUrl(job.url)) return;
+        const key = feedKey(job);
+        if (seen.has(key)) return;
+        seen.add(key);
+        const existing = oldByKey.get(key);
+        job.id = existing ? existing.id : (str(raw.id) || newId());
+        job.stage = existing ? existing.stage : "";
+        job.source = "cloud";
+        job.manual = false;
+        const date = str(raw.posted_at || raw.addedAt);
+        job.addedAt = /^\d{4}-\d{2}-\d{2}/.test(date) ? date.slice(0,10) : feed.generated_at;
+        cloud.push(job);
+      });
+      // Retain manually added and tracked jobs even if a later scan misses them.
+      const savedLocal = previous.filter(function (j) {
+        return (j.manual || !!j.stage || (oldMode === "manual" && j.source !== "cloud")) && !seen.has(feedKey(j));
+      });
+      const isNewScan = state.feedGeneratedAt !== feed.generated_at;
+      state.jobs = cloud.concat(savedLocal).slice(0,500);
+      state.mode = "live";
+      state.feedGeneratedAt = feed.generated_at;
+      if (isNewScan) log("Public scanner feed refreshed", cloud.length + " job listings · " + numErrors + " source errors");
+      save(); render();
+      showFeedStatus(scan.status, cloud.length + (cloud.length === 1 ? " public match" : " public matches") +
+        (scan.status === "partial" ? " · partial scan" : " · scanner connected"), summary);
+      if (requestedByUser) toast("Latest published scanner feed loaded");
+    } catch (error) {
+      showFeedStatus("failed", "Cloud feed not available", "The published jobs file could not be reached (" + String(error.message).slice(0,100) + "). Your saved jobs remain available.");
+      if (requestedByUser) toast("The published scanner feed is not available yet");
+    } finally {
+      $("refreshCloud").disabled = false;
+    }
+  };
+  $("refreshCloud").addEventListener("click", function () { syncCloudFeed(true); });
+
   if (memoryOnly) toast("Local storage unavailable; changes may not persist.");
   render();
   showPage(location.hash.replace("#","") || "overview");
+  syncCloudFeed(false);
 })();
