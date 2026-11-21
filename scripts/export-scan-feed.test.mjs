@@ -41,6 +41,7 @@ test('exports unique public job cards from temporary scanner pipeline',()=>{
   assert.equal(feed.jobs[0].company,'Example Labs');
   assert.equal(feed.jobs[0].location,'Hyderabad, India');
   assert.equal(feed.jobs[0].posted_at,'2026-11-20');
+  assert.equal(feed.jobs[0].requiredExperience,'2-4');
   assert.equal(feed.jobs[1].url,'https://jobs.ashbyhq.com/placeholder/1234');
   assert.ok(!JSON.stringify(feed).includes('candidate'));
 });
