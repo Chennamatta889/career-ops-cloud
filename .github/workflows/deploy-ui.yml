@@ -96,6 +96,60 @@ jobs:
             - name: Temporal
               careers_url: https://jobs.ashbyhq.com/temporal
               enabled: true
+            - name: Cohere Health
+              careers_url: https://job-boards.greenhouse.io/coherehealth
+              enabled: true
+            - name: Ivanti
+              careers_url: https://job-boards.greenhouse.io/a3c41b8b71eff8c4
+              enabled: true
+            - name: HackerRank
+              careers_url: https://job-boards.greenhouse.io/hackerrank
+              enabled: true
+            - name: CrashPlan
+              careers_url: https://job-boards.greenhouse.io/crashplan
+              enabled: true
+            - name: Motive
+              careers_url: https://job-boards.greenhouse.io/gomotive
+              enabled: true
+            - name: DataHub
+              careers_url: https://job-boards.greenhouse.io/acryldata
+              enabled: true
+            - name: RhythmX AI
+              careers_url: https://job-boards.greenhouse.io/rhythmx-ai
+              enabled: true
+            - name: Zenoti
+              careers_url: https://job-boards.greenhouse.io/zenoti
+              enabled: true
+            - name: Momentum Financial Services
+              careers_url: https://job-boards.greenhouse.io/momentumfinancialservicesgroup
+              enabled: true
+            - name: BusPatrol
+              careers_url: https://jobs.ashbyhq.com/buspatrol
+              enabled: true
+            - name: Neuphonic
+              careers_url: https://jobs.ashbyhq.com/neuphonic
+              enabled: true
+            - name: Outmarket AI
+              careers_url: https://jobs.ashbyhq.com/outmarket
+              enabled: true
+            - name: Ema
+              careers_url: https://jobs.ashbyhq.com/ema
+              enabled: true
+            - name: Demandbase
+              careers_url: https://jobs.ashbyhq.com/demandbase
+              enabled: true
+            - name: Encord
+              careers_url: https://jobs.ashbyhq.com/encord
+              enabled: true
+            - name: Plane Software
+              careers_url: https://jobs.ashbyhq.com/plane
+              enabled: true
+            - name: UptimeAI
+              careers_url: https://jobs.ashbyhq.com/uptimeai
+              enabled: true
+            - name: Triomics
+              careers_url: https://jobs.ashbyhq.com/triomics
+              enabled: true
           job_boards: []
           EOF
 
