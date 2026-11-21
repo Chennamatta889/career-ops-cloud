@@ -80,7 +80,7 @@
       if (current) el.setAttribute("aria-current", "page"); else el.removeAttribute("aria-current");
     });
     $("currentCrumb").textContent = pageNames[name];
-    if (location.hash !== "#" + name && !location.hash.startsWith("#access_token=")) history.replaceState(null, "", "#" + name);
+    if (location.hash !== "#" + name && !/^#(?:access_token=|error=|error_code=)/.test(location.hash)) history.replaceState(null, "", "#" + name);
     hideMobileMenu();
     window.scrollTo({ top: 0, behavior: "instant" });
   };
