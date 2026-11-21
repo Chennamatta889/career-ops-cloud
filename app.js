@@ -581,8 +581,15 @@
       if (!jobs.length) throw new Error("No job records found. This file may be a summary-only scan receipt.");
       const keep = state.jobs.filter(function (j) { return !j.demo && !!j.stage; });
       const kept = new Map();
-      keep.forEach(function (j) { kept.set(j.url || (j.company + "/" + j.title + "/" + j.location).toLowerCase(), j.stage); });
-      jobs.forEach(function (j) { const key = j.url || (j.company + "/" + j.title + "/" + j.location).toLowerCase(); j.stage = kept.get(key) || ""; });
+      keep.forEach(function(j){kept.set(j.url||(j.company+"/"+j.title+"/"+j.location).toLowerCase(),j);});
+      jobs.forEach(function(j){
+        const key=j.url||(j.company+"/"+j.title+"/"+j.location).toLowerCase();
+        const previous=kept.get(key);
+        j.stage=previous?.stage||"";
+        j.openedAt=previous?.openedAt||"";
+        j.appliedOn=previous?.appliedOn||"";
+        j.trackingUpdatedAt=previous?.trackingUpdatedAt||"";
+      });
       const importedKeys = new Set(jobs.map(function (j) { return j.url || (j.company + "/" + j.title + "/" + j.location).toLowerCase(); }));
       const previousTrackedJobs = keep.filter(function (j) { return !importedKeys.has(j.url || (j.company + "/" + j.title + "/" + j.location).toLowerCase()); });
       // Every imported job remains searchable; retain old tracked roles too.
@@ -906,11 +913,24 @@
         if(!title || !company || key.length<6)continue;
         const url=safeUrl(raw.job_url);
         const existing=byKey.get(key);
-        if(existing){existing.stage=raw.stage;merged++;continue;}
+        if(existing){
+          // Reject stale network responses that could overwrite a local update.
+          const localTime=Date.parse(existing.trackingUpdatedAt||"")||0;
+          const remoteTime=Date.parse(raw.updated_at||"")||0;
+          if(localTime && localTime>remoteTime)continue;
+          existing.stage=raw.stage;
+          if(Object.prototype.hasOwnProperty.call(raw,"opened_at"))
+            existing.openedAt=str(raw.opened_at);
+          if(Object.prototype.hasOwnProperty.call(raw,"applied_on"))
+            existing.appliedOn=str(raw.applied_on);
+          existing.trackingUpdatedAt=str(raw.updated_at)||existing.trackingUpdatedAt||"";
+          merged++;continue;
+        }
         const restored={
           id:newId(),title,company,location:str(raw.location).slice(0,160)||"Not specified",
           url,stage:raw.stage,skills:[],description:"",demo:false,manual:true,
-          source:"cloud-tracking",addedAt:str(raw.updated_at)||stamp()
+          source:"cloud-tracking",openedAt:str(raw.opened_at),appliedOn:str(raw.applied_on),
+          trackingUpdatedAt:str(raw.updated_at),addedAt:str(raw.updated_at)||stamp()
         };
         state.jobs.push(restored);
         byKey.set(key,restored);
@@ -947,6 +967,7 @@
     accountEpoch++;
     state=load(ACCOUNT_STORAGE_PREFIX+id);
     activeJobId=null;
+    closeApplicationFollowup();
     if($("jobDialog")?.open)$("jobDialog").close();
     render();
     syncCloudFeed(false);
@@ -957,6 +978,7 @@
     accountEpoch++;
     state=load(GUEST_STORAGE_KEY);
     activeJobId=null;
+    closeApplicationFollowup();
     if($("jobDialog")?.open)$("jobDialog").close();
     render();
     syncCloudFeed(false);
