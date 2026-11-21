@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {createRequire} from "node:module";
-import {scanBoard,balanceJobs,runScan} from "./universal-job-scan.mjs";
+import {scanBoard,balanceJobs,runScan,readPreviousCandidateHealth} from "./universal-job-scan.mjs";
 import {discoverIndiaCandidates,checkCandidateCatalog,mergeIndiaCandidates}
   from "./india-candidate-expansion.mjs";
 const require=createRequire(import.meta.url);
@@ -242,4 +242,16 @@ test("phase 10 ignores arbitrary stale health keys and never skips a new board",
   assert.equal(result.report.checked,1);
   assert.equal(result.report.quarantined,0);
   assert.deepEqual(Object.keys(result.history),["greenhouse:newboard"]);
+});
+
+test("phase 10 only imports previous health from a validated India public feed",async()=>{
+  const valid={schema:"careerops.public-jobs.v1",market:"IN",scan:{india_only:true,
+    candidate_health:{"greenhouse:board":{status:"unavailable",consecutive_failures:2,
+      retry_after:"2026-11-28",kind:"not_found"}}}};
+  const fetchImpl=async()=>({ok:true,headers:{get:()=>null},text:async()=>JSON.stringify(valid)});
+  assert.deepEqual(await readPreviousCandidateHealth(fetchImpl),valid.scan.candidate_health);
+  const invalid=async()=>({ok:true,headers:{get:()=>null},
+    text:async()=>JSON.stringify({...valid,market:"US"})});
+  assert.deepEqual(await readPreviousCandidateHealth(invalid),{});
+  assert.deepEqual(await readPreviousCandidateHealth(async()=>{throw Error("offline")}),{});
 });
