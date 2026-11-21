@@ -63,6 +63,11 @@ test("Product-company public boards use real supported ATS adapters, not guessed
     assert.ok(sources.some(s=>s.name===name&&s.provider===provider&&s.slug===slug),name);
   }
   for(const firm of data.companies){
+    if(firm.name==="ServiceNow"){
+      assert.ok(sources.some(s=>s.name==="ServiceNow"&&s.provider==="smartrecruiters"&&s.slug==="ServiceNow"),
+        "ServiceNow uses a verified official SmartRecruiters public employer board");
+      continue;
+    }
     assert.equal(sources.some(s=>s.name.toLowerCase()===firm.name.toLowerCase()),false,
       "Do not impersonate "+firm.name+" as a supported ATS board");
   }
@@ -76,6 +81,6 @@ test("Phase 10B portal module does not auto-apply or store candidate data",()=>{
   const html=fs.readFileSync(path.join(__dirname,"../index.html"),"utf8");
   for(const id of ["enterpriseCareerDirectory","enterpriseCareerSearch","enterpriseCareerKind",
     "enterpriseCareerCards","enterpriseCareerStatus"])assert.match(html,new RegExp('id="'+id+'"'));
-  assert.match(html,/These are employer career-page links, not individual vacancies/);
+  assert.match(html,/These are official career-page links, not job applications/);
   assert.match(html,/enterprise-careers\.js/);
 });
