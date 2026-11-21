@@ -230,6 +230,16 @@
       "merge_commit": "f501861744cceecbe0a1c73de0d60e4fd64f5d13",
       "pr_ci_run": "44959743761",
       "deployment_run": "44959771125"
+    },
+    {
+      "phase": 12,
+      "status": "in_progress",
+      "note": "PR #22 deploy and browser QA passed (44959771125, 44959873813). New PR #23 adds public machine-readable final-feed coverage evidence and live cross-check. Initial CI 44964247783 failed due to invalid JSON newline; corrected on branch commit 67dcde0. Awaiting CI 44964287912, merge, deployment, and actual counts; do not advance.",
+      "previous_deployment_run": 44959771125,
+      "previous_browser_qa_run": 44959873813,
+      "pr": "https://github.com/Chennamatta889/career-ops-cloud/pull/23",
+      "head_commit": "67dcde0b828cc01834176ab19ef058749332737e",
+      "pending_ci_run": 44964287912
     }
   ]
 }
