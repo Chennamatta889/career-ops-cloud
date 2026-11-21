@@ -37,7 +37,7 @@
       "title": "Job source optimization and invalid API quarantine",
       "status": "completed",
       "definition_of_done": "Track provider errors, quarantine repeatedly failing boards, prefer working India boards, keep public feed guard and 30-day freshness, add tests and live metrics",
-      "verified_at": "2026-11-21T18:01:00Z",
+      "verified_at": "2026-11-21T17:58:01Z",
       "evidence": {
         "pr": "https://github.com/Chennamatta889/career-ops-cloud/pull/15",
         "commit": "9cb6533a6167eaaa465bbcfe9b9e44b5c8f74ccd",
