@@ -136,7 +136,10 @@
   }
   function trackedPayload(job){
     const raw={
-      job_key:safe(job.url,1500) || ("manual:"+[job.company,job.title,job.location].map(x=>safe(x,140).toLowerCase()).join("|")),
+      // Preserve the dashboard's stable key exactly. Manual jobs use '/'
+      // separators so cloud imports match the same local record on reload.
+      job_key:safe(job.job_key,1500) || safe(job.url,1500) ||
+        ("manual:"+[job.company,job.title,job.location].map(x=>safe(x,140).toLowerCase()).join("/")),
       title:job.title,company:job.company,location:job.location,
       job_url:job.url,stage:job.stage
     };
