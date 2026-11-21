@@ -10,7 +10,7 @@ const sql=fs.readFileSync(path.join(__dirname,"../supabase/migrations/20261121_p
 const uid="7fdc93a6-57f6-47a8-bce0-6d354ee7d0f8";
 const resume="Cloud DevOps Engineer with experience in AWS, Jenkins, Terraform and production support. ".repeat(6);
 const flush=()=>new Promise(r=>setImmediate(r));
-function harness({signedIn=true,tracked=[]}={}){
+function harness({signedIn=true,tracked=[],responseForWrite}={}){
   const els=new Map(),events=new Map(),requests=[];
   const el=id=>{
     if(!els.has(id))els.set(id,{
@@ -34,6 +34,7 @@ function harness({signedIn=true,tracked=[]}={}){
   const fetch=async(url,options)=>{
     requests.push({url:String(url),method:options.method,body:options.body,headers:options.headers});
     if(options.method==="GET")return {ok:true,status:200,json:async()=>[]};
+    if(responseForWrite)return responseForWrite(url,options);
     return {ok:true,status:204,json:async()=>({})};
   };
   vm.runInNewContext(script,{window,document,fetch,URL,Event:class Event{},AbortSignal,Date,
@@ -154,4 +155,32 @@ test("user-confirmed date is persisted only after an explicit Applied status eve
   assert.equal(value.applied_on,"2026-11-21");
   assert.equal(value.opened_at,"2026-11-20T07:00:00.000Z");
   assert.equal(Object.hasOwn(value,"resume_text"),false);
+});
+
+test("rapid Opened → Applied writes are serialized, preserving the user's confirmation",async()=>{
+  let releaseOpened;
+  const pendingOpened=new Promise(resolve=>{releaseOpened=resolve;});
+  const h=harness({responseForWrite:(_url,options)=>{
+    if(JSON.parse(options.body).stage==="Opened")return pendingOpened;
+    return {ok:true,status:204};
+  }});
+  await flush();
+  h.requests.length=0;
+  const base={job_key:"https://example.com/careers/123",title:"Engineer",
+    company:"Employer",url:"https://example.com/careers/123",location:"Remote"};
+  h.dispatch("careerops:tracking-changed",{job:{
+    ...base,stage:"Opened",openedAt:"2026-11-21T08:00:00Z"
+  }});
+  h.dispatch("careerops:tracking-changed",{job:{
+    ...base,stage:"Applied",openedAt:"2026-11-21T08:00:00Z",appliedOn:"2026-11-21"
+  }});
+  await flush();
+  const writes=()=>h.requests.filter(r=>r.url.includes("careerops_job_tracking")&&r.method==="POST");
+  assert.equal(writes().length,1,"Applied should not race ahead of Opened");
+  assert.equal(JSON.parse(writes()[0].body).stage,"Opened");
+  releaseOpened({ok:true,status:204});
+  await flush();await flush();
+  assert.equal(writes().length,2);
+  assert.equal(JSON.parse(writes()[1].body).stage,"Applied");
+  assert.equal(JSON.parse(writes()[1].body).applied_on,"2026-11-21");
 });
