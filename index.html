@@ -14,6 +14,7 @@
   <script defer src="./resume-parser.js"></script>
   <script defer src="./ai-studio.js"></script>
   <script defer src="./private-workspace.js"></script>
+  <script defer src="./health-check.js"></script>
 </head>
 <body>
 <div class="app-shell" id="app">
@@ -153,8 +154,15 @@
       </section>
       <section class="page" id="page-settings">
         <div class="page-heading"><div><div class="eyebrow">SETUP</div><h1>Settings & <span>data.</span></h1><p>Control what appears in your workspace and bring your scan results here.</p></div></div>
-        <div class="form-grid"><section class="panel"><div class="panel-heading"><div><div class="eyebrow">DATA CONNECTION</div><h2>Import scan results</h2></div></div><p class="panel-desc">Import a JSON file exported by Career-Ops. Supported inputs include an array of jobs, or an object with a <code>jobs</code>, <code>matches</code>, <code>results</code>, or <code>discovered_jobs</code> array. The import is local only.</p><label class="btn btn-primary upload-btn" for="scanImport">Choose JSON file ⇧</label><input id="scanImport" type="file" accept=".json,application/json" hidden><p class="inline-note" id="importMessage">No scanner connected. Import a file to replace sample jobs.</p></section><section class="panel"><div class="panel-heading"><div><div class="eyebrow">WORKSPACE</div><h2>Data & privacy</h2></div></div><p class="panel-desc">Jobs, preferences, and tracking statuses are stored in your browser's local storage. This prototype has no account authentication, server database, auto-apply integration, or resume analysis.</p><div class="setting-actions"><button class="btn btn-outline" id="exportData">Export workspace JSON ↓</button><button class="btn btn-danger" id="resetWorkspace">Reset demo workspace</button></div></section></div>
-        <div class="notice" style="margin-top:22px"><span class="notice-icon">ⓘ</span><div><strong>Safe by design:</strong> A public GitHub repository must never contain resumes, passwords, tokens, or private application information. This page only serves the UI; connect a private, authenticated backend before enabling account-level features.</div></div>
+        <div class="form-grid"><section class="panel"><div class="panel-heading"><div><div class="eyebrow">DATA CONNECTION</div><h2>Import scan results</h2></div></div><p class="panel-desc">Import a JSON file exported by Career-Ops. Supported inputs include an array of jobs, or an object with a <code>jobs</code>, <code>matches</code>, <code>results</code>, or <code>discovered_jobs</code> array. The import is local only.</p><label class="btn btn-primary upload-btn" for="scanImport">Choose JSON file ⇧</label><input id="scanImport" type="file" accept=".json,application/json" hidden><p class="inline-note" id="importMessage">No scanner connected. Import a file to replace sample jobs.</p></section><section class="panel"><div class="panel-heading"><div><div class="eyebrow">WORKSPACE</div><h2>Data & privacy</h2></div></div><p class="panel-desc">Your private resume and tracked jobs are stored in your signed-in Supabase account. Browser job lists are kept only for this tab and separated by Google account. Older unassigned browser records are imported only with your confirmation. Resetting this browser does not delete cloud data.</p><div class="setting-actions"><button class="btn btn-outline" id="exportData">Export workspace JSON ↓</button><button class="btn btn-danger" id="resetWorkspace">Reset demo workspace</button></div></section></div>
+        <section class="panel health-panel" aria-label="System health diagnostics">
+          <div class="panel-heading"><div><div class="eyebrow">PHASE 4.5</div><h2>System diagnostics</h2></div></div>
+          <p class="panel-desc">Run read-only checks for job discovery, resume parsers, Google sign-in, your private database permissions, and the AI configuration. No resume content is uploaded, no Gemini generation occurs, and no sign-in email is sent.</p>
+          <button type="button" class="btn btn-outline" id="runHealthChecks">Run diagnostics</button>
+          <p id="healthSummary" role="status" aria-live="polite">Checks have not been run in this browser.</p>
+          <div id="healthResults" class="health-results" aria-live="polite"></div>
+        </section>
+        <div class="notice" style="margin-top:22px"><span class="notice-icon">ⓘ</span><div><strong>Privacy:</strong> Job status in the pipeline reflects your own tracking, not employer confirmation. Your stored resume is protected with account-owned database rules; do not use a shared device without signing out. No applications are submitted automatically.</div></div>
       </section>
     </main>
   </div>
