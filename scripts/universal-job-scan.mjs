@@ -173,6 +173,13 @@ async function main(){
   console.log(JSON.stringify({status:feed.scan.status,boards:feed.scan.scanned,
     inspected:feed.scan.found,published:feed.jobs.length,
     errors:feed.scan.error_count,categories:feed.category_counts},null,2));
+  // Release diagnostics only: job counts and titles are never added to visible UI.
+  const serviceNowJobs=feed.jobs.filter(j=>/\bservice[\s-]?now\b/i.test(j.title));
+  console.log("ServiceNow role titles in published employer scan:",serviceNowJobs.length);
+  console.log("ServiceNow sample titles:",JSON.stringify(serviceNowJobs.slice(0,12).map(j=>
+    ({title:j.title,company:j.company,location:j.location}))));
+  if(feed.source_errors.length)
+    console.warn("Unavailable boards:",JSON.stringify(feed.source_errors.slice(0,15)));
   if(feed.scan.status==="failed")process.exitCode=1;
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(path.resolve(process.argv[1])).href)
