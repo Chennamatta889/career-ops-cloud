@@ -40,3 +40,14 @@ test("empty search never blocks ordinary categories and filtering",()=>{
   assert.equal(evaluate(sf,"").matches,true);
   assert.equal(evaluate(sf,"!!!").score,0);
 });
+
+test("ServiceNow company searches find its generic engineering titles without returning Salesforce employer roles",()=>{
+  const employerRole={title:"Software Engineer",company:"ServiceNow",
+    location:"Hyderabad, Telangana, India",department:"Platform Engineering",skills:[],description:""};
+  const other={title:"Salesforce Developer",company:"Salesforce",location:"India",skills:[],description:""};
+  const matched=evaluate(employerRole,"ServiceNow");
+  assert.equal(matched.matches,true);
+  assert.equal(matched.source,"primary");
+  assert.equal(evaluate(other,"ServiceNow").matches,false);
+  assert.equal(evaluate(employerRole,"ServiceNow Hyderabad").matches,true);
+});
