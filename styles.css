@@ -91,3 +91,7 @@
 .resume-parse-status[data-state="success"]{border-color:#2a806a;background:#123d31;color:#ceffed!important}
 .resume-parse-status[data-state="error"]{border-color:#aa6953;background:#3b2729;color:#ffdbd0!important}
 #aiResumeTxtFile:disabled + .resume-parse-status{opacity:.85}
+
+/* Magic-link rate-limit feedback: high visibility and accessible on mobile */
+.ai-email-guidance{margin-top:14px;padding:12px 14px;border:1px solid #36536b;border-radius:10px;background:#13283a;color:#b9d0df;font-size:11px;line-height:1.65;overflow-wrap:anywhere}
+#aiSendLink:disabled{cursor:not-allowed;opacity:.75}
