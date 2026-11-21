@@ -97,6 +97,7 @@
   const visibleJobs = function () {
     const search=$("jobSearch").value.trim().toLowerCase();
     const category=$("categoryFilter").value;
+    const sector=$("sectorFilter").value;
     const location=$("locationFilter").value.toLowerCase();
     const sort=$("sortFilter").value;
     const priorityFilter=$("matchFilter").value;
@@ -104,14 +105,16 @@
       const all=[job.title,job.company,job.location,job.description,job.department,jobCategory(job)]
         .concat(job.skills||[]).join(" ").toLowerCase();
       const loc=String(job.location||"").toLowerCase();
-      const categoryOk=!category||jobCategory(job)===category;
+      const kind=jobCategory(job);
+      const categoryOk=!category||kind===category;
+      const sectorOk=!sector||(sector==="it" ? kind==="IT & Software" : kind!=="IT & Software");
       const locationOk=!location||loc.includes(location)||
         (location==="india" && /india|hyderabad|bengaluru|bangalore|mumbai|delhi|pune|chennai|noida|gurugram|gurgaon|kolkata|ahmedabad|kochi/.test(loc))||
         (location==="bengaluru"&&loc.includes("bangalore"));
       const points=priority(job).score;
       const priorityOk=priorityFilter==="all"||
         (priorityFilter==="below"?points<50:points>=Number(priorityFilter));
-      return (!search||all.includes(search))&&categoryOk&&locationOk&&priorityOk;
+      return (!search||all.includes(search))&&categoryOk&&sectorOk&&locationOk&&priorityOk;
     }).sort(function(a,b){
       if(sort==="priority")return priority(b).score-priority(a).score||
         String(b.addedAt||"").localeCompare(String(a.addedAt||""));
@@ -336,8 +339,8 @@
   document.addEventListener("change", function (e) {
     if (e.target.matches("[data-stage-id]")) setStage(e.target.getAttribute("data-stage-id"), e.target.value);
   });
-  ["jobSearch","categoryFilter","locationFilter","matchFilter","sortFilter"].forEach(function (id) { $(id).addEventListener(id === "jobSearch" ? "input" : "change", renderDiscover); });
-  $("clearFilters").addEventListener("click", function () { $("jobSearch").value = ""; $("categoryFilter").value = ""; $("locationFilter").value = ""; $("matchFilter").value = "all"; renderDiscover(); });
+  ["jobSearch","sectorFilter","categoryFilter","locationFilter","matchFilter","sortFilter"].forEach(function (id) { $(id).addEventListener(id === "jobSearch" ? "input" : "change", renderDiscover); });
+  $("clearFilters").addEventListener("click", function () { $("jobSearch").value = ""; $("categoryFilter").value = ""; $("sectorFilter").value = ""; $("locationFilter").value = ""; $("matchFilter").value = "all"; renderDiscover(); });
   $("mobileMenu").addEventListener("click", function () { const open = $("sidebar").classList.toggle("open"); $("mobileScrim").classList.toggle("show",open); $("mobileMenu").setAttribute("aria-expanded", String(open)); });
   $("mobileScrim").addEventListener("click", hideMobileMenu);
   window.addEventListener("hashchange", function () { showPage(location.hash.replace("#","")); });
