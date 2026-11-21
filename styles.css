@@ -104,3 +104,14 @@
 .ai-email-fallback summary{cursor:pointer;font-size:12px;color:#9ee7d4;padding:6px 0;font-weight:700}
 .ai-email-fallback .panel-desc{margin:9px 0 12px;color:#91b0c3}
 .ai-email-fallback .ai-login-row{margin-top:10px}
+
+/* Phase 4: account-private resume vault and cloud application tracking. */
+.vault-inline,.phase4-sync{margin:15px 0 17px;border:1px solid #31576a;border-radius:14px;background:#14293b;padding:16px;display:flex;flex-direction:column;gap:12px}
+.vault-inline strong,.phase4-sync h2{color:#ecfbf6;font-size:13px;font-weight:750}
+.vault-inline p,.phase4-sync p{font-size:11px;line-height:1.6;color:#afc4d2;margin-top:5px}
+.phase4-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.phase4-actions .btn{font-size:11px;padding:9px 13px}
+.phase4-privacy{color:#859faf!important;font-size:10px!important}
+#vaultStatus[data-state="success"],#cloudTrackingStatus[data-state="success"]{color:#9df1d1}
+#vaultStatus[data-state="error"],#cloudTrackingStatus[data-state="error"]{color:#f4b4a5}
+@media(max-width:650px){.phase4-actions .btn{width:100%;justify-content:center}}
