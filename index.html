@@ -94,7 +94,7 @@
         <section class="panel ai-login" id="aiLogin" hidden>
           <div class="panel-heading"><div><div class="eyebrow">SIGN IN</div><h2>Connect your private Career-Ops account</h2></div></div>
           <p class="panel-desc">Once the separate backend is configured, enter your approved email address. A sign-in link will be sent to your inbox.</p>
-          <div class="ai-login-row"><input type="email" id="aiEmail" autocomplete="email" inputmode="email" placeholder="you@example.com" aria-label="Email address for private AI sign-in"><button class="btn btn-primary" id="aiSendLink" type="button">Email sign-in link</button></div>
+          <div class="ai-login-row"><input type="email" id="aiEmail" autocomplete="email" inputmode="email" placeholder="you@example.com" aria-label="Email address for private AI sign-in"><button class="btn btn-primary" id="aiSendLink" type="button">Email sign-in link</button></div><p id="aiEmailCooldown" class="ai-email-guidance" role="status" aria-live="polite">Request only one sign-in email. If you already have a recent unused link in Gmail, open that link instead of requesting another.</p>
         </section>
         <section id="aiWorkspace" hidden>
           <div class="ai-signed-in">Private session: <strong id="aiSignedUser"></strong> · Resume and generated drafts are not saved to GitHub or the app database.</div>
