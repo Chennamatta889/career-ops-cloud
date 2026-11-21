@@ -154,7 +154,9 @@
     if(!currentUser)return;
     const raw=event.detail?.job;
     if(!raw || !safe(raw.title,160) || !safe(raw.company,130))return;
-    const payload=trackedPayload(raw);
+    // Use a validated key even when the user un-saves a job (stage="").
+    // The unsave operation must DELETE its cloud record, not silently return.
+    const payload=trackedPayload({...raw,stage:raw.stage || "Saved"});
     if(!payload)return;
     status("cloudTrackingStatus","Syncing "+safe(raw.title,65)+"…","loading");
     try {
