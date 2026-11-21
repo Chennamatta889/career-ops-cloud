@@ -13,6 +13,8 @@
   let activeResult = null;
   let reviewReady = false;
   let authCallbackError = "";
+  let googleProviderEnabled = null; // true/false/null: verified/disabled/unknown
+  let googleRedirectStarted = false;
   const siteRedirect = "https://chennamatta889.github.io/career-ops-cloud/";
   const siteOrigin = new URL(siteRedirect).origin;
   const text = (v,n=10000) => typeof v==="string" ? v.trim().slice(0,n) : "";
@@ -128,6 +130,32 @@
     url.searchParams.set("provider","google");
     url.searchParams.set("redirect_to",siteRedirect);
     return url.toString();
+  }
+  async function checkGoogleProvider() {
+    if(!ready) return;
+    const button=byId("aiGoogleSignIn");
+    const help=byId("aiGoogleHelp");
+    help.textContent="Checking whether Google is enabled in Career-Ops Supabase Auth…";
+    button.disabled=true;
+    try{
+      const settings=await api("/auth/v1/settings",{headers:headers()});
+      const enabled=settings?.external?.google;
+      if(enabled===true) {
+        googleProviderEnabled=true;
+        help.textContent="Google Sign-In enabled. Choose the same Gmail account approved for Career-Ops AI Review.";
+      } else if(enabled===false) {
+        googleProviderEnabled=false;
+        help.textContent="Google Sign-In is disabled in the Career-Ops Supabase project. Enable and save Authentication → Sign In / Providers → Google, then reload this page.";
+      } else {
+        googleProviderEnabled=null;
+        help.textContent="Could not verify Google's provider setting. Confirm Google is enabled in Career-Ops Supabase before signing in.";
+      }
+    } catch(_error) {
+      googleProviderEnabled=null;
+      help.textContent="Couldn't check Google provider settings. Google sign-in may still work; verify Supabase Auth settings if it fails.";
+    } finally {
+      button.disabled=googleRedirectStarted || googleProviderEnabled===false;
+    }
   }
   function readUrlSession() {
     const hash=location.hash.startsWith("#") ? new URLSearchParams(location.hash.slice(1)) : null;
@@ -249,12 +277,14 @@
     if (this.disabled) return;
     try {
       const url=googleOAuthUrl();
+      googleRedirectStarted=true;
       this.disabled=true;
       byId("aiGoogleHelp").textContent="Opening Google account selection. Return to Career-Ops after authorizing.";
       status("Redirecting to Google sign-in…");
       location.assign(url);
     } catch(error) {
-      this.disabled=false;
+      googleRedirectStarted=false;
+      this.disabled=googleProviderEnabled===false;
       const message=text(error?.message||error,220);
       byId("aiGoogleHelp").textContent=message;
       status("Unable to start Google Sign-In: "+message);
@@ -262,7 +292,8 @@
   });
   window.addEventListener("pageshow",()=>{
     const button=byId("aiGoogleSignIn");
-    if(button)button.disabled=false;
+    googleRedirectStarted=false;
+    if(button)button.disabled=googleProviderEnabled===false;
   });
   byId("aiSendLink").addEventListener("click",async function(){
     if(emailRequestInFlight)return;
@@ -449,4 +480,5 @@
   prerequisites();
   updateEmailButton();
   refreshAuth();
+  checkGoogleProvider();
 })();
