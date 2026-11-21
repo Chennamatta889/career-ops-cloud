@@ -94,7 +94,7 @@ test("AI Studio file input remains intact until parsing ends on mobile",async()=
   const input=h.el("aiResumeTxtFile");
   input.files=[{name:"my-resume.docx",size:1000}];
   input.value="selected-file";
-  const event=input.listeners.get("change")();
+  const event=input.listeners.get("change").call(input);
   assert.equal(h.navigation,1);
   assert.equal(input.value,"selected-file","file handle must survive async imports");
   assert.equal(input.disabled,true);
