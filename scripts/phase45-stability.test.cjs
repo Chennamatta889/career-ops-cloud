@@ -34,11 +34,11 @@ function dashboardHarness({initialLocal={},feedPromise}={}){
       els.set(id,obj);
     }return els.get(id);
   };
-  const doc={getElementById:el,body:{classList:{add(){},remove(){},toggle(){},contains(){return false}}},querySelectorAll:()=>[],
+  const doc={getElementById:el,querySelectorAll:()=>[],
     querySelector:()=>({querySelector:()=>({innerHTML:""})}),
     addEventListener:(name,fn)=>docListeners.set(name,fn),
     createElement:()=>({click(){},remove(){},setAttribute(){}}),
-    body:{appendChild(){}}
+    body:{appendChild(){},classList:{add(){},remove(){},toggle(){},contains(){return false}}}
   };
   const win={CareerOpsCategories:{
     categories:["IT & Software","Sales & Business","Other"],
