@@ -115,5 +115,5 @@ test("loading a saved resume from REST fills the editor only when requested",asy
   const h=harness();await flush();h.requests.length=0;
   // The private vault loads via a direct user action, not automatic login.
   assert.ok(!h.requests.some(r=>r.url.includes("select=resume_text")));
-  assert.match(script,/async function loadVault\(\)/);
+  assert.match(script,/async function loadVault\(onlyIfEmpty=false\)/);
 });
