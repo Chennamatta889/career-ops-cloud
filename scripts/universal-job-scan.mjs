@@ -162,8 +162,12 @@ export async function scanBoard(source,fetchImpl=fetch){
     const pageSize=100,maxPages=100,results=[];
     for(let page=0;page<maxPages;page++){
       const offset=page*pageSize;
+      // Country filtering is documented by SmartRecruiters and avoids
+      // scanning many thousands of international posts from large employers.
+      // Enable per-source only, preserving existing curated board behavior.
       const url="https://api.smartrecruiters.com/v1/companies/"+source.slug+
-        "/postings?limit="+pageSize+"&offset="+offset;
+        "/postings?limit="+pageSize+"&offset="+offset+
+        (source.indiaOnly===true?"&country=IN":"");
       const data=await limitedJson(url,fetchImpl);
       if(!data||!Array.isArray(data.content)||
          !Number.isSafeInteger(data.totalFound)||data.totalFound<0 ||
@@ -291,9 +295,12 @@ async function main(){
     const fresherFile=process.env.FRESHER_JOB_CANDIDATES_FILE||
       "scripts/india-fresher-candidates.json";
     const fresherCandidates=JSON.parse(readFileSync(fresherFile,"utf8")).candidates;
-    // Fresher employer leads go first but must pass the same India-only,
-    // real-source, 30-day eligibility gates as every other employer.
-    const candidates=[...fresherCandidates,...legacyCandidates];
+    const earlyFile=process.env.ENTRY_JOB_CANDIDATES_FILE||
+      "scripts/india-early-career-candidates.json";
+    const earlyCandidates=JSON.parse(readFileSync(earlyFile,"utf8")).candidates;
+    // Source leads are NOT automatically validated openings: every board
+    // must pass public API, India, real vacancy and 30-day eligibility gates.
+    const candidates=[...earlyCandidates,...fresherCandidates,...legacyCandidates];
     const expansion=await discoverIndiaCandidates({candidates,curatedSources:sources,
       scanBoard,isIndiaLocation,now});
     feed=mergeIndiaCandidates(feed,expansion,balanceJobs);

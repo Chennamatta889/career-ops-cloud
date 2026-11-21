@@ -48,6 +48,13 @@ Reviewed 21 November 2026. Implementation is read-only; not legal advice.
 - National Career Service, AICTE Internship Portal and the official Apprenticeship India website are available as user-initiated **external portals only**. Their postings are not rehosted or counted.
 - The 30-day publication/creation cutoff, India-only location test, URL deduplication and original employer application URLs remain mandatory. Existing user tracked applications and resumes are unchanged.
 
+## Graduate and apprenticeship employer-board leads
+
+- New 15-entry employer candidate list: `scripts/india-early-career-candidates.json`, with public career-board reference URLs and fresher focus. Actual jobs are imported exclusively by direct anonymous employer ATS requests, not by reusing third-party datasets or unlicensed scraped vacancies.
+- Public SmartRecruiters company-postings API supports `country=IN` to reduce global result pagination. Only explicitly `indiaOnly:true` sources use this parameter, followed by the existing local India filter: https://developers.smartrecruiters.com/reference/v1listpostings
+- A candidate board remains unverified until its own public API returns recent India vacancies. Candidate 404, auth requirements, over-budget pages or no recent India openings never create public jobs.
+- Continue requiring the latest 30 calendar days, real employer application URLs, no automatic applications or fees, and no modification of existing users' saved opportunities.
+
 ## Future expansion criteria
 
 Before ingesting more portal postings: (1) document the provider's written API/feed permissions and permitted display use, (2) verify the exact company/source endpoint and public job board, (3) test location, deduplication, pagination and freshness, (4) cap response size and fail without fabricating results, and (5) verify production source health. Do not use unofficial scrape APIs, stealth automation, CAPTCHA bypass, or a logged-in user's session as a replacement for permission.

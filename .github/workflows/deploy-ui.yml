@@ -35,6 +35,7 @@ on:
       - scripts/universal-job-sources.json
       - scripts/india-employer-candidates.json
       - scripts/india-fresher-candidates.json
+      - scripts/india-early-career-candidates.json
       - scripts/india-candidate-expansion.mjs
       - scripts/india-candidate-expansion.test.mjs
       - job-categories.js

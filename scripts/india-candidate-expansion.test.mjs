@@ -9,6 +9,7 @@ const require=createRequire(import.meta.url);
 const {isIndiaLocation}=require("../india-jobs.js");
 const registry=JSON.parse(readFileSync("scripts/india-employer-candidates.json","utf8"));
 const fresherRegistry=JSON.parse(readFileSync("scripts/india-fresher-candidates.json","utf8"));
+const earlyRegistry=JSON.parse(readFileSync("scripts/india-early-career-candidates.json","utf8"));
 const curated=JSON.parse(readFileSync("scripts/universal-job-sources.json","utf8")).sources;
 const fakeResponse=obj=>{
   const bytes=new TextEncoder().encode(JSON.stringify(obj));let done=false;
@@ -147,4 +148,41 @@ test("freshers-focused SmartRecruiters candidate activates only for fresh, India
   assert.equal(out.jobs.length,1);
   assert.equal(out.jobs[0].entry_level,"fresher");
   assert.equal(out.health[0].focus,"fresher");
+});
+
+test("new official early-career employer leads are not enrolled as curated or existing candidates",()=>{
+  assert.equal(earlyRegistry.candidates.length,15);
+  assert.equal(checkCandidateCatalog([
+    ...earlyRegistry.candidates,...fresherRegistry.candidates,...registry.candidates]),true);
+  const active=new Set(curated.map(x=>x.provider+":"+x.slug.toLowerCase()));
+  assert.ok(earlyRegistry.candidates.every(x=>x.focus==="fresher"));
+  assert.ok(earlyRegistry.candidates.every(x=>!active.has(x.provider+":"+x.slug.toLowerCase())));
+  assert.ok(earlyRegistry.candidates.every(x=>x.reference_url.startsWith("https://")));
+  assert.equal(earlyRegistry.candidates.filter(x=>x.indiaOnly===true).length,2);
+});
+test("large global SmartRecruiters employer is queried with India server-side location filter",async()=>{
+  const source=earlyRegistry.candidates.find(x=>x.slug==="AccorHotel");
+  const urls=[];
+  const result=await discoverIndiaCandidates({
+    candidates:[source],curatedSources:[],scanBoard,isIndiaLocation,
+    now:new Date("2026-11-21T08:00:00Z"),
+    fetchImpl:async(url)=>{
+      urls.push(url);
+      const u=new URL(url);
+      assert.equal(u.searchParams.get("country"),"IN");
+      assert.equal(u.searchParams.get("limit"),"100");
+      assert.equal(u.searchParams.get("offset"),"0");
+      return fakeResponse({content:[
+        {id:"744000162000001",name:"Apprentice - Hotel Operations",
+          releasedDate:"2026-11-19T00:00:00Z",location:{city:"Bengaluru",country:"IN"}},
+        {id:"744000162000002",name:"Old Hotel Trainee",
+          releasedDate:"2026-06-12T00:00:00Z",location:{city:"Delhi",country:"IN"}}
+      ],totalFound:2});
+    }
+  });
+  assert.equal(urls.length,1);
+  assert.equal(result.jobs.length,1);
+  assert.equal(result.jobs[0].title,"Apprentice - Hotel Operations");
+  assert.equal(result.report.outdated_excluded,1);
+  assert.equal(result.report.fresher_focus_activated,1);
 });

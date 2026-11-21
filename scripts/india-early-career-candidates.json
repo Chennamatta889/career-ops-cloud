@@ -1,0 +1,129 @@
+{
+  "version": 1,
+  "purpose": "Employer career-board leads with direct public recruiter URLs, primarily observed on India internship, trainee or graduate opportunities. NOT verified active. Only successful public ATS scans with India locations and dated postings in past 30 days may contribute.",
+  "candidate_provenance": "Employer-operated careers pages discovered in public search results, checked 2026-11-21; source URLs are evidence of a board, not evidence of current job freshness.",
+  "candidates": [
+    {
+      "provider": "greenhouse",
+      "slug": "aidashinc",
+      "name": "AiDASH",
+      "sector": "Technology & Services",
+      "focus": "fresher",
+      "reference_url": "https://job-boards.greenhouse.io/aidashinc"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "instead",
+      "name": "Instead",
+      "sector": "Technology & Services",
+      "focus": "fresher",
+      "reference_url": "https://job-boards.greenhouse.io/instead"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "guidepoint",
+      "name": "Guidepoint",
+      "sector": "Technology & Services",
+      "focus": "fresher",
+      "reference_url": "https://job-boards.greenhouse.io/guidepoint"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "artefact",
+      "name": "Artefact",
+      "sector": "Technology & Services",
+      "focus": "fresher",
+      "reference_url": "https://job-boards.greenhouse.io/artefact"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "episodesix",
+      "name": "Episode Six",
+      "sector": "Technology & Services",
+      "focus": "fresher",
+      "reference_url": "https://job-boards.greenhouse.io/episodesix/jobs/6237551004"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "zyngaearlycareers",
+      "name": "Zynga Early Careers",
+      "sector": "Technology & Services",
+      "focus": "fresher",
+      "reference_url": "https://job-boards.greenhouse.io/zyngaearlycareers/jobs/6233109004"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "zyngacareers",
+      "name": "Zynga",
+      "sector": "Technology & Services",
+      "focus": "fresher",
+      "reference_url": "https://job-boards.greenhouse.io/zyngacareers/jobs/6194312004"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "konovo",
+      "name": "Konovo",
+      "sector": "Technology & Services",
+      "focus": "fresher",
+      "reference_url": "https://job-boards.greenhouse.io/konovo/jobs/5455984008"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "knowbe4",
+      "name": "KnowBe4",
+      "sector": "Technology & Services",
+      "focus": "fresher",
+      "reference_url": "https://job-boards.greenhouse.io/knowbe4"
+    },
+    {
+      "provider": "ashby",
+      "slug": "gainsight",
+      "name": "Gainsight",
+      "sector": "Technology & Services",
+      "focus": "fresher",
+      "reference_url": "https://jobs.ashbyhq.com/gainsight/620e6849-061e-415e-8052-887d186cfd1c"
+    },
+    {
+      "provider": "smartrecruiters",
+      "slug": "AccorHotel",
+      "name": "Accor",
+      "sector": "Technology & Services",
+      "focus": "fresher",
+      "reference_url": "https://jobs.smartrecruiters.com/AccorHotel/744000148670199-apprentice-engineering-trainee-",
+      "indiaOnly": true
+    },
+    {
+      "provider": "smartrecruiters",
+      "slug": "SmithsGroup2",
+      "name": "Smiths Group",
+      "sector": "Technology & Services",
+      "focus": "fresher",
+      "reference_url": "https://jobs.smartrecruiters.com/SmithsGroup2/744000146886659-trade-apprentice",
+      "indiaOnly": true
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "onetrust",
+      "name": "OneTrust",
+      "sector": "Technology & Services",
+      "focus": "fresher",
+      "reference_url": "https://job-boards.greenhouse.io/onetrust/jobs/8121683"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "tanium",
+      "name": "Tanium",
+      "sector": "Technology & Services",
+      "focus": "fresher",
+      "reference_url": "https://job-boards.greenhouse.io/tanium/jobs/8176398"
+    },
+    {
+      "provider": "ashby",
+      "slug": "junipersquare",
+      "name": "Juniper Square",
+      "sector": "Technology & Services",
+      "focus": "fresher",
+      "reference_url": "https://jobs.ashbyhq.com/junipersquare/58e050b8-16c6-412b-9ac7-82bbf5a1a765/"
+    }
+  ]
+}
