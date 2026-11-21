@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {mkdtempSync,writeFileSync,rmSync} from "node:fs";
+import {mkdtempSync,writeFileSync,readFileSync,existsSync,rmSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {spawnSync} from "node:child_process";
@@ -10,8 +10,10 @@ function run(feed){
   try{
     const file=join(dir,"jobs.json");
     writeFileSync(file,JSON.stringify(feed));
-    return spawnSync(process.execPath,["scripts/report-published-coverage.mjs",file],
-      {encoding:"utf8",env:{...process.env,GITHUB_STEP_SUMMARY:""}});
+    const output=join(dir,"coverage.json");
+    const result=spawnSync(process.execPath,["scripts/report-published-coverage.mjs",file],
+      {encoding:"utf8",env:{...process.env,GITHUB_STEP_SUMMARY:"",COVERAGE_OUTPUT:output}});
+    return {...result,evidence:existsSync(output)?JSON.parse(readFileSync(output,"utf8")):null};
   }finally{rmSync(dir,{recursive:true,force:true});}
 }
 const jobs=[
@@ -48,4 +50,23 @@ test("non-India or empty feeds cannot produce credible coverage reports",()=>{
   for(const bad of [{...feed(),market:"GLOBAL"}, {...feed(),jobs:[]}]){
     const out=run(bad);assert.notEqual(out.status,0);
   }
+});
+
+test("public evidence is derived from final unique published cards",()=>{
+  const result=run(feed());
+  assert.equal(result.status,0,result.stderr);
+  assert.equal(result.evidence.schema,"careerops.coverage-evidence.v1");
+  assert.equal(result.evidence.market,"IN");
+  assert.equal(result.evidence.published_jobs,3);
+  assert.equal(result.evidence.entry_signals,2);
+  assert.equal(result.evidence.explicit_zero_experience,1);
+  assert.equal(result.evidence.enterprise_coverage.employers_with_published_jobs,2);
+  assert.equal(result.evidence.source_feed,"data/jobs.json");
+  assert.ok(!JSON.stringify(result.evidence).includes("No prior experience required"));
+});
+test("invalid coverage does not emit public evidence",()=>{
+  const bad=feed();bad.scan.candidate_discovery.enterprise_coverage.published_jobs=200;
+  const result=run(bad);
+  assert.notEqual(result.status,0);
+  assert.equal(result.evidence,null);
 });
