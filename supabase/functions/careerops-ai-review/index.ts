@@ -119,7 +119,7 @@ Deno.serve(async (req:Request) => {
       };
       // Gemini 3.8 Flash defaults to medium thinking. Low thinking can reduce
       // latency without weakening factual-grounding instructions.
-      if (/^gemini-3\\.(8|7|6)-flash$/.test(model)) {
+      if (/^gemini-3\.(8|7|6)-flash$/.test(model)) {
         generationConfig.thinkingConfig={thinkingLevel:"low"};
       }
       const api=await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+model+":generateContent",{
@@ -138,7 +138,7 @@ Deno.serve(async (req:Request) => {
       const candidate=result?.candidates?.[0];
       const raw=candidate?.content?.parts?.map((p:{text?:string})=>p.text||"").join("") || "";
       let data:Record<string,unknown>;
-      try { data=JSON.parse(raw.replace(/^\\u0060{3}(?:json)?\\s*|\\s*\\u0060{3}$/g,"")); }
+      try { data=JSON.parse(raw.replace(/^\u0060{3}(?:json)?\s*|\s*\u0060{3}$/g,"")); }
       catch {
         console.warn("Gemini response JSON could not be parsed; finish reason",String(candidate?.finishReason||"unknown"));
         return respond(origin,502,{error:candidate?.finishReason==="MAX_TOKENS"?
