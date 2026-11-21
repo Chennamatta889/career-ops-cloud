@@ -86,15 +86,27 @@ async function limitedJson(url,fetchImpl){
 }
 export async function scanBoard(source,fetchImpl=fetch){
   assertSource(source);
+  if(source.provider==="lever"){
+    // Lever uses a top-level JSON array and supports skip/limit paging.
+    // Page the public board instead of allowing a large employer to exceed
+    // the single-response safety limit. Do not silently truncate job lists.
+    const pageSize=40,maxPages=100,results=[];
+    for(let page=0;page<maxPages;page++){
+      const url="https://api.lever.co/v0/postings/"+source.slug+
+        "?mode=json&skip="+(page*pageSize)+"&limit="+pageSize;
+      const data=await limitedJson(url,fetchImpl);
+      if(!Array.isArray(data))throw Error("Lever employer API response is not a postings array");
+      results.push(...data.map(job=>normalize(source,job)).filter(Boolean));
+      if(data.length<pageSize)return results;
+    }
+    throw Error("Lever employer board exceeds the safe pagination window");
+  }
   const url=source.provider==="greenhouse"?
     "https://boards-api.greenhouse.io/v1/boards/"+source.slug+"/jobs?content=true":
-    source.provider==="lever"?
-      "https://api.lever.co/v0/postings/"+source.slug+"?mode=json":
-      "https://api.ashbyhq.com/posting-api/job-board/"+source.slug;
+    "https://api.ashbyhq.com/posting-api/job-board/"+source.slug;
   const data=await limitedJson(url,fetchImpl);
-  const jobs=source.provider==="lever"?data:data?.jobs;
-  if(!Array.isArray(jobs))throw Error("Employer API response has no valid postings array");
-  return jobs.map(job=>normalize(source,job)).filter(Boolean);
+  if(!data||!Array.isArray(data.jobs))throw Error("Employer API response has no valid postings array");
+  return data.jobs.map(job=>normalize(source,job)).filter(Boolean);
 }
 export function balanceJobs(all){
   // Diversify jobs without imposing an arbitrary publishing limit.
