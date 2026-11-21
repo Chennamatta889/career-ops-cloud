@@ -240,6 +240,15 @@
       "pr": "https://github.com/Chennamatta889/career-ops-cloud/pull/23",
       "head_commit": "67dcde0b828cc01834176ab19ef058749332737e",
       "pending_ci_run": 44964287912
+    },
+    {
+      "phase": 12,
+      "status": "in_progress",
+      "note": "PR #23 merged after CI 44964287912 passed. Public coverage-evidence.json is generated from final deduplicated feed and cross-checked by live smoke. Production deploy 44964319618 waiting; browser QA and independently observed employer counts pending. Do not advance.",
+      "pr": "https://github.com/Chennamatta889/career-ops-cloud/pull/23",
+      "merge_commit": "b35f2fd76dccb2e4a941cba75ca6d1128f26a405",
+      "pr_ci_run": 44964287912,
+      "deployment_run": 44964319618
     }
   ]
 }
