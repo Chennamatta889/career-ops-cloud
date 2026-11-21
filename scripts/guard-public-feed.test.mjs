@@ -37,6 +37,7 @@ test("global-to-India migration compares only previous India's jobs",()=>{
   const old=feed(1000);
   old.market="WORLD";
   old.scan.india_only=false;
+  old.scan.max_job_age_days=undefined;
   old.jobs=old.jobs.map((j,i)=>({...j,location:i<50?"Hyderabad, India":"New York, USA"}));
   assert.equal(judgeFeed(feed(30,1),old).ok,true,
     "expected overseas removals must not block safe migration");
@@ -44,6 +45,7 @@ test("global-to-India migration compares only previous India's jobs",()=>{
     "prior India baseline below 100 is not enough for a reliable outage threshold");
   const oldMixed=feed(1000);
   oldMixed.market="WORLD";oldMixed.scan.india_only=false;
+  oldMixed.scan.max_job_age_days=undefined;
   oldMixed.jobs=oldMixed.jobs.map((j,i)=>({...j,location:i<300?"Hyderabad, India":"New York, USA"}));
   assert.equal(judgeFeed(feed(30,1),oldMixed).ok,true,
     "30-day migration must not compare to worldwide or pre-freshness baselines");
