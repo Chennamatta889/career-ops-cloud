@@ -186,6 +186,15 @@
       "pr": "https://github.com/Chennamatta889/career-ops-cloud/pull/20",
       "prior_deployment_run": "44943592547",
       "prior_browser_qa_run": "44943664793"
+    },
+    {
+      "phase": 12,
+      "status": "in_progress",
+      "note": "Follow-up PR #20 merged after green CI 44949005072. Added published_evidence counts from final deduplicated candidate jobs, including explicit zero-experience roles and employer breakdown. Deployment 44949024361 queued; live QA and actual source-coverage counts pending. Do not advance.",
+      "pr": "https://github.com/Chennamatta889/career-ops-cloud/pull/20",
+      "merge_commit": "a6901f8147a9141ff637bf6db437898bbb9c182f",
+      "pr_ci_run": "44949005072",
+      "deployment_run": "44949024361"
     }
   ]
 }
