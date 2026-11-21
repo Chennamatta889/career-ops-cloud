@@ -49,6 +49,21 @@ test("GitHub Pages packages AI files but does not ship server files or user data
   assert.match(html,/src="\.\/ai-studio\.js"/);
   assert.match(html,/src="\.\/careerops-config\.js"/);
 });
+test("diagnostic checks are authenticated, gated and never disclose secret values",()=>{
+  assert.match(backend,/const user=await getAuthUser\(req\)/);
+  assert.match(backend,/user\.email\.trim\(\)\.toLowerCase\(\)!==approved/);
+  assert.match(backend,/body\.action==="status"/);
+  assert.match(backend,/missing\.push\("GEMINI_API_KEY"\)/);
+  assert.match(backend,/missing\.push\("AI_CALLS_ENABLED"\)/);
+  assert.match(backend,/typeof map\?\.default==="string" \? map\.default/);
+});
+test("AI Studio explains missing resume, description and consent, and probes backend",()=>{
+  for(const id of ["aiResumeCount","aiJdCount","aiChecklist","aiCheckConnection"])
+    assert.match(html,new RegExp('id="'+id+'"'));
+  assert.match(ai,/action:"status"/);
+  assert.match(ai,/before reviewing/i);
+  assert.match(ai,/checkReviewConnection\(token\)/);
+});
 test("AI review does not send applications or persist resume text",()=>{
   assert.doesNotMatch(ai,/localStorage\.setItem\([^\n]*resume/i);
   assert.match(html,/Nothing is submitted automatically/);
