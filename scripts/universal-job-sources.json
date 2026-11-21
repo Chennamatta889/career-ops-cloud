@@ -439,6 +439,42 @@
       "slug": "synergyecp",
       "name": "Synergy ECP",
       "sector": "Technology & Services"
+    },
+    {
+      "name": "GitLab",
+      "provider": "greenhouse",
+      "slug": "gitlab",
+      "sector": "Software Products"
+    },
+    {
+      "name": "Canonical",
+      "provider": "greenhouse",
+      "slug": "canonical",
+      "sector": "Software Products"
+    },
+    {
+      "name": "Cloudflare",
+      "provider": "greenhouse",
+      "slug": "cloudflare",
+      "sector": "Software Products"
+    },
+    {
+      "name": "Braze",
+      "provider": "greenhouse",
+      "slug": "braze",
+      "sector": "Software Products"
+    },
+    {
+      "name": "1Password",
+      "provider": "ashby",
+      "slug": "1password",
+      "sector": "Software Products"
+    },
+    {
+      "name": "Crusoe",
+      "provider": "ashby",
+      "slug": "Crusoe",
+      "sector": "Cloud and AI Infrastructure"
     }
   ]
 }
