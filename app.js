@@ -155,11 +155,17 @@
     showPage(pageFromLocation(),{history:"none",scroll:false});
   };
   const priority = function (job) { return window.CareerOpsMatch.rank(job,state.prefs); };
+  const jobExperience = function(job){
+    const api=window.CareerOpsJobText;
+    return api?.experienceRequirement?.(str(job.requiredExperience)) ||
+      api?.experienceRequirement?.(job.description) || null;
+  };
   const visibleJobs = function () {
     const searchTerms=normalizeSearch($("jobSearch").value).split(" ").filter(Boolean);
     const category=$("categoryFilter").value;
     const sector=$("sectorFilter").value;
     const location=$("locationFilter").value.toLowerCase();
+    const experience=$("experienceFilter").value;
     const sort=$("sortFilter").value;
     const priorityFilter=$("matchFilter").value;
     const jobs=state.jobs.filter(function(job){
@@ -172,11 +178,13 @@
       const locationOk=!location||loc.includes(location)||
         (location==="india" && /india|hyderabad|bengaluru|bangalore|mumbai|delhi|pune|chennai|noida|gurugram|gurgaon|kolkata|ahmedabad|kochi/.test(loc))||
         (location==="bengaluru"&&loc.includes("bangalore"));
+      const experienceOk=!experience||window.CareerOpsJobText?.experienceMatches?.(
+        jobExperience(job)?.label||"",experience);
       const priorityOk=priorityFilter==="all"||function(){
         const points=priority(job).score;
         return priorityFilter==="below"?points<50:points>=Number(priorityFilter);
       }();
-      return searchTerms.every(function(term){return all.includes(term);})&&categoryOk&&sectorOk&&locationOk&&priorityOk;
+      return searchTerms.every(function(term){return all.includes(term);})&&categoryOk&&sectorOk&&locationOk&&experienceOk&&priorityOk;
     });
     if(sort==="variety"){
       // Mix job types instead of letting high-volume IT boards dominate the first cards.
@@ -253,12 +261,15 @@
       '<div class="card-priority-row">'+priorityBadge(j)+
       '<span class="priority-quality">'+escapeHtml(fit.quality)+'</span></div>':"";
     const categoryName=jobCategory(j);
+    const experience=jobExperience(j);
+    const experienceBadge='<span class="job-experience-badge" title="Based on an explicit employer requirement; verify the original posting">Experience: '+
+      escapeHtml(experience?.label||"Not specified")+'</span>';
     const details = '<button class="text-link secondary-link" type="button" data-action="details" data-id="' + escapeHtml(j.id) + '">View details</button>';
     const aiReview = '<button class="text-link open-job-link" type="button" data-action="ai" data-id="' + escapeHtml(j.id) + '">Review with AI</button>';
     const open = url
       ? '<a class="text-link open-job-link" href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer" aria-label="Open job listing for ' + escapeHtml(j.title) + ' at ' + escapeHtml(j.company) + '">Open listing ↗</a>'
       : '<span class="no-url-label">' + (j.demo ? 'Sample job — no link' : 'Posting link unavailable') + '</span>';
-    return '<article class="job-card"><div class="job-card-top"><div class="company-symbol">' + escapeHtml(companyInitials(j.company)) + '</div><button class="save-button ' + (j.stage ? 'saved' : '') + '" data-action="save" data-id="' + escapeHtml(j.id) + '">' + (j.stage ? '✓ Tracking' : '+ Save') + '</button></div>' + ranking + '<h3>' + escapeHtml(j.title) + '</h3><p class="company-line">' + escapeHtml(j.company) + ' · ' + escapeHtml(j.location) + '</p><p class="description">' + escapeHtml(readableJobText(j.description,220) || 'A description is not available in this listing. Open the employer website for details.') + '</p><div class="chip-wrap"><span class="skill-chip category-chip">' + escapeHtml(categoryName) + '</span>' + chips(j.skills) + '</div><div class="card-footer"><span class="job-date">' + escapeHtml(jobSource(j)) + '</span><div class="card-action-group">' + details + aiReview + open + '</div></div></article>';
+    return '<article class="job-card"><div class="job-card-top"><div class="company-symbol">' + escapeHtml(companyInitials(j.company)) + '</div><button class="save-button ' + (j.stage ? 'saved' : '') + '" data-action="save" data-id="' + escapeHtml(j.id) + '">' + (j.stage ? '✓ Tracking' : '+ Save') + '</button></div>' + ranking + '<h3>' + escapeHtml(j.title) + '</h3><p class="company-line">' + escapeHtml(j.company) + ' · ' + escapeHtml(j.location) + '</p><p class="description">' + escapeHtml(readableJobText(j.description,220) || 'A description is not available in this listing. Open the employer website for details.') + '</p><div class="chip-wrap"><span class="skill-chip category-chip">' + escapeHtml(categoryName) + '</span>' + experienceBadge + chips(j.skills) + '</div><div class="card-footer"><span class="job-date">' + escapeHtml(jobSource(j)) + '</span><div class="card-action-group">' + details + aiReview + open + '</div></div></article>';
   };
   const pipelineCount = function (stage) { return state.jobs.filter(function (j) { return j.stage === stage; }).length; };
   const renderOverview = function () {
@@ -296,7 +307,7 @@
     $("loadMoreJobs").textContent="Show more jobs";
     $("resetDiscoverFilters").hidden=!Boolean(
       $("jobSearch").value.trim() || $("sectorFilter").value ||
-      $("categoryFilter").value || $("locationFilter").value ||
+      $("categoryFilter").value || $("locationFilter").value || $("experienceFilter").value ||
       $("matchFilter").value!=="all" || $("sortFilter").value!=="variety"
     );
     $("dataModeTag").textContent = state.mode === "demo" ? "Examples" : state.mode === "live" ? "Published vacancies" : "Your job list";
@@ -344,6 +355,7 @@
     $("dialogEyebrow").textContent = j.demo ? "EXAMPLE LISTING" : "JOB DETAILS";
     $("dialogTitle").textContent = j.title;
     $("dialogMeta").textContent = j.company + " · " + j.location;
+    $("dialogExperience").textContent="Experience required: "+(jobExperience(j)?.label||"Not specified");
     const fullDescription=readableJobText(j.description,6000);
     $("dialogDescription").textContent=fullDescription||
       "A job description is not available. Check the original employer posting for complete requirements.";
@@ -417,7 +429,11 @@
       department:str(j.department).slice(0,130),
       skills: skills.map(str).filter(Boolean).slice(0,12),
       description: readableJobText(str(j.description || j.summary || j.job_description || ""),6000),
-      requiredExperience: str(j.requiredExperience || j.required_experience || j.experience_requirement || "").slice(0,100),
+      requiredExperience: (window.CareerOpsJobText?.experienceRequirement?.(
+        str(j.requiredExperience || j.required_experience || j.experience_requirement || "")
+      ) || window.CareerOpsJobText?.experienceRequirement?.(
+        str(j.description || j.summary || j.job_description || "")
+      ))?.label || "",
       url: safeUrl(j.apply_url || j.job_url || j.url || j.link || j.source_url),
       demo: false, manual: false, source: "import", stage: "",
       addedAt: /^\d{4}-\d{2}-\d{2}/.test(str(j.posted_at||j.published_at||j.addedAt)) ?
@@ -484,7 +500,7 @@
   document.addEventListener("change", function (e) {
     if (e.target.matches("[data-stage-id]")) setStage(e.target.getAttribute("data-stage-id"), e.target.value);
   });
-  ["jobSearch","sectorFilter","categoryFilter","locationFilter","matchFilter","sortFilter"].forEach(function (id) {
+  ["jobSearch","sectorFilter","categoryFilter","locationFilter","experienceFilter","matchFilter","sortFilter"].forEach(function (id) {
     $(id).addEventListener(id==="jobSearch"?"input":"change",function(){
       discoverVisibleCount=DISCOVER_PAGE_SIZE;
       renderDiscover();
@@ -495,6 +511,7 @@
     $("categoryFilter").value="";
     $("sectorFilter").value="";
     $("locationFilter").value="";
+    $("experienceFilter").value="";
     $("matchFilter").value="all";
     $("sortFilter").value="variety";
     discoverVisibleCount=DISCOVER_PAGE_SIZE;
