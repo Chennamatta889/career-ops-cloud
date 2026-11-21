@@ -991,6 +991,8 @@
             return "greenhouse:"+String(parts[0]||"").toLowerCase();
           if(host==="jobs.ashbyhq.com"&&parts.length>=2)
             return "ashby:"+String(parts[0]||"").toLowerCase();
+          if(host==="jobs.lever.co"&&parts.length>=2)
+            return "lever:"+String(parts[0]||"").toLowerCase();
         }catch(_){}
         return "";
       };
