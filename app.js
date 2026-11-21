@@ -66,7 +66,7 @@
     if (toastTimer) clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { el.classList.remove("show"); }, 3500);
   };
-  const pageNames = { overview:"Overview", discover:"Discover jobs", applications:"Applications", resume:"Resume lab", activity:"Activity", settings:"Settings & data" };
+  const pageNames = { overview:"Overview", discover:"Discover jobs", applications:"Applications", resume:"Resume lab", ai:"AI Studio", activity:"Activity", settings:"Settings & data" };
   const hideMobileMenu = function () {
     $("sidebar").classList.remove("open"); $("mobileScrim").classList.remove("show");
     $("mobileMenu").setAttribute("aria-expanded", "false");
@@ -80,7 +80,7 @@
       if (current) el.setAttribute("aria-current", "page"); else el.removeAttribute("aria-current");
     });
     $("currentCrumb").textContent = pageNames[name];
-    if (location.hash !== "#" + name) history.replaceState(null, "", "#" + name);
+    if (location.hash !== "#" + name && !location.hash.startsWith("#access_token=")) history.replaceState(null, "", "#" + name);
     hideMobileMenu();
     window.scrollTo({ top: 0, behavior: "instant" });
   };
@@ -125,10 +125,11 @@
     const url = safeUrl(j.url);
     const fit = priority(j);
     const details = '<button class="text-link secondary-link" type="button" data-action="details" data-id="' + escapeHtml(j.id) + '">Why this priority?</button>';
+    const aiReview = '<button class="text-link open-job-link" type="button" data-action="ai" data-id="' + escapeHtml(j.id) + '">AI review ✧</button>';
     const open = url
       ? '<a class="text-link open-job-link" href="' + escapeHtml(url) + '" rel="noopener noreferrer" aria-label="Open job listing for ' + escapeHtml(j.title) + ' at ' + escapeHtml(j.company) + '">Open listing ↗</a>'
       : '<span class="no-url-label">' + (j.demo ? 'Sample job — no link' : 'Posting link unavailable') + '</span>';
-    return '<article class="job-card"><div class="job-card-top"><div class="company-symbol">' + escapeHtml(companyInitials(j.company)) + '</div><button class="save-button ' + (j.stage ? 'saved' : '') + '" data-action="save" data-id="' + escapeHtml(j.id) + '">' + (j.stage ? '✓ Tracking' : '+ Save') + '</button></div><div class="card-priority-row">' + priorityBadge(j) + '<span class="priority-quality">' + escapeHtml(fit.quality) + '</span></div><h3>' + escapeHtml(j.title) + '</h3><p class="company-line">' + escapeHtml(j.company) + ' · ' + escapeHtml(j.location) + '</p><p class="description">' + escapeHtml(j.description || 'Full requirements are not included in the public scan. Open the listing to review them.') + '</p><div class="chip-wrap">' + chips(j.skills) + '</div><div class="card-footer"><span class="job-date">' + escapeHtml(jobSource(j)) + '</span><div class="card-action-group">' + details + open + '</div></div></article>';
+    return '<article class="job-card"><div class="job-card-top"><div class="company-symbol">' + escapeHtml(companyInitials(j.company)) + '</div><button class="save-button ' + (j.stage ? 'saved' : '') + '" data-action="save" data-id="' + escapeHtml(j.id) + '">' + (j.stage ? '✓ Tracking' : '+ Save') + '</button></div><div class="card-priority-row">' + priorityBadge(j) + '<span class="priority-quality">' + escapeHtml(fit.quality) + '</span></div><h3>' + escapeHtml(j.title) + '</h3><p class="company-line">' + escapeHtml(j.company) + ' · ' + escapeHtml(j.location) + '</p><p class="description">' + escapeHtml(j.description || 'Full requirements are not included in the public scan. Open the listing to review them.') + '</p><div class="chip-wrap">' + chips(j.skills) + '</div><div class="card-footer"><span class="job-date">' + escapeHtml(jobSource(j)) + '</span><div class="card-action-group">' + details + aiReview + open + '</div></div></article>';
   };
   const pipelineCount = function (stage) { return state.jobs.filter(function (j) { return j.stage === stage; }).length; };
   const renderOverview = function () {
@@ -297,6 +298,12 @@
       const id = action.getAttribute("data-id");
       if (action.getAttribute("data-action") === "details") openDetails(id);
       if (action.getAttribute("data-action") === "save") track(id);
+      if (action.getAttribute("data-action") === "ai") {
+        const job = find(id);
+        if (job) window.dispatchEvent(new CustomEvent("careerops:job-selected", {detail:{
+          title:job.title,company:job.company,url:job.url,description:job.description
+        }}));
+      }
     }
   });
   document.addEventListener("change", function (e) {
@@ -310,6 +317,7 @@
   $("openAddJob").addEventListener("click", function () { $("addDialog").showModal(); });
   $("closeDialog").addEventListener("click", function () { $("jobDialog").close(); });
   $("closeAddDialog").addEventListener("click", function () { $("addDialog").close(); });
+  $("dialogAI").addEventListener("click", function () { const job=find(activeJobId); $("jobDialog").close(); if(job) window.dispatchEvent(new CustomEvent("careerops:job-selected",{detail:{title:job.title,company:job.company,url:job.url,description:job.description}})); });
   $("dialogSave").addEventListener("click", function () { if (activeJobId) { track(activeJobId); const j = find(activeJobId); $("dialogSave").textContent = j && j.stage ? "✓ Tracking" : "+ Save job"; } });
   $("addJobForm").addEventListener("submit", function (e) {
     e.preventDefault();
