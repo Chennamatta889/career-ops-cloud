@@ -89,7 +89,8 @@
       ];
       results.push(...await Promise.all(publicChecks));
 
-      const token=await window.CareerOpsAuth?.getAccessToken?.().catch(()=>null);
+      let token=null;
+      try{token=await window.CareerOpsAuth?.getAccessToken?.();}catch(_){}
       if(!token){
         results.push(status("Signed-in session","Sign in with Google from AI Studio to run private checks.","skip"));
         results.push(status("Private resume vault","Not checked without a signed-in account.","skip"));
