@@ -605,6 +605,14 @@
     return j.url || (j.company + "/" + j.title + "/" + j.location).toLowerCase();
   };
   const showFeedStatus = function (kind, title, description) {
+    const discover=$("discoverFeedStatus"),retry=$("retryDiscoverFeed");
+    if(discover){
+      discover.hidden=kind==="success";
+      discover.textContent=kind==="loading"?"Loading employer job cards…":
+        kind==="partial"?"Some employer listings may be unavailable. You can browse the cards already loaded.":
+        kind==="failed"?"Job listings couldn't be loaded. Please try Reload jobs.":"";
+    }
+    if(retry)retry.hidden=kind==="loading"||kind==="success";
     $("feedIndicator").className = "feed-indicator" +
       (kind === "success" ? " ok" : kind === "partial" ? " partial" : kind === "failed" ? " offline" : "");
     const pill=$("headerFeedStatus");
@@ -698,6 +706,7 @@
     }
   };
   $("refreshCloud").addEventListener("click", function () { syncCloudFeed(true); });
+  $("retryDiscoverFeed")?.addEventListener("click",function(){syncCloudFeed(true);});
 
   // Private sync integration: UI-generated statuses are local until signed in.
   // Never allow fake/demo jobs to be uploaded to the private account.
