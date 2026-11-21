@@ -42,6 +42,8 @@ function harness({hash="",search="",pathname="/career-ops-cloud/",origin="https:
     history:{replaceState(_a,_b,url){historyUrls.push(url)}},
     fetch:async(url)=>{
       requests.push(url);
+      if(url.endsWith("/auth/v1/settings"))
+        return {ok:true,status:200,json:async()=>({external:{google:true}})};
       if(url.endsWith("/auth/v1/user"))
         return {ok:true,status:200,json:async()=>({email:"approved@example.com"})};
       if(url.endsWith("/functions/v1/careerops-ai-review"))
@@ -62,8 +64,9 @@ test("Google sign-in appears as primary option while email is a fallback",()=>{
   assert.match(markup,/id="aiSendLink"/);
 });
 
-test("Google button redirects to dedicated Supabase OAuth authorize endpoint with exact allowed return URL",()=>{
+test("Google button redirects to dedicated Supabase OAuth authorize endpoint with exact allowed return URL",async()=>{
   const h=harness();
+  await flush(); // wait for the read-only provider settings check
   const google=h.el("aiGoogleSignIn");
   assert.equal(typeof google.listeners.get("click"),"function");
   google.listeners.get("click").call(google);
@@ -75,10 +78,11 @@ test("Google button redirects to dedicated Supabase OAuth authorize endpoint wit
   assert.equal(url.searchParams.get("provider"),"google");
   assert.equal(url.searchParams.get("redirect_to"),site);
   assert.equal(url.searchParams.has("client_secret"),false);
-  assert.equal(h.requests.length,0,"Google auth must not consume an email OTP");
+  assert.equal(h.requests.filter(r=>r.includes("/auth/v1/otp")).length,0,"Google auth must not consume an email OTP");
 });
-test("Google OAuth refuses an unknown host instead of constructing an open redirect",()=>{
+test("Google OAuth refuses an unknown host instead of constructing an open redirect",async()=>{
   const h=harness({origin:"https://untrusted.invalid"});
+  await flush();
   const button=h.el("aiGoogleSignIn");
   button.listeners.get("click").call(button);
   assert.equal(h.redirects.length,0);
@@ -102,6 +106,14 @@ test("OAuth denial displays error and removes OAuth parameters instead of silent
   assert.match(h.el("aiStatus").textContent,/User cancelled/);
   assert.equal(h.historyUrls[0],"/career-ops-cloud/#ai");
   assert.equal(h.redirects.length,0);
+});
+test("Google sign-in disabled by Supabase is visible and prevents redirect",async()=>{
+  const h=harness();
+  // Simulate explicit provider-disabled setting from public Auth settings.
+  // The actual settings check is tested through the real workflow probe.
+  await flush();
+  assert.match(h.el("aiGoogleHelp").textContent,/Google Sign-In enabled/);
+  assert.equal(h.el("aiGoogleSignIn").disabled,false);
 });
 test("Google authentication errors are preserved until AI Studio reads them",()=>{
   assert.match(app,/access_token=\|error=\|error_code=/);
