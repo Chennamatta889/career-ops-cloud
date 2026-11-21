@@ -1,0 +1,9 @@
+# Career-Ops private AI review
+#
+# JWT gateway verification is off because modern Supabase publishable keys
+# are not legacy JWT keys. The handler itself MUST verify the bearer token
+# using Supabase Auth /auth/v1/user and enforce the ALLOWED_EMAIL allowlist.
+#
+# Do not deploy this function without its explicit application-level checks.
+[functions.careerops-ai-review]
+verify_jwt = false
