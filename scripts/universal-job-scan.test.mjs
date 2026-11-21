@@ -162,3 +162,54 @@ test("Phase 10 expands only known, unique public employer boards",()=>{
   }
   assert.ok(src.sources.length>=60);
 });
+
+
+test("Lever public postings are included without employer credentials or application submissions",async()=>{
+  const board={provider:"lever",slug:"ttecdigital",name:"TTEC Digital"};
+  const jobs=await scanBoard(board,async(url,options)=>{
+    assert.equal(url,"https://api.lever.co/v0/postings/ttecdigital?mode=json");
+    assert.equal(options.method,"GET");
+    assert.equal(options.redirect,"error");
+    return fakeResponse([{
+      id:"93cbd388-4d8c-4f18-ab3c-3e9a76e9f207",
+      text:"Senior Consultant – ServiceNow",
+      categories:{department:"Consulting",location:"Hyderabad, India"},
+      descriptionPlain:"You need 3+ years of ServiceNow engineering experience.",
+      hostedUrl:"https://jobs.lever.co/ttecdigital/93cbd388-4d8c-4f18-ab3c-3e9a76e9f207",
+      createdAt:1784753233000
+    },{
+      id:"a357ccbd-8dd5-49be-8711-0a0499eea924",
+      text:"Salesforce Consultant",
+      categories:{team:"CRM",location:"Remote"},
+      descriptionPlain:"Experience integrating Salesforce with ServiceNow.",
+      hostedUrl:"https://jobs.lever.co/ttecdigital/a357ccbd-8dd5-49be-8711-0a0499eea924"
+    }]);
+  });
+  assert.equal(jobs.length,2);
+  assert.equal(jobs[0].title,"Senior Consultant – ServiceNow");
+  assert.equal(jobs[0].location,"Hyderabad, India");
+  assert.equal(jobs[0].requiredExperience,"3+ years");
+  assert.match(jobs[0].url,/^https:\/\/jobs\.lever\.co\/ttecdigital\//);
+  assert.equal(jobs[0].source,"Lever public board");
+  assert.equal(jobs[0].posted_at,null,"Lever createdAt is not a publication date");
+  assert.equal(jobs[1].title,"Salesforce Consultant");
+  assert.equal(jobs[1].category,"IT & Software");
+});
+test("Lever scan excludes invalid postings and refuses malformed or private API responses",async()=>{
+  const board={provider:"lever",slug:"thinkahead",name:"AHEAD"};
+  const results=await scanBoard(board,async()=>fakeResponse([{
+    id:"fake-uuid-123",text:"ServiceNow Developer",categories:{location:"India"}
+  },{id:"../unsafe",text:"ServiceNow Administrator"},{id:"",text:"Unknown"},{id:"id-ok",text:""}]));
+  assert.deepEqual(results.map(x=>x.title),["ServiceNow Developer"]);
+  await assert.rejects(scanBoard(board,async()=>fakeResponse({jobs:[]})),/postings array/);
+});
+test("ServiceNow-focused public employer source catalog includes supported ATS providers",()=>{
+  const expected=[
+    ["greenhouse","anaplan"],["greenhouse","guidepointsecurity"],
+    ["greenhouse","ltconsulting"],["ashby","rapdev"],["ashby","knox-systems"],
+    ["lever","ttecdigital"],["lever","thinkahead"],["lever","cgsfederal"]
+  ];
+  for(const [provider,slug]of expected)
+    assert.ok(src.sources.some(s=>s.provider===provider&&s.slug===slug),provider+":"+slug);
+  assert.ok(src.sources.length>=74);
+});
