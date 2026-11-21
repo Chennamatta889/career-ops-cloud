@@ -218,6 +218,13 @@
     }
   };
   const renderDiscover = function () {
+    // Personalized score filters should never hide every job when the
+    // candidate hasn't configured a target role/location/skill yet.
+    const hasPreferences=Boolean(
+      state.prefs.roles.trim()||state.prefs.locations.trim()||state.prefs.skills.trim()
+    );
+    $("matchFilter").disabled=!hasPreferences;
+    if(!hasPreferences)$("matchFilter").value="all";
     const jobs = visibleJobs();
     $("jobsGrid").innerHTML = jobs.map(card).join("");
     $("resultsCount").textContent = jobs.length + (jobs.length === 1 ? " job listing" : " job listings");
@@ -466,7 +473,7 @@
   });
   $("resetWorkspace").addEventListener("click", function () {
     if (!confirm("Reset this browser's Career-Ops jobs, statuses and preferences? This cannot be undone.")) return;
-    state = defaultState(); save(); $("importMessage").textContent = "No scanner connected. Import a file to replace sample jobs."; $("resumeFileLabel").textContent = "No file selected"; render(); showPage("overview"); toast("Demo workspace restored");
+    state = defaultState(); save(); $("importMessage").textContent = "No file imported. You can upload job listings in JSON format."; $("resumeFileLabel").textContent = "No file selected"; render(); showPage("overview"); toast("Browser workspace reset. Published job listings will reload."); syncCloudFeed(false);
   });
   $("clearActivity").addEventListener("click", function () {
     if (!state.activity.length) return;
