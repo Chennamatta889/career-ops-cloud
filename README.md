@@ -9,6 +9,14 @@ A standalone experiment running the original [Career-Ops](https://github.com/car
 - To preview locally, clone/download the repository and open index.html in a browser.
 - To enable hosting: open **Settings → Pages → Build and deployment → Source: GitHub Actions**. Then run **Publish Career-Ops dashboard** in the Actions tab, or push an edit to the UI. This is a one-time repository setting.
 
+## Gemini timeout and retry fix (November 21, 2026)
+
+The AI Studio was observed to reach Supabase successfully, then a Gemini generation call took about 42.5 seconds and produced HTTP 502 because the function had a 42-second timeout. The next attempt received HTTP 429 because the original code applied a 60-second cooldown even on failure.
+
+**Fixed in function v7:** provider timeout raised to 100 seconds (below Supabase's request idle timeout); Gemini 3.5 Flash-Lite is the faster default when no GEMINI_MODEL secret overrides it; Gemini 3.8 Flash uses low thinking level; responses are requested more concisely. Rate cooldown is now 20 seconds after a **successful** review only, with no 60-second lockout after failed or timed-out calls. The backend distinguishes provider timeout, quota, malformed JSON, and authentication errors. An in-worker in-flight request guard reduces accidental duplicate requests. AI Studio shows elapsed time and the selected Gemini model in its connection status.
+
+Existing GEMINI_MODEL configuration takes precedence over the faster default. If the connection displays gemini-3.8-flash and generation still times out, the owner can select the faster gemini-3.5-flash-lite by setting GEMINI_MODEL securely in Supabase Edge Function secrets; check model availability and pricing before changing. No automatic repeat requests are made following provider errors to avoid surprise provider charges. AI output must be reviewed and verified.
+
 ## AI Review troubleshooting (November 21, 2026)
 
 The browser now checks the authenticated Supabase Edge Function when AI Studio opens and when **Check AI connection** is selected. The function returns readiness information **only to the email allowlisted account**, never exposing secret values.
