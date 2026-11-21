@@ -4,6 +4,7 @@
  */
 import {createRequire} from "node:module";
 const {isIndiaLocation}=createRequire(import.meta.url)("../india-jobs.js");
+import {MAX_JOB_AGE_DAYS,cutoffDay,hasRecentDate} from "./job-freshness.mjs";
 const site="https://chennamatta889.github.io/career-ops-cloud/";
 const supabase="https://nnhzihcugvifhegsfmua.supabase.co";
 const checks=[
@@ -54,6 +55,10 @@ async function check(item){
     if(data.market!=="IN"||data.scan?.india_only!==true ||
        data.jobs.some(job=>!isIndiaLocation(job?.location)))
       throw Error("Published job feed contains non-India or unverified locations.");
+    if(data.scan?.max_job_age_days!==MAX_JOB_AGE_DAYS ||
+       data.scan?.date_cutoff_utc!==cutoffDay() ||
+       data.jobs.some(job=>!hasRecentDate(job)))
+      throw Error("Published job feed contains old, future or unverified job ages.");
     console.log("India-only postings:",data.jobs.length,"employer boards:",data.scan?.scanned,"categories:",JSON.stringify(data.category_counts),"scan:",data.scan?.status);
   }else{
     const source=await r.text();
