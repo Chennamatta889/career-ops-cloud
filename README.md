@@ -4,7 +4,7 @@
 
 Career-Ops now provides user-initiated, location-aware outbound searches to **Naukri and Indeed India**, plus homepage navigation to **LinkedIn**, in Discover Jobs. These are links, not scraped or imported listings; the portals' APIs and terms do not establish permission for an open read-all-jobs index. No portal login, scraping or automatic applications are added.
 
-Actual indexed employer postings are sourced from selected read-only public Greenhouse, Ashby, Lever, SmartRecruiters, and **Workable** career boards. Eight Workable companies with publicly visible India-facing career pages are newly configured. Workable source failures are reported independently and never turned into fabricated vacancies. Terms, permissions, API references, limitations and expansion criteria: [India job-source policy](docs/INDIA_JOB_SOURCE_POLICY.md).
+Actual indexed employer postings remain sourced from selected read-only Greenhouse, Ashby, Lever and SmartRecruiters career boards. A **Workable public-feed adapter** has been implemented and tested, but the eight selected Workable account endpoints failed from the production runner on November 21, 2026, so those feeds are **not enabled or counted as live sources**. Their original employer career pages are provided as external links instead; no unavailable postings are invented. Terms, permissions, API references, limitations and expansion criteria: [India job-source policy](docs/INDIA_JOB_SOURCE_POLICY.md).
 
 
 ## ServiceNow official employer feed (November 21, 2026)

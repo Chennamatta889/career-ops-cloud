@@ -345,10 +345,15 @@ test("Workable invalid and closed API endpoints cannot create fake postings",asy
   await assert.rejects(scanBoard(source,async()=>fakeResponse({content:[]})),/Workable public employer response is invalid/);
   await assert.rejects(scanBoard(source,async()=>({ok:false,status:403})),/HTTP 403/);
 });
-test("India-focused Workable sources represent verified employer career sites",()=>{
+test("unreachable Workable sources use employer career links instead of false job cards",()=>{
   const names=["mercari-india","capgemini-insurance","unisongroup","prox-works",
     "teleport-careers","updraft","youtrip","zyte"];
-  for(const slug of names)
-    assert.ok(src.sources.some(s=>s.provider==="workable"&&s.slug===slug),slug);
-  assert.ok(src.sources.length>=88);
+  const html=readFileSync("index.html","utf8");
+  for(const slug of names){
+    assert.ok(html.includes('href="https://apply.workable.com/'+slug+'/"'),slug);
+    assert.ok(!src.sources.some(s=>s.provider==="workable"&&s.slug===slug),
+      "Unavailable Workable feeds cannot count as active sources: "+slug);
+  }
+  assert.match(html,/These are original employer boards, not imported job cards/);
+  assert.ok(src.sources.length>=80);
 });
