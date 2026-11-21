@@ -74,7 +74,7 @@ test("saving resume performs an owner-scoped upsert through Supabase REST, not G
   assert.match(p.url,/\/rest\/v1\/careerops_resume_vault\?on_conflict=user_id/);
   const body=JSON.parse(p.body);
   assert.equal(body.user_id,uid);
-  assert.equal(body.resume_text,resume);
+  assert.equal(body.resume_text,resume.trim());
   assert.equal(body.source_filename,"resume.pdf");
   assert.equal(p.headers.Authorization,"Bearer fake-jwt-access-token");
   assert.match(h.el("vaultStatus").textContent,/saved privately/);
