@@ -17,20 +17,21 @@
     { name: "Rejected", color: "#db8994" }
   ];
   const SAMPLE = [
-    { id: "demo-1", title: "DevOps Engineer", company: "Northstar Systems", location: "Hyderabad, India", skills: ["AWS","Jenkins","Docker"], description: "Illustrative opportunity: manage CI/CD pipelines, cloud environments and automated deployments.", url: "", demo: true, stage: "", addedAt: "2026-11-20" },
-    { id: "demo-2", title: "Cloud Engineer", company: "OrbitStack Labs", location: "Remote · India", skills: ["AWS","Terraform","Linux"], description: "Illustrative opportunity: build infrastructure automation and support resilient cloud platforms.", url: "", demo: true, stage: "", addedAt: "2026-11-19" },
-    { id: "demo-3", title: "Site Reliability Engineer", company: "Beacon Cloud", location: "Bengaluru, India", skills: ["Kubernetes","Monitoring","Python"], description: "Illustrative opportunity: strengthen observability, reliability engineering and incident response.", url: "", demo: true, stage: "", addedAt: "2026-11-18" },
-    { id: "demo-4", title: "Platform Engineer", company: "Mosaic Software", location: "Pune, India", skills: ["OpenShift","Docker","GitHub"], description: "Illustrative opportunity: maintain internal developer platforms and delivery tooling.", url: "", demo: true, stage: "", addedAt: "2026-11-17" },
-    { id: "demo-5", title: "AWS DevOps Engineer", company: "Aster Digital", location: "Remote · India", skills: ["EC2","CloudWatch","Jenkins"], description: "Illustrative opportunity: administer AWS services and improve deployment workflows.", url: "", demo: true, stage: "", addedAt: "2026-11-16" },
-    { id: "demo-6", title: "Release Engineer", company: "Pioneer Techworks", location: "Hyderabad, India", skills: ["CI/CD","Artifactory","Bash"], description: "Illustrative opportunity: coordinate releases and maintain build tooling across environments.", url: "", demo: true, stage: "", addedAt: "2026-11-15" }
+    {id:"demo-1",title:"Software Developer",company:"Northstar Systems",location:"Hyderabad, India",skills:["JavaScript","SQL"],description:"Illustrative IT opening for software development and testing.",url:"",demo:true,stage:"",addedAt:"2026-11-20"},
+    {id:"demo-2",title:"Sales Executive",company:"Orbit Commerce",location:"Mumbai, India",skills:["Communication","CRM"],description:"Illustrative non-IT position involving client outreach and sales.",url:"",demo:true,stage:"",addedAt:"2026-11-19"},
+    {id:"demo-3",title:"Customer Support Associate",company:"Beacon Services",location:"Remote, India",skills:["Customer Service"],description:"Illustrative customer service and operations role.",url:"",demo:true,stage:"",addedAt:"2026-11-18"},
+    {id:"demo-4",title:"Financial Accountant",company:"Mosaic Finance",location:"Delhi, India",skills:["Excel","Accounting"],description:"Illustrative finance and reporting role.",url:"",demo:true,stage:"",addedAt:"2026-11-17"},
+    {id:"demo-5",title:"HR Recruiter",company:"Aster Talent",location:"Bengaluru, India",skills:["Recruiting"],description:"Illustrative HR position coordinating interviews and hiring.",url:"",demo:true,stage:"",addedAt:"2026-11-16"},
+    {id:"demo-6",title:"Warehouse Operations Coordinator",company:"Pioneer Logistics",location:"Chennai, India",skills:["Logistics"],description:"Illustrative logistics and inventory role.",url:"",demo:true,stage:"",addedAt:"2026-11-15"}
   ];
-  const DEFAULT_PREFS = {
-    roles: "DevOps Engineer, Cloud Engineer, Site Reliability Engineer, Platform Engineer",
-    locations: "Hyderabad, Bengaluru, Remote India",
-    experience: "2–4 years",
-    skills: "AWS, Jenkins, OpenShift, Docker, Kubernetes, Terraform, JFrog, Dynatrace"
-  };
+  const DEFAULT_PREFS = {roles:"",locations:"",experience:"",skills:""};
   const $ = function (id) { return document.getElementById(id); };
+  const categoryApi=window.CareerOpsCategories;
+  const jobCategory=function(j){
+    const provided=typeof j?.category==="string"?j.category:"";
+    if(categoryApi?.categories?.includes(provided))return provided;
+    return categoryApi?.classify?.(String(j?.title||""),String(j?.department||""))||"Other";
+  };
   const copy = function (x) { return JSON.parse(JSON.stringify(x)); };
   const escapeHtml = function (v) { return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]; }); };
   const safeUrl = function (v) { try { const u = new URL(String(v)); return (u.protocol === "http:" || u.protocol === "https:") ? u.href : ""; } catch (_) { return ""; } };
@@ -47,7 +48,7 @@
       return {
         mode: ["imported","manual","live"].includes(x.mode) ? x.mode : "demo",
         jobs: x.jobs.slice(0,500).map(function (j) {
-          return { id: str(j.id) || newId(), title: str(j.title), company: str(j.company), location: str(j.location), skills: Array.isArray(j.skills) ? j.skills.slice(0,12).map(str) : [], description: str(j.description), url: safeUrl(j.url), demo: !!j.demo, manual: !!j.manual || (x.mode === "manual" && !j.demo), source: str(j.source), requiredExperience: str(j.requiredExperience), stage: STAGES.some(function (s) { return s.name === j.stage; }) ? j.stage : "", addedAt: str(j.addedAt) };
+          return { id: str(j.id) || newId(), title: str(j.title), company: str(j.company), location: str(j.location), category:jobCategory(j), department:str(j.department), skills: Array.isArray(j.skills) ? j.skills.slice(0,12).map(str) : [], description: str(j.description), url: safeUrl(j.url), demo: !!j.demo, manual: !!j.manual || (x.mode === "manual" && !j.demo), source: str(j.source), requiredExperience: str(j.requiredExperience), stage: STAGES.some(function (s) { return s.name === j.stage; }) ? j.stage : "", addedAt: str(j.addedAt) };
         }),
         prefs: Object.assign({}, DEFAULT_PREFS, x.prefs || {}),
         activity: Array.isArray(x.activity) ? x.activity.slice(0,100) : [],
@@ -257,6 +258,8 @@
     return {
       id: newId(), title: title.slice(0,160), company: company.slice(0,120),
       location: str(locationValue).slice(0,120) || "Not specified",
+      category:jobCategory({title,category:j.category,department:j.department}),
+      department:str(j.department).slice(0,130),
       skills: skills.map(str).filter(Boolean).slice(0,12),
       description: str(j.description || j.summary || j.job_description || "").slice(0,3000),
       requiredExperience: str(j.requiredExperience || j.required_experience || j.experience_requirement || "").slice(0,100),
@@ -341,7 +344,7 @@
     const rawUrl = str(form.get("url"));
     const url = safeUrl(rawUrl);
     if (rawUrl && !url) { toast("Please enter a valid http(s) job URL"); return; }
-    const job = { id:newId(),title:title.slice(0,160),company:company.slice(0,120),location:str(form.get("location")) || "Not specified",skills:str(form.get("skills")).split(",").map(function (s) { return s.trim(); }).filter(Boolean).slice(0,12),description:str(form.get("description")),url:url,demo:false,manual:true,source:"manual",stage:"Saved",addedAt:stamp() };
+    const job = { id:newId(),title:title.slice(0,160),company:company.slice(0,120),location:str(form.get("location")) || "Not specified",category:jobCategory({title}),skills:str(form.get("skills")).split(",").map(function (s) { return s.trim(); }).filter(Boolean).slice(0,12),description:str(form.get("description")),url:url,demo:false,manual:true,source:"manual",stage:"Saved",addedAt:stamp() };
     if (state.mode === "demo") state.jobs = state.jobs.filter(function (j) { return !j.demo; });
     state.jobs.unshift(job); if (state.mode !== "live") state.mode = "manual";
     log("Opportunity added", title + " · " + company);
