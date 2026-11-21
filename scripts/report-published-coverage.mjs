@@ -75,7 +75,7 @@ const evidence={
   note:"Employer and fresher counts are evidence-based signals, not guaranteed hiring eligibility."
 };
 if(process.env.COVERAGE_OUTPUT)
-  writeFileSync(process.env.COVERAGE_OUTPUT,JSON.stringify(evidence,null,2)+"\\n");
-const report=lines.join("\\n")+"\\n";
+  writeFileSync(process.env.COVERAGE_OUTPUT,JSON.stringify(evidence,null,2)+"\n");
+const report=lines.join("\n")+"\n";
 process.stdout.write(report);
 if(process.env.GITHUB_STEP_SUMMARY)appendFileSync(process.env.GITHUB_STEP_SUMMARY,report);
