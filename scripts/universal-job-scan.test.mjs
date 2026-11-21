@@ -306,7 +306,7 @@ test("real ServiceNow company source is configured separately from ServiceNow co
 test("Workable public employer feed imports published India roles using official links",async()=>{
   const source={provider:"workable",slug:"mercari-india",name:"Mercari India"};
   const result=await scanBoard(source,async(url,opts)=>{
-    assert.equal(url,"https://www.workable.com/api/accounts/mercari-india?details=true");
+    assert.equal(url,"https://apply.workable.com/api/v1/widget/accounts/mercari-india?details=true");
     assert.equal(opts.method,"GET");assert.equal(opts.redirect,"error");
     return fakeResponse({name:"Mercari, Inc. (India)",jobs:[
       {shortcode:"3C538C2CA4",title:"Software Engineer, Platform Engineering",
@@ -410,4 +410,38 @@ test("all-global job boards remain healthy but publish zero India jobs",async()=
   assert.equal(feed.jobs.length,0);
   assert.equal(feed.source_health[0].count,0);
   assert.equal(feed.source_health[0].scanned_count,2);
+});
+
+test("Recruitee anonymous careers-site offers normalize only real public postings",async()=>{
+  const company={provider:"recruitee",slug:"examplecompany",name:"Example Company"};
+  const res=await scanBoard(company,async(url,opts)=>{
+    assert.equal(url,"https://examplecompany.recruitee.com/api/offers/");
+    assert.equal(opts.method,"GET");assert.equal(opts.redirect,"error");
+    return fakeResponse({offers:[
+      {id:123,slug:"platform-engineer-123",title:"Platform Engineer",
+        locations:[{city:"Hyderabad",country:"India"}],department:"Engineering",
+        description:"<p>Maintain cloud infrastructure</p>",published_at:"2026-11-20T00:00:00Z"},
+      {slug:"sales-manager-456",position:"Sales Manager",city:"London",country:"UK"},
+      {slug:"../../malicious",title:"Fake posting",city:"Bengaluru",country:"India"},
+      {id:456,title:"No public careers slug",country:"India"}
+    ]});
+  });
+  assert.equal(res.length,2);
+  assert.equal(res[0].title,"Platform Engineer");
+  assert.equal(res[0].location,"Hyderabad, India");
+  assert.equal(res[0].company,"Example Company");
+  assert.equal(res[0].posted_at,"2026-11-20");
+  assert.equal(res[0].source,"Recruitee public board");
+  assert.equal(res[0].url,"https://examplecompany.recruitee.com/o/platform-engineer-123");
+  const feed=await runScan({sources:[company],fetchImpl:async()=>fakeResponse({offers:[
+    {slug:"platform-engineer-123",title:"Platform Engineer",locations:[{city:"Hyderabad",country:"India"}]},
+    {slug:"sales-manager-456",title:"Sales Manager",city:"London",country:"UK"}
+  ]})});
+  assert.equal(feed.jobs.length,1);
+  assert.equal(feed.market,"IN");
+});
+test("Recruitee malformed responses do not generate invented vacancies",async()=>{
+  const source={provider:"recruitee",slug:"examplecompany",name:"Example Company"};
+  await assert.rejects(scanBoard(source,async()=>fakeResponse({jobs:[]})),/Recruitee public offers response is invalid/);
+  await assert.rejects(scanBoard(source,async()=>({ok:false,status:403})),/HTTP 403/);
 });
