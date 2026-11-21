@@ -321,3 +321,30 @@ a:focus-visible,button:focus-visible,[role="button"]:focus-visible{outline:2px s
   .topbar .sync-pill{display:none}
   #currentCrumb{max-width:120px}
 }
+
+/* Clean rich-text excerpts from employer ATS pages. Source HTML is converted
+   into plain text before rendering, never inserted as executable markup. */
+.job-description-readable{
+  white-space:pre-line;
+  overflow-wrap:anywhere;
+  word-break:normal;
+  line-height:1.75;
+  font-size:12px;
+  max-width:100%;
+}
+.dialog-description-note{
+  color:#9cb8c8;
+  font-size:11px;
+  line-height:1.55;
+  margin:-6px 0 20px;
+}
+.priority-explanation[hidden]{display:none!important}
+.job-card .description{
+  overflow-wrap:anywhere;
+  white-space:normal;
+}
+@media(max-width:650px){
+  .job-dialog{width:min(96vw,530px);max-height:92dvh}
+  .dialog-inner{padding:24px 18px}
+  .job-description-readable{font-size:12px}
+}
