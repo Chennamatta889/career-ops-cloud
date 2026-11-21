@@ -167,7 +167,7 @@ test("Phase 10 expands only known, unique public employer boards",()=>{
 test("Lever public postings are included without employer credentials or application submissions",async()=>{
   const board={provider:"lever",slug:"ttecdigital",name:"TTEC Digital"};
   const jobs=await scanBoard(board,async(url,options)=>{
-    assert.equal(url,"https://api.lever.co/v0/postings/ttecdigital?mode=json");
+    assert.equal(url,"https://api.lever.co/v0/postings/ttecdigital?mode=json&skip=0&limit=40");
     assert.equal(options.method,"GET");
     assert.equal(options.redirect,"error");
     return fakeResponse([{
@@ -219,4 +219,27 @@ test("ServiceNow-focused public employer source catalog includes supported ATS p
   for(const [provider,slug]of expected)
     assert.ok(src.sources.some(s=>s.provider===provider&&s.slug===slug),provider+":"+slug);
   assert.ok(src.sources.length>=74);
+});
+
+test("large Lever employer feeds are paginated without silently skipping ServiceNow jobs",async()=>{
+  const board={provider:"lever",slug:"cgsfederal",name:"Contact Government Services"};
+  const visited=[];
+  const fakePosting=i=>({
+    id:"id"+String(i).padStart(6,"0"),
+    text:i===48?"ServiceNow Developer":"Information Technology Consultant "+i,
+    categories:{location:"United States"},
+    descriptionPlain:"Engineering applications and infrastructure."
+  });
+  const jobs=await scanBoard(board,async(url,opts)=>{
+    assert.equal(opts.method,"GET");
+    const u=new URL(url);
+    visited.push(Number(u.searchParams.get("skip")));
+    assert.equal(u.searchParams.get("limit"),"40");
+    const start=Number(u.searchParams.get("skip"));
+    return fakeResponse(Array.from({length:Math.max(0,Math.min(40,93-start))},(_,i)=>fakePosting(start+i)));
+  });
+  assert.deepEqual(visited,[0,40,80]);
+  assert.equal(jobs.length,93);
+  assert.ok(jobs.some(j=>j.title==="ServiceNow Developer"));
+  assert.ok(jobs.every(j=>j.url.startsWith("https://jobs.lever.co/cgsfederal/")));
 });
