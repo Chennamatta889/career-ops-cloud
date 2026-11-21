@@ -40,7 +40,7 @@ function dashboardHarness({initialLocal={},feedPromise}={}){
     createElement:()=>({click(){},remove(){},setAttribute(){}}),
     body:{appendChild(){},classList:{add(){},remove(){},toggle(){},contains(){return false}}}
   };
-  const win={CareerOpsJobText:require("../job-text.js"),CareerOpsApplicationEmail:require("../application-email.js"),CareerOpsCategories:{
+  const win={CareerOpsJobText:require("../job-text.js"),CareerOpsApplicationEmail:require("../application-email.js"),CareerOpsJobSearch:require("../job-search.js"),CareerOpsCategories:{
     categories:["IT & Software","Sales & Business","Other"],
     classify:(title)=>/software|developer|devops/i.test(title)?"IT & Software":/sales/i.test(title)?"Sales & Business":"Other"
   },CareerOpsMatch:{
@@ -267,7 +267,7 @@ test("Phase 6 Discover view shows cards, not public job totals, and mixes job ty
     assert.ok(html.includes('id="'+legacyId+'" hidden'),
       "legacy scripts must find an invisible compatibility element");
   }
-  assert.ok(html.includes("app.js?v=20261121-phase08-10-v1"));
+  assert.ok(html.includes("app.js?v=20261121-search-relevance-v1"));
   assert.ok(html.includes("styles.css?v=20261121-phase08-10-v1"));
   assert.ok(html.includes('id="discoverFeedStatus"'));
   assert.ok(html.includes('id="retryDiscoverFeed"'));
@@ -506,4 +506,55 @@ test("Phase 08 email and listing warnings have stable HTML targets, no Gmail per
   assert.ok(html.includes("application-email.js?v=20261121-phase08-10-v1"));
   assert.match(html,/aria-live="polite"/);
   assert.doesNotMatch(html,/gmail\.readonly|gmail\.modify/);
+});
+
+test("ServiceNow keyword returns ServiceNow job, not Salesforce title mentioning ServiceNow",async()=>{
+  const feed={schema:"careerops.public-jobs.v1",generated_at:"2026-11-21T10:00:00Z",
+    scan:{status:"success",scanned:3,found:3,error_count:0},
+    jobs:[
+      {title:"Salesforce Administrator",company:"CRM Company",location:"India",
+        url:"https://example.com/sf",description:"Support CRM integrations with ServiceNow."},
+      {title:"ServiceNow Developer",company:"IT Services",location:"Hyderabad",
+        url:"https://example.com/sn",description:"Build ITSM workflows."},
+      {title:"Cloud Engineer",company:"Cloud Company",location:"Pune",
+        url:"https://example.com/cloud",skills:["AWS","Jenkins"]}
+    ]};
+  const h=dashboardHarness({feedPromise:Promise.resolve({ok:true,json:async()=>feed})});
+  await tick();await tick();
+  h.el("jobSearch").value="ServiceNow";
+  h.el("jobSearch").listeners.get("input")();
+  assert.match(h.el("jobsGrid").innerHTML,/ServiceNow Developer/);
+  assert.doesNotMatch(h.el("jobsGrid").innerHTML,/Salesforce Administrator/);
+  assert.equal(h.el("searchDescriptions").checked,false);
+  h.el("searchDescriptions").checked=true;
+  h.el("searchDescriptions").listeners.get("change")();
+  const cards=h.el("jobsGrid").innerHTML;
+  assert.match(cards,/ServiceNow Developer/);
+  assert.match(cards,/Salesforce Administrator/);
+  assert.match(cards,/Mentioned in description/);
+  assert.ok(cards.indexOf("ServiceNow Developer")<cards.indexOf("Salesforce Administrator"),
+    "explicit job title matches must outrank description-only mentions");
+  h.el("resetDiscoverFilters").listeners.get("click")();
+  assert.equal(h.el("searchDescriptions").checked,false);
+  assert.equal(h.el("jobSearch").value,"");
+});
+test("Salesforce keyword excludes unrelated ServiceNow roles and strict search preserves skill filtering",async()=>{
+  const h=dashboardHarness();h.auth(USER_A);
+  h.window.CareerOpsDashboard.mergeRemoteTracking([
+    {job_key:"https://example.com/sf",job_url:"https://example.com/sf",
+      title:"Salesforce Engineer",company:"CRM",stage:"Saved",location:"Remote"},
+    {job_key:"https://example.com/sn",job_url:"https://example.com/sn",
+      title:"ServiceNow Developer",company:"ITSM",stage:"Saved",location:"India"}
+  ]);
+  h.el("jobSearch").value="salesforce";
+  h.el("jobSearch").listeners.get("input")();
+  assert.match(h.el("jobsGrid").innerHTML,/Salesforce Engineer/);
+  assert.doesNotMatch(h.el("jobsGrid").innerHTML,/ServiceNow Developer/);
+});
+test("role search UI is explicit and preserves opt-in description matching",()=>{
+  const html=fs.readFileSync(path.resolve(__dirname,"../index.html"),"utf8");
+  assert.match(html,/id="searchDescriptions"/);
+  assert.match(html,/id="emptyJobsHint"/);
+  assert.match(html,/job-search\.js\?v=20261121-search-relevance-v1/);
+  assert.doesNotMatch(html,/id="searchDescriptions" checked/);
 });
