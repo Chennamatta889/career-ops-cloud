@@ -64,6 +64,7 @@ function createHarness(initialHash="#overview"){
   const window={
     CareerOpsCategories:{categories:["IT & Software","Other"],classify:()=>"Other"},
     CareerOpsJobText:require("../job-text.js"),
+    CareerOpsJobSearch:require("../job-search.js"),
     CareerOpsMatch:{
       rank:()=>({score:0,quality:"Limited evidence",role:{points:0,detail:"Unknown"},
         location:{points:0,detail:"Unknown"},skills:{points:0,detail:"Unknown"},
