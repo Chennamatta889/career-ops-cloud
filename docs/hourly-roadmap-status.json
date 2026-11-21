@@ -1,8 +1,8 @@
 {
   "schema": "careerops.hourly-roadmap.v1",
   "project": "Career-Ops, India-only, free-API job discovery",
-  "active_phase": 10,
-  "last_completed_phase": 9,
+  "active_phase": 11,
+  "last_completed_phase": 10,
   "verification_required": [
     "PR regression tests pass",
     "production GitHub Pages deployment succeeds",
@@ -35,8 +35,17 @@
     {
       "number": 10,
       "title": "Job source optimization and invalid API quarantine",
-      "status": "pending",
-      "definition_of_done": "Track provider errors, quarantine repeatedly failing boards, prefer working India boards, keep public feed guard and 30-day freshness, add tests and live metrics"
+      "status": "completed",
+      "definition_of_done": "Track provider errors, quarantine repeatedly failing boards, prefer working India boards, keep public feed guard and 30-day freshness, add tests and live metrics",
+      "verified_at": "2026-11-21T18:01:00Z",
+      "evidence": {
+        "pr": "https://github.com/Chennamatta889/career-ops-cloud/pull/15",
+        "commit": "9cb6533a6167eaaa465bbcfe9b9e44b5c8f74ccd",
+        "pr_ci_run": "44932669847",
+        "deployment_run": "44932696782",
+        "live_browser_qa_run": "44932805024",
+        "note": "Production deploy and smoke passed; real Chromium desktop/mobile QA passed. Candidate health outcomes persisted in public feed and retries are bounded; actual post-deploy board counts not independently read."
+      }
     },
     {
       "number": 11,
@@ -82,6 +91,16 @@
         44927334821,
         44927422154,
         44927516917
+      ]
+    },
+    {
+      "phase": 10,
+      "status": "completed",
+      "note": "Repeated failed candidate endpoints quarantined after two failures with automatic retry, previously published health reused; PR tests, deployment and live browser QA passed.",
+      "run_ids": [
+        44932669847,
+        44932696782,
+        44932805024
       ]
     }
   ]
