@@ -45,7 +45,7 @@ test("the deployed function requires a real Supabase user JWT at the gateway",()
   assert.match(backend,/getAuthUser\(req\)/);
 });
 test("GitHub Pages packages AI files but does not ship server files or user data",()=>{
-  assert.match(workflow,/cp index\.html styles\.css match-engine\.js careerops-config\.js app\.js resume-parser\.js ai-studio\.js private-workspace\.js health-check\.js public\//);
+  assert.match(workflow,/cp index\.html styles\.css match-engine\.js job-categories\.js careerops-config\.js app\.js resume-parser\.js ai-studio\.js private-workspace\.js health-check\.js public\//);
   assert.doesNotMatch(workflow,/cp .*supabase\/functions/);
   assert.match(html,/src="\.\/ai-studio\.js"/);
   assert.match(html,/src="\.\/careerops-config\.js"/);
