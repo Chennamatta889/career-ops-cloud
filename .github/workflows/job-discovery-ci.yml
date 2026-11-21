@@ -9,6 +9,9 @@ on:
       - 'job-search.js'
       - 'external-job-search.js'
       - 'scripts/external-job-search.test.cjs'
+      - 'scripts/enterprise-careers.test.cjs'
+      - 'scripts/ai-studio.test.cjs'
+      - '.github/workflows/deploy-ui.yml'
       - 'index.html'
       - 'scripts/job-search.test.cjs'
       - 'job-categories.js'
@@ -18,6 +21,7 @@ on:
     branches:
       - 'fix/servicenow-smartrecruiters-india-20261121'
       - 'feat/india-job-portals-workable-20261121'
+      - 'fix/india-source-release-tests-20261121'
 
 permissions:
   contents: read
@@ -38,4 +42,4 @@ jobs:
           node --check job-search.js
           node --check external-job-search.js
           node --check scripts/job-search.test.cjs
-          node --test scripts/universal-job-scan.test.mjs scripts/job-search.test.cjs scripts/external-job-search.test.cjs
+          node --test scripts/universal-job-scan.test.mjs scripts/job-search.test.cjs scripts/external-job-search.test.cjs scripts/ai-studio.test.cjs scripts/enterprise-careers.test.cjs
