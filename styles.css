@@ -411,3 +411,26 @@ a:focus-visible,button:focus-visible,[role="button"]:focus-visible{outline:2px s
 .search-scope-tip{font-size:11px;color:#94b0bf}
 .description-search-tag{display:inline-flex;align-items:center;border:1px dashed #77879d;border-radius:8px;padding:5px 8px;font-size:11px;color:#bed4e3}
 @media(max-width:600px){.search-scope{align-items:flex-start;flex-direction:column;gap:7px}.search-scope label{max-width:100%}}
+
+/* Phase 10B — clearly separate official career portals from confirmed job cards. */
+.enterprise-directory{margin:14px 0 20px;background:#122a3e;border:1px solid #386277;border-radius:16px;padding:15px 17px}
+.enterprise-directory>summary{cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:46px;list-style:none}
+.enterprise-directory>summary::-webkit-details-marker{display:none}
+.enterprise-directory>summary>span:first-child{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.enterprise-directory>summary strong{font-size:15px;color:#f1fafb}
+.enterprise-directory>summary small{color:#b9d1dd;font-size:11px;line-height:1.5;font-weight:450}
+.enterprise-directory-count{display:inline-flex;align-items:center;white-space:nowrap;color:#c9e5d9;font-size:11px;padding:6px 9px;border:1px solid #4a7169;border-radius:9px}
+.enterprise-directory-disclaimer{font-size:12px;line-height:1.6;color:#c5d6dd;margin:14px 0}
+.enterprise-career-controls{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin:8px 0 13px}
+.enterprise-career-controls label{display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:650;color:#d7e6eb}
+.enterprise-career-controls input,.enterprise-career-controls select{width:100%;min-width:0;background:#0c2334;color:#e7f4f4;border:1px solid #527585;border-radius:9px;min-height:38px;padding:8px}
+.enterprise-career-controls :is(input,select):focus-visible,.enterprise-directory>summary:focus-visible{outline:2px solid #75ebcb;outline-offset:2px}
+#enterpriseCareerStatus{font-size:11px;color:#aac6d4;margin:5px 0 10px}
+.enterprise-career-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;max-height:350px;overflow-y:auto;overscroll-behavior:contain;padding:2px}
+.enterprise-career-card{padding:12px;background:#183649;border:1px solid #3b5868;border-radius:12px;min-width:0}
+.enterprise-career-card strong{display:block;font-size:13px;color:#eaf7f9;overflow-wrap:anywhere}
+.enterprise-career-card p{font-size:11px;color:#acc7d4;margin:6px 0;line-height:1.5}
+.enterprise-career-card .enterprise-career-note{color:#c6d7dc}
+.enterprise-career-card a{display:inline-block;font-size:12px;line-height:1.55;margin-top:4px}
+@media(max-width:920px){.enterprise-career-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.enterprise-directory{padding:12px}.enterprise-directory>summary{align-items:flex-start;flex-wrap:wrap}.enterprise-career-controls{grid-template-columns:1fr}.enterprise-career-grid{grid-template-columns:1fr;max-height:320px}.enterprise-directory-count{align-self:flex-start}}
