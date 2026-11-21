@@ -9,7 +9,7 @@ Reviewed 21 November 2026. Implementation is read-only; not legal advice.
 | Naukri | User-initiated outbound role/location search only | No verified public, general-purpose job-search API; get permission or a commercial feed agreement before ingestion. |
 | LinkedIn Jobs | Homepage navigation only; users search Jobs directly on LinkedIn | LinkedIn's published Job Posting API is for approved posting partners, not anonymous cross-employer job search; its user agreement restricts unapproved scraping. |
 | Indeed India | User-initiated outbound role/location search only | The Job Sync API is an ATS/employer-partner publishing/management API, not a public read-all-jobs search API; unapproved automated extraction is restricted. |
-| Official employer ATS | Selected public, read-only postings | Greenhouse, Ashby, Lever and SmartRecruiters already supported; new Workable boards added using its documented published-jobs API. |
+| Official employer ATS | Selected public, read-only postings | Greenhouse, Ashby, Lever and SmartRecruiters are active; a Workable adapter exists but its eight proposed feeds failed to connect and are not activated. |
 
 ### Documentation and policy references
 
@@ -26,8 +26,8 @@ Reviewed 21 November 2026. Implementation is read-only; not legal advice.
 ## Implementation
 
 - The website provides **user-initiated search links** for Naukri and Indeed. A visitor's role keyword and selected India location are encoded into those outgoing links. LinkedIn opens its homepage only; users search Jobs there themselves because its agreement restricts unapproved deep-linking. No extraction, authentication or server requests to those portals occur. Sector/experience/priority filters are NOT transferred. A portal may ignore or change its query URL.
-- Workable is supported via its documented `GET https://www.workable.com/api/accounts/{subdomain}?details=true` public endpoint (no token). Only employer-supplied public fields are transformed and published. The 8 newly selected employer boards are Mercari India, Capgemini Insurance, Unison Group, Proximity Works, Teleport, Updraft, YouTrip and Zyte. Their public company pages showed India-facing opportunities when reviewed; individual posts can close.
-- Each Workable posting links to `https://apply.workable.com/{subdomain}/j/{shortcode}/`. If its account API fails or the JSON is invalid, mark that board unavailable; never fabricate postings.
+- A Workable adapter supports its documented `GET https://www.workable.com/api/accounts/{subdomain}?details=true` public endpoint (no token). However, all eight proposed sources failed with `fetch failed` from GitHub Actions on November 21, 2026. They are not active scanned boards and their listings are not represented as indexed jobs. Instead, Career-Ops links to the original employer career pages for Mercari India, Capgemini Insurance, Unison Group, Proximity Works, Teleport, Updraft, YouTrip and Zyte. Do not enable the scanner boards until access, permission and reliable retrieval are verified.
+- If an authorized Workable source is activated later, each posting must link to `https://apply.workable.com/{subdomain}/j/{shortcode}/`. If its account API fails or the JSON is invalid, mark that board unavailable; never fabricate postings.
 - The source catalog remains a **curated subset of employers** and is not an exhaustive Indian job search. A source's technical availability does not constitute blanket permission to sublicense its content. Follow each provider's terms, use conservative refresh rates, avoid reproducing unnecessary content, preserve source attribution, and seek written authorization if expanding commercial redistribution or ingesting restricted portals.
 - User credentials, resumes, applications, recruiter contacts and private mailbox data are not sent to any of these sources. Users always complete applications at the employer/portal.
 
