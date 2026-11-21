@@ -365,8 +365,12 @@
     const showing=Math.min(jobs.length,discoverVisibleCount);
     $("jobsGrid").innerHTML = jobs.slice(0,showing).map(card).join("");
     $("emptyJobs").hidden = jobs.length !== 0;
-    $("emptyJobsHint").textContent=Boolean($("jobSearch").value.trim()&&!$("searchDescriptions").checked)?
-      "No matching job titles, companies or skills. Enable Include job descriptions to broaden your search.":
+    const hasExtraFilters=Boolean($("sectorFilter").value||$("categoryFilter").value||
+      $("locationFilter").value||$("experienceFilter").value||$("matchFilter").value!=="all");
+    $("emptyJobsHint").textContent=hasExtraFilters?
+      "No jobs match this combination. Select Reset search & filters, then try your keyword again.":
+      $("jobSearch").value.trim()&&!$("searchDescriptions").checked?
+      "No matching roles from the currently scanned employers. Include job descriptions only for broader matches that may mention the keyword incidentally.":
       "Try another filter, or add an opportunity from a career portal.";
     $("loadMoreJobs").hidden=showing>=jobs.length;
     $("loadMoreJobs").textContent="Show more jobs";
