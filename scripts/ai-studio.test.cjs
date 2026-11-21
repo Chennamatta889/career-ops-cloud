@@ -44,7 +44,7 @@ test("the deployed function requires a real Supabase user JWT at the gateway",()
   assert.match(backend,/getAuthUser\(req\)/);
 });
 test("GitHub Pages packages AI files but does not ship server files or user data",()=>{
-  assert.match(workflow,/cp index\.html styles\.css match-engine\.js careerops-config\.js app\.js ai-studio\.js public\//);
+  assert.match(workflow,/cp index\.html styles\.css match-engine\.js careerops-config\.js app\.js resume-parser\.js ai-studio\.js public\//);
   assert.doesNotMatch(workflow,/cp .*supabase\/functions/);
   assert.match(html,/src="\.\/ai-studio\.js"/);
   assert.match(html,/src="\.\/careerops-config\.js"/);
@@ -79,6 +79,21 @@ test("AI Review uses fast default Gemini and shows request progress",()=>{
   assert.match(backend,/thinkingConfig=\{thinkingLevel:"low"\}/);
   assert.match(ai,/setInterval\(showProgress,1000\)/);
   assert.match(ai,/clearInterval\(progressTimer\)/);
+});
+test("PDF/DOCX extraction and ATS source fetching are wired to AI Studio",()=>{
+  const parser=read("resume-parser.js");
+  const jobSource=read("supabase/functions/careerops-ai-review/job-fetch.mjs");
+  for(const id of ["aiResumeTxtFile","aiResumeParseStatus","aiJobUrl","aiFetchJob","aiJobFetchStatus"])
+    assert.match(html,new RegExp('id="'+id+'"'));
+  assert.match(html,/src="\.\/resume-parser\.js"/);
+  assert.match(parser,/extractRawText/);
+  assert.match(parser,/pdf\.min\.mjs/);
+  assert.match(ai,/action:"fetch_job"/);
+  assert.match(backend,/body\.action==="fetch_job"/);
+  assert.match(jobSource,/SUPPORTED|UNSUPPORTED_JOB_LINK/i);
+  assert.match(workflow,/pdfjs-dist@5\.4\.624 mammoth@1\.11\.0/);
+  assert.match(workflow,/public\/vendor\/pdf\.min\.mjs/);
+  assert.match(workflow,/public\/vendor\/mammoth\.browser\.min\.js/);
 });
 test("AI review does not send applications or persist resume text",()=>{
   assert.doesNotMatch(ai,/localStorage\.setItem\([^\n]*resume/i);
