@@ -9,6 +9,21 @@ A standalone experiment running the original [Career-Ops](https://github.com/car
 - To preview locally, clone/download the repository and open index.html in a browser.
 - To enable hosting: open **Settings → Pages → Build and deployment → Source: GitHub Actions**. Then run **Publish Career-Ops dashboard** in the Actions tab, or push an edit to the UI. This is a one-time repository setting.
 
+## AI Review troubleshooting (November 21, 2026)
+
+The browser now checks the authenticated Supabase Edge Function when AI Studio opens and when **Check AI connection** is selected. The function returns readiness information **only to the email allowlisted account**, never exposing secret values.
+
+- If you see **AI connection check failed: Career-Ops account allowlist is not configured**, add `ALLOWED_EMAIL` in the separate Career-Ops project's **Edge Functions → Secrets**. The signed-in account email must match this value.
+- If the response says **Missing private settings: GEMINI_API_KEY, AI_CALLS_ENABLED**, configure `GEMINI_API_KEY` in the *private* project and set `AI_CALLS_ENABLED=true` only after verifying provider pricing and quotas.
+- If the function says **Signed-in email is not authorized**, review `ALLOWED_EMAIL`. Do not place that setting in GitHub.
+- If connection succeeds but review cannot start, paste at least **250 characters of resume text**, **200 characters of the complete job description**, include the job title, and select the consent checkbox. Choosing a public job card often supplies a title but **not its full job description**.
+- If the browser says **Failed to fetch**, verify GitHub Pages published the latest frontend and that the Edge Function's APP_ORIGIN matches the site origin, `https://chennamatta889.github.io`. The function now also accepts a configured full Pages URL by extracting its origin.
+- Authentication is still required. The function has gateway `verify_jwt=true` and independently validates the user token and email allowlist.
+- The publishable key parsing bug was corrected: Supabase's `SUPABASE_PUBLISHABLE_KEYS` environment variable is JSON with **key values**, not the names of other environment variables.
+- The service now allows larger Gemini JSON outputs to reduce truncation. This does not remove provider rate limits or usage costs.
+
+**No live AI result has been verified yet:** it depends on your private Gemini secrets and an authenticated request. No application submission or email sending has been enabled.
+
 ## Phase 3 — Private AI Studio (code ready, not yet activated)
 
 The public UI includes an AI Studio page and an **AI review** action on job cards. It supports passwordless email sign-in, session-only resume text entry (paste or .txt import), job title/employer/description inputs, explicit consent to third-party AI processing, fit analysis, suggested resume rewrites, cover letter, recruiter email, screening answer drafts, and a local .txt export. It never sends an application, uploads an entire PDF, or modifies an existing resume.
