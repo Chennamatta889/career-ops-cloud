@@ -353,6 +353,16 @@
       notice.querySelector("div").innerHTML = '<strong>Your saved job list</strong> — this view includes roles you added or imported. Verify details on the employer website before taking action.';
     }
   };
+  const updateExternalPortals = function(){
+    const urls=window.CareerOpsExternalJobs?.links?.(
+      $("jobSearch").value,$("locationFilter").value);
+    if(!urls)return;
+    for(const [id,provider] of [
+      ["searchNaukri","naukri"],["searchLinkedIn","linkedin"],["searchIndeed","indeed"]
+    ]){
+      $(id).href=urls[provider];
+    }
+  };
   const renderDiscover = function () {
     // Personalized score filters should never hide every job when the
     // candidate hasn't configured a target role/location/skill yet.
@@ -361,6 +371,7 @@
     );
     $("matchFilter").disabled=!hasPreferences;
     if(!hasPreferences)$("matchFilter").value="all";
+    updateExternalPortals();
     const jobs = visibleJobs();
     const showing=Math.min(jobs.length,discoverVisibleCount);
     $("jobsGrid").innerHTML = jobs.slice(0,showing).map(card).join("");
