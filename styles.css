@@ -6,3 +6,15 @@
 @media(max-width:760px){.sidebar{position:fixed;left:0;top:0;transform:translateX(-102%);transition:transform .2s ease;width:260px;min-width:260px;box-shadow:20px 0 60px #0006}.sidebar.open{transform:translateX(0)}.mobile-scrim.show{display:block;position:fixed;inset:0;background:#0008;z-index:19}.mobile-menu{display:block}.topbar{height:63px;padding:0 18px}.topbar-left{gap:8px}.sync-pill{display:none}.page-content{padding:19px 15px 60px}.welcome-head{padding:28px 23px;min-height:280px}.welcome-head h1{font-size:32px}.hero-art{opacity:.14;right:-112px}.notice{align-items:flex-start;flex-wrap:wrap}.notice-link{margin-left:30px}.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.stats-grid .stat-card{padding:14px}.stat-number{font-size:24px}.stat-card strong{font-size:11px}.stat-card p{font-size:10px}.job-grid,.form-grid{grid-template-columns:1fr}.side-stack{grid-template-columns:1fr}.toolbar select{max-width:none;min-width:125px}.page-heading{align-items:start}.page-heading .btn{white-space:normal}.board{grid-template-columns:repeat(6,200px)}}
 @media(max-width:420px){.welcome-head h1{font-size:28px}.welcome-ctas .btn{font-size:11px;padding:10px}.panel{padding:17px}.stats-grid{gap:8px}.stat-card{min-height:140px}.page-heading h1{font-size:28px}.toolbar select{width:100%;max-width:none;flex:auto}.dialog-inner{padding:23px}.dialog-actions .btn{font-size:11px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+/* Live public scanner connection. These statuses never imply AI evaluation. */
+.feed-connect{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:19px 0 14px;padding:15px 19px;background:#132a37;border:1px solid #305567;border-radius:14px}
+.feed-meta{display:flex;align-items:center;gap:12px;min-width:0}
+.feed-meta strong{font-size:12px;color:#e5f9f3;display:block}
+.feed-meta p{font-size:11px;color:#9fb8c8;margin-top:4px;line-height:1.5}
+.feed-indicator{display:inline-block;height:11px;width:11px;border-radius:50%;background:#768da7;flex:none;box-shadow:0 0 0 4px #25374c}
+.feed-indicator.ok{background:var(--teal);box-shadow:0 0 0 4px #215144}
+.feed-indicator.partial{background:#edbe72;box-shadow:0 0 0 4px #524229}
+.feed-indicator.offline{background:#f098a4;box-shadow:0 0 0 4px #502d3d}
+.feed-connect button{flex:none}
+#page-overview>.notice{margin-top:0}
+@media(max-width:600px){.feed-connect{align-items:flex-start;flex-wrap:wrap}.feed-connect button{margin-left:23px}}
