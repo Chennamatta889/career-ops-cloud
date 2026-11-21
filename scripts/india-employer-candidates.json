@@ -1,0 +1,1536 @@
+{
+  "version": 1,
+  "usage": "Unverified Indian employer board CANDIDATES. Validate the public ATS endpoint and require explicit India-based jobs before adding a candidate to any published feed. Never count this list as active employer boards.",
+  "provenance": {
+    "repository": "AnoJskunte/career-ops-india",
+    "file": "portals/india.yml",
+    "license": "MIT",
+    "url": "https://github.com/AnojSKunte/career-ops-india/blob/main/portals/india.yml"
+  },
+  "candidates": [
+    {
+      "provider": "greenhouse",
+      "slug": "razorpay",
+      "name": "Razorpay",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "bharatpe",
+      "name": "BharatPe",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "perfios",
+      "name": "Perfios",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "setu",
+      "name": "Setu",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "juspay",
+      "name": "Juspay",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "niyo",
+      "name": "Niyo",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "cashfree",
+      "name": "Cashfree",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "happay",
+      "name": "Happay",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "open-financial",
+      "name": "Open Financial",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "credavenue",
+      "name": "Cred Avenue",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "browserstack",
+      "name": "BrowserStack",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "postman",
+      "name": "Postman",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "freshworks",
+      "name": "Freshworks",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "chargebee",
+      "name": "Chargebee",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "whatfix",
+      "name": "Whatfix",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "darwinbox",
+      "name": "Darwinbox",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "sprinklr",
+      "name": "Sprinklr",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "druva",
+      "name": "Druva",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "exotel",
+      "name": "Exotel",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "clevertap",
+      "name": "Clevertap",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "moengage",
+      "name": "MoEngage",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "webengage",
+      "name": "WebEngage",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "netcorecloud",
+      "name": "Netcore Cloud",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "helpshift",
+      "name": "Helpshift",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "kapture",
+      "name": "Kapture CRM",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "leadsquared",
+      "name": "LeadSquared",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "salesken",
+      "name": "Salesken",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "uniphore",
+      "name": "Uniphore",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "unacademy",
+      "name": "Unacademy",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "upgrad",
+      "name": "upGrad",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "simplilearn",
+      "name": "Simplilearn",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "scaler",
+      "name": "Scaler",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "greatlearning",
+      "name": "Great Learning",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "innovaccer",
+      "name": "Innovaccer",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "niramai",
+      "name": "Niramai",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "portea",
+      "name": "Portea Medical",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "practo",
+      "name": "Practo",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "healthplix",
+      "name": "Healthplix",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "lenskart",
+      "name": "Lenskart",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "mamaearth",
+      "name": "Mamaearth",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "purplle",
+      "name": "Purplle",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "zivame",
+      "name": "Zivame",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "shadowfax",
+      "name": "Shadowfax",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "rivigo",
+      "name": "Rivigo",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "elasticrun",
+      "name": "ElasticRun",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "gupshup",
+      "name": "Gupshup",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "hasura",
+      "name": "Hasura",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "madstreetden",
+      "name": "Mad Street Den",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "arya-ai",
+      "name": "Arya.ai",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "mu-sigma",
+      "name": "Mu Sigma",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "tigeranalytics",
+      "name": "Tiger Analytics",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "fractal",
+      "name": "Fractal Analytics",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "latentview",
+      "name": "LatentView Analytics",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "inmobi",
+      "name": "InMobi",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "gojek",
+      "name": "Gojek India",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "dunzo",
+      "name": "Dunzo",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "vedantu",
+      "name": "Vedantu",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "navi",
+      "name": "Navi Technologies",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "fampay",
+      "name": "Fampay",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "freo",
+      "name": "Freo",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "moxo",
+      "name": "Moxo",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "signzy",
+      "name": "Signzy",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "artoo",
+      "name": "Artoo",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "yubi",
+      "name": "Yubi (CredAvenue)",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "mintifi",
+      "name": "Mintifi",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "progcap",
+      "name": "Progcap",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "availfinance",
+      "name": "Avail Finance",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "ekaplus",
+      "name": "Eka Plus",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "vyapar",
+      "name": "Vyapar",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "zowork",
+      "name": "Zowork",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "numberz",
+      "name": "Numberz",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "ezetap",
+      "name": "Ezetap",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "kredx",
+      "name": "Kredx",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "happiestminds",
+      "name": "Happiest Minds",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "sigmoid",
+      "name": "Sigmoid",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "dataweave",
+      "name": "DataWeave",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "flutura",
+      "name": "Flutura",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "absolutdata",
+      "name": "Absolutdata",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "axtria",
+      "name": "Axtria",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "classplus",
+      "name": "Classplus",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "teachmint",
+      "name": "Teachmint",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "konversai",
+      "name": "Konversai",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "ineuron",
+      "name": "iNeuron",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "cred",
+      "name": "CRED",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "growwapp",
+      "name": "Groww",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "zepto",
+      "name": "Zepto",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "meesho",
+      "name": "Meesho",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "olaelectric",
+      "name": "Ola Electric",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "makemytrip",
+      "name": "MakeMyTrip",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "paytmmoney",
+      "name": "Paytm Money",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "kreditbee",
+      "name": "KreditBee",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "moneytap",
+      "name": "MoneyTap",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "kissht",
+      "name": "Kissht",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "zestmoney",
+      "name": "ZestMoney",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "earlysalary",
+      "name": "Fibe (EarlySalary)",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "mswipe",
+      "name": "Mswipe",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "zenoti",
+      "name": "Zenoti",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "icertis",
+      "name": "Icertis",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "vymo",
+      "name": "Vymo",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "mindtickle",
+      "name": "Mindtickle",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "haptik",
+      "name": "Haptik",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "exotel",
+      "name": "Exotel",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "eka",
+      "name": "Eka Software",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "urbanclap",
+      "name": "Urban Company",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "zetwerk",
+      "name": "Zetwerk",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "ninjacart",
+      "name": "Ninjacart",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "spinny",
+      "name": "Spinny",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "delhivery",
+      "name": "Delhivery",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "blackbuck",
+      "name": "BlackBuck",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "shiprocket",
+      "name": "Shiprocket",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "porter",
+      "name": "Porter",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "blowhorn",
+      "name": "Blowhorn",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "pharmeasy",
+      "name": "PharmEasy",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "pristyncare",
+      "name": "Pristyn Care",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "curefit",
+      "name": "Cure.fit",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "asterdm",
+      "name": "Aster DM Healthcare",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "licious",
+      "name": "Licious",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "countrydelight",
+      "name": "Country Delight",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "eatclub",
+      "name": "Eat Club",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "nobroker",
+      "name": "NoBroker",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "squareyards",
+      "name": "Square Yards",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "housing",
+      "name": "Housing.com",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "ixigo",
+      "name": "ixigo",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "easemytrip",
+      "name": "EaseMyTrip",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "rategain",
+      "name": "RateGain",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "springworks",
+      "name": "Springworks",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "keka",
+      "name": "Keka HR",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "sumhr",
+      "name": "sumHR",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "bizongo",
+      "name": "Bizongo",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "moglix",
+      "name": "Moglix",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "ofbusiness",
+      "name": "Ofbusiness",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "yash-technologies",
+      "name": "Yash Technologies",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "niswey",
+      "name": "Niswey",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "styli",
+      "name": "Styli (Landmark Group)",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "fashinza",
+      "name": "Fashinza",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "zilingo",
+      "name": "Zilingo India",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "tata1mg",
+      "name": "Tata 1mg",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "apollo247",
+      "name": "Apollo 24/7",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "medikabazaar",
+      "name": "Medikabazaar",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "eulermotors",
+      "name": "Euler Motors",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "log9materials",
+      "name": "Log9 Materials",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "climes",
+      "name": "Climes",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "angelone",
+      "name": "Angel One",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "iifl",
+      "name": "IIFL Finance",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "5paisa",
+      "name": "5Paisa Capital",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "samco",
+      "name": "Samco Securities",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "edelweiss",
+      "name": "Edelweiss Financial Services",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "renewbuy",
+      "name": "RenewBuy",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "coverfox",
+      "name": "Coverfox",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "lever",
+      "slug": "phillipcapital",
+      "name": "PhillipCapital India",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "krutrim",
+      "name": "Krutrim",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "yellowai",
+      "name": "Yellow.ai",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "gnani",
+      "name": "Gnani AI",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "mihup",
+      "name": "Mihup",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "observeai",
+      "name": "Observe.AI",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "avaamo",
+      "name": "Avaamo",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "olacabs",
+      "name": "Ola",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "yulu",
+      "name": "Yulu",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "bounce",
+      "name": "Bounce",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "sliceit",
+      "name": "Slice",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "jar-app",
+      "name": "Jar",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "epifi",
+      "name": "Fi Money",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "smallcase",
+      "name": "Smallcase",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "indmoney",
+      "name": "INDmoney",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "fisdom",
+      "name": "Fisdom",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "rupeek",
+      "name": "Rupeek",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "kredivo",
+      "name": "Kredivo",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "stashfin",
+      "name": "Stashfin",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "leegality",
+      "name": "Leegality",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "paperflite",
+      "name": "Paperflite",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "zeta",
+      "name": "Zeta Suite",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "sprinto",
+      "name": "Sprinto",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "facilio",
+      "name": "Facilio",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "toplyne",
+      "name": "Toplyne",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "suprsend",
+      "name": "Suprsend",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "recykal",
+      "name": "Recykal",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "zomato",
+      "name": "Zomato",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "blinkit",
+      "name": "Blinkit",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "peppercontent",
+      "name": "Pepper Content",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "eruditus",
+      "name": "Eruditus",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "cuemath",
+      "name": "Cuemath",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "credgenics",
+      "name": "Credgenics",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "karza",
+      "name": "Karza Technologies",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "pixxel",
+      "name": "Pixxel",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "agnikul",
+      "name": "Agnikul Cosmos",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "skyroot",
+      "name": "Skyroot Aerospace",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "graphy",
+      "name": "Unacademy (Graphy)",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "itc-classmate",
+      "name": "Classmate (ITC)",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "atherenergy",
+      "name": "Ather Energy",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "greenpanel",
+      "name": "Greenpanel",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "dehaat",
+      "name": "DeHaat",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "waycool",
+      "name": "Waycool",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "bijak",
+      "name": "Bijak",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "acko",
+      "name": "Acko",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "digit",
+      "name": "Digit Insurance",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "turtlemint",
+      "name": "Turtlemint",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "slintel",
+      "name": "Slintel (6sense India)",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "dealshare",
+      "name": "DealShare",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "globalbees",
+      "name": "GlobalBees",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "mensabrands",
+      "name": "Mensa Brands",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "khatabook",
+      "name": "Khatabook",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "okcredit",
+      "name": "OkCredit",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "betterplace",
+      "name": "BetterPlace",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "apna-com",
+      "name": "Apna",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "vokal",
+      "name": "Vokal",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "kutumb",
+      "name": "Kutumb",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "sharechat",
+      "name": "ShareChat",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "moj",
+      "name": "Moj (ShareChat)",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "josh",
+      "name": "Josh (DailyHunt)",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "verseinnovation",
+      "name": "Verse Innovation (DailyHunt)",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "pocketfm",
+      "name": "Pocket FM",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "pratilipi",
+      "name": "Pratilipi",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "onecode",
+      "name": "OneCode",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "nira-finance",
+      "name": "Nira Finance",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "cars24",
+      "name": "Cars24",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "oyorooms",
+      "name": "OYO Rooms",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "upstox",
+      "name": "Upstox",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "mobikwik",
+      "name": "Mobikwik",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "capillary",
+      "name": "Capillary Technologies",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "kaleyra",
+      "name": "Kaleyra",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "cloudsek",
+      "name": "CloudSEK",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "airmeet",
+      "name": "Airmeet",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "droom",
+      "name": "Droom",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "tatadigital",
+      "name": "Tata Digital",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "physicswallah",
+      "name": "Physics Wallah",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "udaan",
+      "name": "Udaan",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "firstcry",
+      "name": "FirstCry",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "wakefit",
+      "name": "Wakefit",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "pepperfry",
+      "name": "Pepperfry",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "imaginemarketingltd",
+      "name": "boAt (Imagine Marketing)",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "sugarcosmetics",
+      "name": "Sugar Cosmetics",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "medibuddy",
+      "name": "MediBuddy",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "innoviti",
+      "name": "Innoviti",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "stanzaliving",
+      "name": "Stanza Living",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "awfis",
+      "name": "Awfis",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "magicpin",
+      "name": "Magicpin",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "quantiphi",
+      "name": "Quantiphi",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "crayondata",
+      "name": "Crayon Data",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "gramener",
+      "name": "Gramener",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "analyticsquotient",
+      "name": "Analytics Quotient",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "evalueserve",
+      "name": "Evalueserve",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "zs-associates",
+      "name": "ZS Associates India",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "exlservice",
+      "name": "EXL Service",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "wns",
+      "name": "WNS Global Services",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "bridgei2i",
+      "name": "BRIDGEi2i Analytics",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "manthan",
+      "name": "Manthan",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "themathcompany",
+      "name": "MathCo (The Math Company)",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "subex",
+      "name": "Subex",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "nucleussoftware",
+      "name": "Nucleus Software",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "intellectdesign",
+      "name": "Intellect Design Arena",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "finarkein",
+      "name": "Finarkein Analytics",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "sahamati",
+      "name": "Sahamati",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "artivatic",
+      "name": "Artivatic Data Labs",
+      "sector": "Technology & Services"
+    },
+    {
+      "provider": "ashby",
+      "slug": "lendingkart",
+      "name": "Lendingkart",
+      "sector": "Technology & Services"
+    }
+  ]
+}
