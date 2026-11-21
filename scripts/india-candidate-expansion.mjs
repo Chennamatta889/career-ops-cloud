@@ -8,7 +8,7 @@
  * Candidate failures never replace or degrade the 80 curated employer sources.
  */
 import {filterRecentJobs} from "./job-freshness.mjs";
-const PROVIDERS=new Set(["greenhouse","ashby","lever"]);
+const PROVIDERS=new Set(["greenhouse","ashby","lever","smartrecruiters"]);
 const KEY=s=>s.provider+":"+s.slug.toLowerCase();
 const clean=s=>typeof s==="string"?s.trim():"";
 export function checkCandidateCatalog(candidates){
@@ -79,9 +79,12 @@ export async function discoverIndiaCandidates({
     jobs:accepted.flatMap(a=>a.jobs),
     health:accepted.map(a=>({provider:a.source.provider,board:a.source.slug,
       name:a.source.name,status:"ok",count:a.jobs.length,scanned_count:a.scannedCount,
-      discovered:true})),
+      discovered:true,focus:a.source.focus||null})),
     report:{candidates:candidates.length,already_curated:candidates.length-pending.length,
-      checked:pending.length,activated:accepted.length,no_india:noIndia,
+      checked:pending.length,activated:accepted.length,
+      fresher_focus_checked:pending.filter(s=>s.focus==="fresher").length,
+      fresher_focus_activated:accepted.filter(a=>a.source.focus==="fresher").length,
+      no_india:noIndia,
       no_recent_india:noRecent,unavailable:failed,
       undated_excluded:undatedExcluded,outdated_excluded:outdatedExcluded,
       future_excluded:futureExcluded,
