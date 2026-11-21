@@ -7,6 +7,7 @@
  * Source urls are fixed by scanBoard; no arbitrary remote addresses or proxies.
  * Candidate failures never replace or degrade the 80 curated employer sources.
  */
+import {filterRecentJobs} from "./job-freshness.mjs";
 const PROVIDERS=new Set(["greenhouse","ashby","lever"]);
 const KEY=s=>s.provider+":"+s.slug.toLowerCase();
 const clean=s=>typeof s==="string"?s.trim():"";
@@ -25,14 +26,15 @@ export function checkCandidateCatalog(candidates){
 }
 export async function discoverIndiaCandidates({
   candidates,curatedSources,scanBoard,isIndiaLocation,fetchImpl=fetch,concurrency=8,
-  boardTimeoutMs=12000,maxRequestsPerBoard=8
+  boardTimeoutMs=12000,maxRequestsPerBoard=8,now=new Date()
 }){
   checkCandidateCatalog(candidates);
   if(!Array.isArray(curatedSources)||typeof scanBoard!=="function"||typeof isIndiaLocation!=="function")
     throw Error("Missing trusted scan dependencies");
   const existing=new Set(curatedSources.map(KEY));
   const pending=candidates.filter(s=>!existing.has(KEY(s)));
-  let cursor=0,failed=0,noIndia=0,inspected=0;
+  let cursor=0,failed=0,noIndia=0,noRecent=0,inspected=0;
+  let undatedExcluded=0,outdatedExcluded=0,futureExcluded=0;
   const accepted=[],errors=[];
   const worker=async()=>{
     while(cursor<pending.length){
@@ -52,11 +54,16 @@ export async function discoverIndiaCandidates({
           throw Error("Invalid candidate board result");
         const indiaJobs=jobs.filter(j=>isIndiaLocation(j?.location));
         if(!indiaJobs.length){noIndia++;continue;}
+        const recent=filterRecentJobs(indiaJobs,now);
+        undatedExcluded+=recent.undated;
+        outdatedExcluded+=recent.outdated;
+        futureExcluded+=recent.future;
+        if(!recent.jobs.length){noRecent++;continue;}
         // A candidate must return real normalized public ATS postings; never
         // synthesize title, location or application URL from its slug alone.
-        if(indiaJobs.some(j=>!j?.title||!j?.url||!j?.company||
+        if(recent.jobs.some(j=>!j?.title||!j?.url||!j?.company||
           !j.url.startsWith("https://")))throw Error("Invalid public candidate posting");
-        accepted.push({source:s,jobs:indiaJobs,scannedCount:jobs.length});
+        accepted.push({source:s,jobs:recent.jobs,scannedCount:jobs.length});
         inspected+=jobs.length;
       }catch(e){
         failed++;
@@ -74,7 +81,10 @@ export async function discoverIndiaCandidates({
       name:a.source.name,status:"ok",count:a.jobs.length,scanned_count:a.scannedCount,
       discovered:true})),
     report:{candidates:candidates.length,already_curated:candidates.length-pending.length,
-      checked:pending.length,activated:accepted.length,no_india:noIndia,unavailable:failed,
+      checked:pending.length,activated:accepted.length,no_india:noIndia,
+      no_recent_india:noRecent,unavailable:failed,
+      undated_excluded:undatedExcluded,outdated_excluded:outdatedExcluded,
+      future_excluded:futureExcluded,
       inspected_positions:inspected,india_positions:accepted.reduce((n,a)=>n+a.jobs.length,0)},
     errors
   };
@@ -88,5 +98,8 @@ export function mergeIndiaCandidates(feed,expansion,balanceJobs){
     source_health:[...(feed.source_health||[]),...expansion.health],
     scan:{...feed.scan,scanned:feed.scan.scanned+expansion.health.length,
       found:feed.scan.found+expansion.report.inspected_positions,matched:jobs.length,
+      undated_excluded:(feed.scan.undated_excluded||0)+(expansion.report.undated_excluded||0),
+      outdated_excluded:(feed.scan.outdated_excluded||0)+(expansion.report.outdated_excluded||0),
+      future_excluded:(feed.scan.future_excluded||0)+(expansion.report.future_excluded||0),
       candidate_discovery:expansion.report}};
 }
