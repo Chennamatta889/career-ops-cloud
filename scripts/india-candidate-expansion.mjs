@@ -8,6 +8,8 @@
  * Candidate failures never replace or degrade the 80 curated employer sources.
  */
 import {filterRecentJobs} from "./job-freshness.mjs";
+import {createRequire} from "node:module";
+const {entryOpportunity}=createRequire(import.meta.url)("../job-text.js");
 const PROVIDERS=new Set(["greenhouse","ashby","lever","smartrecruiters"]);
 const KEY=s=>s.provider+":"+s.slug.toLowerCase();
 const clean=s=>typeof s==="string"?s.trim():"";
@@ -57,7 +59,19 @@ export async function discoverIndiaCandidates({
   if(!Array.isArray(curatedSources)||typeof scanBoard!=="function"||typeof isIndiaLocation!=="function")
     throw Error("Missing trusted scan dependencies");
   const existing=new Set(curatedSources.map(KEY));
-  const pending=candidates.filter(s=>!existing.has(KEY(s)));
+  // Priority is based on verified prior India results, never the candidate's
+  // marketing focus label. Keep stable input order for ties and fresh leads.
+  const pending=candidates.filter(s=>!existing.has(KEY(s)))
+    .map((source,index)=>({source,index}))
+    .sort((a,b)=>{
+      const score=source=>{
+        const prior=priorRecord(previousHealth,KEY(source));
+        const count=Number(prior?.entry_positions);
+        return prior?.status==="active"&&Number.isSafeInteger(count)&&count>0?
+          Math.min(count,1000):0;
+      };
+      return score(b.source)-score(a.source)||a.index-b.index;
+    }).map(row=>row.source);
   // Only trusted catalog keys can be carried forward; stale or arbitrary
   // entries in an older public feed cannot add requests or jobs.
   const history={};
@@ -74,6 +88,7 @@ export async function discoverIndiaCandidates({
   }
   let cursor=0,failed=0,noIndia=0,noRecent=0,inspected=0;
   let undatedExcluded=0,outdatedExcluded=0,futureExcluded=0;
+  let entryPositions=0,explicitZeroExperience=0,focusBoardsWithEntry=0;
   const accepted=[],errors=[];
   const worker=async()=>{
     while(cursor<runnable.length){
@@ -104,8 +119,18 @@ export async function discoverIndiaCandidates({
         // synthesize title, location or application URL from its slug alone.
         if(recent.jobs.some(j=>!j?.title||!j?.url||!j?.company||
           !j.url.startsWith("https://")))throw Error("Invalid public candidate posting");
-        accepted.push({source:s,jobs:recent.jobs,scannedCount:jobs.length});
-        history[key]={status:"active",consecutive_failures:0};
+        // Focus is a discovery hint, NOT proof that every job on the board
+        // accepts freshers. Count only evidence in actual recent India jobs.
+        const entry=recent.jobs.map(entryOpportunity);
+        const entryCount=entry.filter(x=>x.level==="fresher"||x.level==="early").length;
+        const explicitCount=entry.filter(x=>x.level==="fresher"&&x.basis==="explicit").length;
+        entryPositions+=entryCount;
+        explicitZeroExperience+=explicitCount;
+        if(s.focus==="fresher"&&entryCount>0)focusBoardsWithEntry++;
+        accepted.push({source:s,jobs:recent.jobs,scannedCount:jobs.length,
+          entryCount,explicitCount});
+        history[key]={status:"active",consecutive_failures:0,
+          entry_positions:entryCount};
         inspected+=jobs.length;
       }catch(e){
         failed++;
@@ -127,11 +152,15 @@ export async function discoverIndiaCandidates({
     jobs:accepted.flatMap(a=>a.jobs),
     health:accepted.map(a=>({provider:a.source.provider,board:a.source.slug,
       name:a.source.name,status:"ok",count:a.jobs.length,scanned_count:a.scannedCount,
-      discovered:true,focus:a.source.focus||null})),
+      discovered:true,focus:a.source.focus||null,
+      entry_positions:a.entryCount,explicit_zero_experience:a.explicitCount})),
     report:{candidates:candidates.length,already_curated:candidates.length-pending.length,
       checked:runnable.length,quarantined:skipped,activated:accepted.length,
       fresher_focus_checked:runnable.filter(s=>s.focus==="fresher").length,
       fresher_focus_activated:accepted.filter(a=>a.source.focus==="fresher").length,
+      fresher_focus_with_entry_jobs:focusBoardsWithEntry,
+      entry_positions:entryPositions,
+      explicit_zero_experience_positions:explicitZeroExperience,
       no_india:noIndia,
       no_recent_india:noRecent,unavailable:failed,
       undated_excluded:undatedExcluded,outdated_excluded:outdatedExcluded,
