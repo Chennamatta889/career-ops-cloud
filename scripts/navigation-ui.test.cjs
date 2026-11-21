@@ -63,6 +63,7 @@ function createHarness(initialHash="#overview"){
   };
   const window={
     CareerOpsCategories:{categories:["IT & Software","Other"],classify:()=>"Other"},
+    CareerOpsJobText:require("../job-text.js"),
     CareerOpsMatch:{
       rank:()=>({score:0,quality:"Limited evidence",role:{points:0,detail:"Unknown"},
         location:{points:0,detail:"Unknown"},skills:{points:0,detail:"Unknown"},
@@ -115,7 +116,15 @@ function createHarness(initialHash="#overview"){
     });
     assert.ok(prevented,"navigation intercepts anchor and button clicks");
   }
-  return {nav,node,pages,navs,location,history,window,document,scrollCalls,urlWrites,
+  function details(id){
+    const target={getAttribute(key){
+      return key==="data-action"?"details":key==="data-id"?id:null;
+    }};
+    documentEvents.get("click")({target:{closest(selector){
+      return selector==="[data-action]"?target:null;
+    }}});
+  }
+  return {nav,details,node,pages,navs,location,history,window,document,scrollCalls,urlWrites,
     get pushes(){return pushes},get replaces(){return replaces},get entries(){return entries.slice()},
     active(){return pages.find(x=>x.classList.contains("active"))?.id.replace("page-","")}
   };
@@ -237,4 +246,32 @@ test("Settings account identity is derived from authenticated user and cleared o
   ui.window.dispatchEvent({type:"careerops:signed-out"});
   assert.match(ui.node("settingsAccountStatus").textContent,/Sign in with Google/);
   assert.equal(ui.node("settingsAccountStatus").dataset.state,"signed-out");
+});
+
+test("imported employer markup is readable in the job dialog and optional ranking is hidden",async()=>{
+  const ui=createHarness("#settings");
+  const raw='<p><strong>Opportunity Overview</strong></p><p>Senior Applied Scientist &nbsp; working with clinical workflows.</p><ul><li>Complex clinical document understanding</li><li>Deploying models</li></ul>';
+  const data=[{
+    id:"cohere-health-sample",title:"Senior Applied Scientist",company:"Cohere Health",
+    location:"Remote, USA",url:"https://example.com/job/123",
+    description:raw
+  }];
+  const listener=ui.node("scanImport").listeners.get("change");
+  assert.equal(typeof listener,"function");
+  const target={files:[{size:1250,name:"sample-job.json",text:async()=>JSON.stringify(data)}],value:"selected"};
+  listener({target});
+  await new Promise(resolve=>setImmediate(resolve));
+  await new Promise(resolve=>setImmediate(resolve));
+  const card=ui.node("jobsGrid").innerHTML;
+  assert.match(card,/Senior Applied Scientist/);
+  assert.doesNotMatch(card,/&lt;p&gt;|&nbsp;|<script/);
+  const id=card.match(/data-action="details"\s+data-id="([^"]+)"/)?.[1];
+  assert.ok(id,"Expected details action for imported job");
+  ui.details(id);
+  const displayed=ui.node("dialogDescription").textContent;
+  assert.match(displayed,/Opportunity Overview\n\nSenior Applied Scientist/);
+  assert.match(displayed,/• Complex clinical document understanding/);
+  assert.doesNotMatch(displayed,/<\/?p>|&nbsp;|\\</);
+  assert.equal(ui.node("matchExplanation").hidden,true);
+  assert.equal(ui.node("matchExplanation").innerHTML,"");
 });
