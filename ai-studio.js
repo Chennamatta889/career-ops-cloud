@@ -15,6 +15,50 @@
   const text = (v,n=10000) => typeof v==="string" ? v.trim().slice(0,n) : "";
   const set = (id,message) => { byId(id).textContent = message; };
   const status = message => set("aiStatus",message);
+
+  // A timestamp-only local flag prevents accidental repeated emails across
+  // tabs. No credentials, email address, or resume are stored in localStorage.
+  const emailCooldownStorageKey="careerops-auth-email-next-request-v1";
+  const normalEmailCooldownMs=90*1000;
+  const exhaustedEmailCooldownMs=60*60*1000;
+  let emailCooldownUntil=0;
+  let emailRequestInFlight=false;
+  let emailTimer=null;
+  let emailNotice="Request one sign-in email and use its link. Repeated taps consume the project's limited email quota.";
+  function readEmailCooldown(){
+    try{
+      const val=Number(localStorage.getItem(emailCooldownStorageKey)||0);
+      if(Number.isFinite(val)&&val>Date.now()&&val<Date.now()+25*60*60*1000)emailCooldownUntil=val;
+    }catch(_){}
+  }
+  function setEmailCooldown(ms){
+    emailCooldownUntil=Date.now()+ms;
+    try{localStorage.setItem(emailCooldownStorageKey,String(emailCooldownUntil));}catch(_){}
+    updateEmailButton();
+  }
+  function remainingEmailTime(){
+    const seconds=Math.ceil(Math.max(0,emailCooldownUntil-Date.now())/1000);
+    const minutes=Math.floor(seconds/60);
+    return minutes?minutes+"m "+String(seconds%60).padStart(2,"0")+"s":seconds+"s";
+  }
+  function updateEmailButton(){
+    const button=byId("aiSendLink");
+    if(!button)return;
+    if(emailTimer){clearTimeout(emailTimer);emailTimer=null;}
+    const locked=Date.now()<emailCooldownUntil;
+    button.disabled=emailRequestInFlight||locked;
+    button.textContent=emailRequestInFlight?"Requesting secure link…":
+      locked?"Try again in "+remainingEmailTime():"Email sign-in link";
+    const detail=byId("aiEmailCooldown");
+    if(detail) {
+      detail.textContent=locked ?
+        emailNotice+" No new email requests for approximately "+remainingEmailTime()+". If you have a recent unused sign-in link, you may use it instead.":
+        emailNotice;
+    }
+    if(locked)emailTimer=setTimeout(updateEmailButton,Math.min(15000,Math.max(1000,emailCooldownUntil-Date.now())));
+  }
+  readEmailCooldown();
+
   function prerequisites() {
     const resume = byId("aiResume").value.trim();
     const jd = byId("aiJd").value.trim();
@@ -174,15 +218,41 @@
     document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);
   }
   byId("aiSendLink").addEventListener("click",async function(){
+    if(emailRequestInFlight)return;
+    if(Date.now()<emailCooldownUntil){
+      updateEmailButton();
+      status("Email sign-in is on cooldown. Please use a valid link already in your inbox or wait before requesting another.");
+      return;
+    }
     const email=byId("aiEmail").value.trim().toLowerCase();
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){status("Enter a valid email address.");return;}
-    this.disabled=true;
+    emailRequestInFlight=true;
+    updateEmailButton();
     try{
       await api("/auth/v1/otp?redirect_to="+encodeURIComponent(location.origin+location.pathname),{
         method:"POST",headers:headers(),body:JSON.stringify({email,create_user:true})
       });
-      status("Sign-in link requested. Check your email and follow the link. Ensure this website is listed in the Supabase Auth redirect allowlist.");
-    }catch(e){status("Sign-in failed: "+e.message);}finally{this.disabled=false;}
+      emailNotice="Sign-in link requested successfully. Check your inbox and spam folder. Avoid requesting another link unless it is necessary.";
+      setEmailCooldown(normalEmailCooldownMs);
+      status("Sign-in email requested. Open the link you received rather than tapping the send button again.");
+    }catch(e){
+      const msg=text(e?.message||e,250);
+      if(/email rate limit exceeded|over_email_send_rate_limit/i.test(msg)){
+        emailNotice="Supabase has reached its authentication-email quota (the built-in provider allows only two emails per hour across this project).";
+        setEmailCooldown(exhaustedEmailCooldownMs);
+        status("Sign-in email quota reached. Wait for Supabase to replenish it; the site cannot bypass this limit. Try any recent unused link instead.");
+      }else if(/rate limit|too many requests|429/i.test(msg)){
+        emailNotice="Supabase is temporarily limiting repeated sign-in requests.";
+        setEmailCooldown(normalEmailCooldownMs);
+        status("Too many sign-in requests. Please use your most recent unused email link or wait before retrying.");
+      }else{
+        emailNotice="Sign-in email could not be sent. Verify the address and Supabase Auth configuration before retrying.";
+        status("Sign-in request failed: "+msg);
+      }
+    }finally{
+      emailRequestInFlight=false;
+      updateEmailButton();
+    }
   });
   byId("aiSignOut").addEventListener("click",async()=>{
     try{const jwt=await getAccessToken();if(jwt)await api("/auth/v1/logout",{method:"POST",headers:headers(jwt)});}catch(_){}
@@ -330,5 +400,6 @@
   try{const stored=sessionStorage.getItem(tokenKey);if(stored)session=JSON.parse(stored);}catch(_){session=null;}
   readUrlSession();
   prerequisites();
+  updateEmailButton();
   refreshAuth();
 })();
