@@ -29,12 +29,13 @@ test("the app preserves auth callback URL fragment until the AI tab reads it",()
   assert.match(ai,/readUrlSession\(\)/);
   assert.match(ai,/sessionStorage/);
 });
-test("the private AI function explicitly enforces user email allowlist, auth and consent boundary",()=>{
+test("the AI endpoint accepts verified accounts while preserving Supabase JWT authentication and consent",()=>{
   assert.match(backend,/getAuthUser\(req\)/);
-  assert.match(backend,/ALLOWED_EMAIL/);
+  assert.match(backend,/user\.email_confirmed_at/);
+  assert.doesNotMatch(backend,/ALLOWED_EMAIL|EMAIL_NOT_ALLOWED|ALLOWLIST_SETUP_REQUIRED/);
+  assert.match(backend,/reserveAiQuota\(user.id\)/);
   assert.match(backend,/AI_CALLS_ENABLED/);
   assert.match(backend,/GEMINI_API_KEY/);
-  assert.match(backend,/user\.email\.trim\(\)\.toLowerCase\(\)!==approved/);
   assert.match(ai,/aiConsent/);
   assert.match(backend,/NEVER invent/);
 });
@@ -51,11 +52,28 @@ test("GitHub Pages packages AI files but does not ship server files or user data
 });
 test("diagnostic checks are authenticated, gated and never disclose secret values",()=>{
   assert.match(backend,/const user=await getAuthUser\(req\)/);
-  assert.match(backend,/user\.email\.trim\(\)\.toLowerCase\(\)!==approved/);
+  assert.match(backend,/user\.email_confirmed_at/);
   assert.match(backend,/body\.action==="status"/);
   assert.match(backend,/missing\.push\("GEMINI_API_KEY"\)/);
   assert.match(backend,/missing\.push\("AI_CALLS_ENABLED"\)/);
   assert.match(backend,/typeof map\?\.default==="string" \? map\.default/);
+});
+test("unrestricted verified-email sign-in is protected by durable shared and per-user AI quotas",()=>{
+  const quota=read("supabase/migrations/20261121_phase4_verified_multiuser_ai_quota.sql");
+  assert.match(backend,/daily_user_limit:DAILY_USER_QUOTA/);
+  assert.match(backend,/SUPABASE_SERVICE_ROLE_KEY/);
+  assert.match(backend,/code:"EMAIL_UNVERIFIED"/);
+  assert.match(backend,/code:"QUOTA_SERVICE_UNAVAILABLE"/);
+  assert.match(backend,/code:global\?"GLOBAL_DAILY_LIMIT":"USER_DAILY_LIMIT"/);
+  assert.match(backend,/let quota:/);
+  assert.match(backend,/quota=await reserveAiQuota\(user.id\)/);
+  assert.ok(backend.indexOf("quota=await reserveAiQuota(user.id)") <
+    backend.indexOf('const api=await fetch("https://generativelanguage.googleapis.com'));
+  assert.match(quota,/pg_advisory_xact_lock/);
+  assert.match(quota,/per_user_limit constant integer := 2/);
+  assert.match(quota,/global_limit constant integer := 20/);
+  assert.match(quota,/grant execute on function public.careerops_reserve_ai_review\(uuid\) to service_role/);
+  assert.match(quota,/revoke all on function public.careerops_reserve_ai_review\(uuid\)/);
 });
 test("AI Studio explains missing resume, description and consent, and probes backend",()=>{
   for(const id of ["aiResumeCount","aiJdCount","aiChecklist","aiCheckConnection"])
