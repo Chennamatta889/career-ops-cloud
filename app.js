@@ -95,23 +95,29 @@
   };
   const priority = function (job) { return window.CareerOpsMatch.rank(job,state.prefs); };
   const visibleJobs = function () {
-    const search = $("jobSearch").value.trim().toLowerCase();
-    const role = $("roleFilter").value.toLowerCase();
-    const loc = $("locationFilter").value.toLowerCase();
-    const sort = $("sortFilter").value;
-    const minPriority = $("matchFilter").value;
-    return state.jobs.filter(function (job) {
-      const all = [job.title,job.company,job.location,job.description].concat(job.skills).join(" ").toLowerCase();
-      const group = window.CareerOpsMatch.groups(job.title);
-      const roleOk = !role || job.title.toLowerCase().includes(role) || (role === "site reliability" && group.includes("sre"));
-      const n = priority(job).score;
-      const priorityOk = minPriority === "all" || (minPriority === "below" ? n < 50 : n >= Number(minPriority));
-      return (!search || all.includes(search)) && roleOk && (!loc || job.location.toLowerCase().includes(loc)) && priorityOk;
-    }).sort(function (a,b) {
-      if (sort === "priority") return priority(b).score - priority(a).score || String(b.addedAt).localeCompare(String(a.addedAt));
-      if (sort === "company") return a.company.localeCompare(b.company);
-      if (sort === "role") return a.title.localeCompare(b.title);
-      return String(b.addedAt).localeCompare(String(a.addedAt));
+    const search=$("jobSearch").value.trim().toLowerCase();
+    const category=$("categoryFilter").value;
+    const location=$("locationFilter").value.toLowerCase();
+    const sort=$("sortFilter").value;
+    const priorityFilter=$("matchFilter").value;
+    return state.jobs.filter(function(job){
+      const all=[job.title,job.company,job.location,job.description,job.department,jobCategory(job)]
+        .concat(job.skills||[]).join(" ").toLowerCase();
+      const loc=String(job.location||"").toLowerCase();
+      const categoryOk=!category||jobCategory(job)===category;
+      const locationOk=!location||loc.includes(location)||
+        (location==="india" && /india|hyderabad|bengaluru|bangalore|mumbai|delhi|pune|chennai|noida|gurugram|gurgaon|kolkata|ahmedabad|kochi/.test(loc))||
+        (location==="bengaluru"&&loc.includes("bangalore"));
+      const points=priority(job).score;
+      const priorityOk=priorityFilter==="all"||
+        (priorityFilter==="below"?points<50:points>=Number(priorityFilter));
+      return (!search||all.includes(search))&&categoryOk&&locationOk&&priorityOk;
+    }).sort(function(a,b){
+      if(sort==="priority")return priority(b).score-priority(a).score||
+        String(b.addedAt||"").localeCompare(String(a.addedAt||""));
+      if(sort==="company")return a.company.localeCompare(b.company);
+      if(sort==="role")return a.title.localeCompare(b.title);
+      return String(b.addedAt||"").localeCompare(String(a.addedAt||""));
     });
   };
   const companyInitials = function (company) {
@@ -121,10 +127,13 @@
   const jobSource = function (j) { return j.demo ? "Illustrative job" : j.source === "cloud" ? "Public scanner result" : (j.url ? "Job URL attached" : "No source URL"); };
   const chips = function (skills) { return (skills || []).slice(0,5).map(function (s) { return '<span class="skill-chip">' + escapeHtml(s) + '</span>'; }).join(""); };
   const find = function (id) { return state.jobs.find(function (j) { return j.id === id; }); };
-  const priorityBadge = function (j) {
-    const fit = priority(j);
-    return '<span class="match ' + (fit.quality === "Limited evidence" ? 'limited' : '') + '" title="' + escapeHtml(fit.quality + " · rule-based, not AI") + '">' +
-      (j.demo ? 'Sample ' : 'Priority ') + fit.score + '/100</span>';
+  const priorityBadge = function(j){
+    if(!state.prefs.roles.trim()&&!state.prefs.locations.trim()&&!state.prefs.skills.trim())
+      return '<span class="match limited" title="Set preferences for personal ranking">All roles</span>';
+    const fit=priority(j);
+    return '<span class="match '+(fit.quality==="Limited evidence"?"limited":"")+
+      '" title="'+escapeHtml(fit.quality+" · rule-based personal priority, not AI")+'">'+
+      (j.demo?"Sample ":"Priority ")+fit.score+"/100</span>";
   };
   const overviewRow = function (j) {
     return '<div class="overview-row"><div class="company-symbol">' + escapeHtml(companyInitials(j.company)) + '</div><div class="overview-row-copy"><strong>' + escapeHtml(j.title) + '</strong><p>' + escapeHtml(j.company) + ' · ' + escapeHtml(j.location) + '</p></div>' + priorityBadge(j) +
@@ -133,12 +142,13 @@
   const card = function (j) {
     const url = safeUrl(j.url);
     const fit = priority(j);
+    const categoryName=jobCategory(j);
     const details = '<button class="text-link secondary-link" type="button" data-action="details" data-id="' + escapeHtml(j.id) + '">Why this priority?</button>';
     const aiReview = '<button class="text-link open-job-link" type="button" data-action="ai" data-id="' + escapeHtml(j.id) + '">AI review ✧</button>';
     const open = url
       ? '<a class="text-link open-job-link" href="' + escapeHtml(url) + '" rel="noopener noreferrer" aria-label="Open job listing for ' + escapeHtml(j.title) + ' at ' + escapeHtml(j.company) + '">Open listing ↗</a>'
       : '<span class="no-url-label">' + (j.demo ? 'Sample job — no link' : 'Posting link unavailable') + '</span>';
-    return '<article class="job-card"><div class="job-card-top"><div class="company-symbol">' + escapeHtml(companyInitials(j.company)) + '</div><button class="save-button ' + (j.stage ? 'saved' : '') + '" data-action="save" data-id="' + escapeHtml(j.id) + '">' + (j.stage ? '✓ Tracking' : '+ Save') + '</button></div><div class="card-priority-row">' + priorityBadge(j) + '<span class="priority-quality">' + escapeHtml(fit.quality) + '</span></div><h3>' + escapeHtml(j.title) + '</h3><p class="company-line">' + escapeHtml(j.company) + ' · ' + escapeHtml(j.location) + '</p><p class="description">' + escapeHtml(j.description || 'Full requirements are not included in the public scan. Open the listing to review them.') + '</p><div class="chip-wrap">' + chips(j.skills) + '</div><div class="card-footer"><span class="job-date">' + escapeHtml(jobSource(j)) + '</span><div class="card-action-group">' + details + aiReview + open + '</div></div></article>';
+    return '<article class="job-card"><div class="job-card-top"><div class="company-symbol">' + escapeHtml(companyInitials(j.company)) + '</div><button class="save-button ' + (j.stage ? 'saved' : '') + '" data-action="save" data-id="' + escapeHtml(j.id) + '">' + (j.stage ? '✓ Tracking' : '+ Save') + '</button></div><div class="card-priority-row">' + priorityBadge(j) + '<span class="priority-quality">' + escapeHtml(fit.quality) + '</span></div><h3>' + escapeHtml(j.title) + '</h3><p class="company-line">' + escapeHtml(j.company) + ' · ' + escapeHtml(j.location) + '</p><p class="description">' + escapeHtml(j.description || 'Full requirements are not included in the public scan. Open the listing to review them.') + '</p><div class="chip-wrap"><span class="skill-chip category-chip">' + escapeHtml(categoryName) + '</span>' + chips(j.skills) + '</div><div class="card-footer"><span class="job-date">' + escapeHtml(jobSource(j)) + '</span><div class="card-action-group">' + details + aiReview + open + '</div></div></article>';
   };
   const pipelineCount = function (stage) { return state.jobs.filter(function (j) { return j.stage === stage; }).length; };
   const renderOverview = function () {
@@ -147,7 +157,7 @@
     $("statApplied").textContent = ["Applied","Interview","Offer","Rejected"].reduce(function (n,s) { return n + pipelineCount(s); },0);
     $("statInterviews").textContent = pipelineCount("Interview");
     $("navJobsCount").textContent = state.jobs.length;
-    const top = state.jobs.slice().sort(function (a,b) { return priority(b).score - priority(a).score; }).slice(0,4);
+    const top = state.jobs.slice().sort(function (a,b) { return String(b.addedAt||"").localeCompare(String(a.addedAt||"")); }).slice(0,4);
     $("overviewJobs").innerHTML = top.length ? top.map(overviewRow).join("") : '<p class="muted">No opportunities yet. Add a job or import scan results.</p>';
     const total = STAGES.reduce(function (n,s) { return n + pipelineCount(s.name); },0);
     $("pipelineChart").innerHTML = STAGES.map(function (s) { const n = pipelineCount(s.name); return n ? '<span class="pipeline-bar" style="background:' + s.color + ';flex:' + n + '"></span>' : ''; }).join("");
@@ -326,8 +336,8 @@
   document.addEventListener("change", function (e) {
     if (e.target.matches("[data-stage-id]")) setStage(e.target.getAttribute("data-stage-id"), e.target.value);
   });
-  ["jobSearch","roleFilter","locationFilter","matchFilter","sortFilter"].forEach(function (id) { $(id).addEventListener(id === "jobSearch" ? "input" : "change", renderDiscover); });
-  $("clearFilters").addEventListener("click", function () { $("jobSearch").value = ""; $("roleFilter").value = ""; $("locationFilter").value = ""; $("matchFilter").value = "all"; renderDiscover(); });
+  ["jobSearch","categoryFilter","locationFilter","matchFilter","sortFilter"].forEach(function (id) { $(id).addEventListener(id === "jobSearch" ? "input" : "change", renderDiscover); });
+  $("clearFilters").addEventListener("click", function () { $("jobSearch").value = ""; $("categoryFilter").value = ""; $("locationFilter").value = ""; $("matchFilter").value = "all"; renderDiscover(); });
   $("mobileMenu").addEventListener("click", function () { const open = $("sidebar").classList.toggle("open"); $("mobileScrim").classList.toggle("show",open); $("mobileMenu").setAttribute("aria-expanded", String(open)); });
   $("mobileScrim").addEventListener("click", hideMobileMenu);
   window.addEventListener("hashchange", function () { showPage(location.hash.replace("#","")); });
