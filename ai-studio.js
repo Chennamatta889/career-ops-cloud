@@ -11,9 +11,45 @@
   const tokenKey = "careerops-v3-tab-session";
   let session = null;
   let activeResult = null;
+  let reviewReady = false;
   const text = (v,n=10000) => typeof v==="string" ? v.trim().slice(0,n) : "";
   const set = (id,message) => { byId(id).textContent = message; };
   const status = message => set("aiStatus",message);
+  function prerequisites() {
+    const resume = byId("aiResume").value.trim();
+    const jd = byId("aiJd").value.trim();
+    const role = byId("aiRole").value.trim();
+    const missing = [];
+    if (resume.length < 250) missing.push("resume (" + resume.length + "/250 characters)");
+    if (jd.length < 200) missing.push("full job description (" + jd.length + "/200 characters)");
+    if (!role) missing.push("job title");
+    if (!byId("aiConsent").checked) missing.push("AI processing consent");
+    set("aiResumeCount",resume.length + " characters · " + (resume.length>=250?"Ready":"Minimum 250"));
+    set("aiJdCount",jd.length + " characters · " + (jd.length>=200?"Ready":"Minimum 200 · paste the full employer job description"));
+    set("aiChecklist",missing.length ? "Before reviewing, add: " + missing.join("; ") + "." : "Inputs complete. Check the AI connection, then review.");
+    return missing;
+  }
+  async function checkReviewConnection(accessToken) {
+    reviewReady = false;
+    const token = accessToken || await getAccessToken();
+    if (!token) {status("Sign in to check the AI Review connection.");return false;}
+    status("Checking private AI Review configuration...");
+    try {
+      const result = await api("/functions/v1/careerops-ai-review",{
+        method:"POST",headers:headers(token),body:JSON.stringify({action:"status"})
+      });
+      reviewReady = result.ok===true && result.ready===true;
+      const missing = Array.isArray(result.missing) ? result.missing.join(", ") : "";
+      status(reviewReady ? "AI endpoint ready. Complete your resume and job description to generate drafts."
+        : "AI backend is connected but not enabled. Missing private settings: " + (missing || "unknown") +
+          ". Configure these in Career-Ops Supabase → Edge Functions → Secrets.");
+      return reviewReady;
+    } catch (error) {
+      const msg = text(error?.message || error,200);
+      status("AI connection check failed: " + (msg==="Failed to fetch" ? "Browser could not reach the function (check deployment and CORS settings)." : msg));
+      return false;
+    }
+  }
   function saveSession(s) {
     session=s;
     if (s) sessionStorage.setItem(tokenKey,JSON.stringify(s));
@@ -68,7 +104,8 @@
       byId("aiWorkspace").hidden=false;
       byId("aiSignOut").hidden=false;
       byId("aiLogin").hidden=true;
-      status("Signed in. Your resume text will only be sent to the private AI endpoint when you click Review with AI.");
+      status("Signed in. Checking whether AI Review is enabled...");
+      await checkReviewConnection(token);
     }catch(_){
       saveSession(null);byId("aiWorkspace").hidden=true;byId("aiLogin").hidden=false;byId("aiSignOut").hidden=true;
       status("Session expired. Please sign in again.");
@@ -155,19 +192,28 @@
     const f=this.files?.[0];if(!f)return;
     if(!/\.txt$/i.test(f.name) || f.size>16000){status("Choose a plain-text .txt resume under 16 KB.");this.value="";return;}
     byId("aiResume").value=await f.text();
+    prerequisites();
     status("Plain-text resume loaded locally; nothing uploaded.");
     this.value="";
   });
   byId("aiDownload").addEventListener("click",exportDraft);
+  ["aiResume","aiJd","aiRole","aiConsent"].forEach(id=>byId(id).addEventListener(id==="aiConsent"?"change":"input",prerequisites));
+  byId("aiCheckConnection").addEventListener("click",()=>checkReviewConnection());
   byId("aiAnalyze").addEventListener("click",async function(){
     const resume=byId("aiResume").value.trim();
     const jobDescription=byId("aiJd").value.trim();
     const jobTitle=byId("aiRole").value.trim();
     const employer=byId("aiCompany").value.trim();
-    if(resume.length<250 || jobDescription.length<200 || !jobTitle){status("Provide 250+ characters of resume text, a job title, and 200+ characters of job description.");return;}
-    if(!byId("aiConsent").checked){status("Confirm that you agree to send the resume and job text to the selected AI provider.");return;}
+    const missing = prerequisites();
+    if(missing.length){status("Review cannot start. Missing: "+missing.join("; ")+".");
+      if(resume.length<250)byId("aiResume").focus();
+      else if(jobDescription.length<200)byId("aiJd").focus();
+      else if(!jobTitle)byId("aiRole").focus();
+      return;
+    }
     const token=await getAccessToken();
     if(!token){status("Sign in again to review this job.");await refreshAuth();return;}
+    if(!reviewReady && !(await checkReviewConnection(token)))return;
     this.disabled=true;activeResult=null;byId("aiDownload").hidden=true;
     status("Requesting a private AI review. No application will be submitted.");
     try{
@@ -188,10 +234,12 @@
     byId("aiJobUrl").value=text(j.url,1000);
     byId("aiJd").value=text(j.description,15000);
     byId("aiResult").hidden=true;byId("aiDownload").hidden=true;activeResult=null;
-    status("Job selected. Paste the full job description and your resume text to begin a real AI review.");
+    prerequisites();
+    status("Job selected. The public scanner may not contain the full job description; paste it here, add your resume and consent, then request AI review.");
     document.querySelector('[data-nav="ai"]')?.click();
   });
   try{const stored=sessionStorage.getItem(tokenKey);if(stored)session=JSON.parse(stored);}catch(_){session=null;}
   readUrlSession();
+  prerequisites();
   refreshAuth();
 })();
