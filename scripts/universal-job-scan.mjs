@@ -14,7 +14,6 @@ const require=createRequire(import.meta.url);
 const {classify,categories}=require("../job-categories.js");
 const {plainText}=require("../job-text.js");
 const MAX_RESPONSE_BYTES=10*1024*1024;
-export const MAX_PUBLISHED=500;
 const clean=(value,n=200)=>typeof value==="string" ? value.replace(/[\u0000-\u001f\u007f]+/g," ").replace(/\s+/g," ").trim().slice(0,n):"";
 function date(value){
   if(typeof value!=="string"||!/^\d{4}-\d{2}-\d{2}/.test(value))return null;
@@ -84,7 +83,8 @@ export async function scanBoard(source,fetchImpl=fetch){
   if(!data||!Array.isArray(data.jobs))throw Error("Employer API response has no jobs array");
   return data.jobs.map(job=>normalize(source,job)).filter(Boolean);
 }
-export function balanceJobs(all,limit=MAX_PUBLISHED){
+export function balanceJobs(all){
+  // Diversify jobs without imposing an arbitrary publishing limit.
   const buckets=new Map(categories.map(cat=>[cat,[]]));
   const seen=new Set(),rows=all.slice().sort((a,b)=>
     String(b.posted_at||"").localeCompare(String(a.posted_at||"")) ||
@@ -92,20 +92,26 @@ export function balanceJobs(all,limit=MAX_PUBLISHED){
   for(const job of rows){
     if(!job?.url||!job?.title||seen.has(job.url.toLowerCase()))continue;
     seen.add(job.url.toLowerCase());
-    buckets.get(buckets.has(job.category)?job.category:"Other").push(job);
+    const category=buckets.has(job.category)?job.category:"Other";
+    buckets.get(category).push(job);
   }
+  const positions=new Map(categories.map(cat=>[cat,0]));
   const output=[];
-  let found=true;
-  while(found && output.length<limit){
-    found=false;
+  let more=true;
+  while(more){
+    more=false;
     for(const category of categories){
-      const bucket=buckets.get(category);
-      if(bucket.length&&output.length<limit){output.push(bucket.shift());found=true;}
+      const bucket=buckets.get(category),index=positions.get(category);
+      if(index<bucket.length){
+        output.push(bucket[index]);
+        positions.set(category,index+1);
+        more=true;
+      }
     }
   }
   return output;
 }
-export async function runScan({sources,fetchImpl=fetch,concurrency=5,limit=MAX_PUBLISHED}={}){
+export async function runScan({sources,fetchImpl=fetch,concurrency=5}={}){
   if(!Array.isArray(sources)||sources.length<1)throw Error("No employer sources configured");
   const seenSources=new Set();
   for(const source of sources){
@@ -125,12 +131,12 @@ export async function runScan({sources,fetchImpl=fetch,concurrency=5,limit=MAX_P
     }
   }));
   const status=errors.length===sources.length?"failed":errors.length?"partial":"success";
-  const published=status==="failed"?[]:balanceJobs(jobs,limit);
+  const published=status==="failed"?[]:balanceJobs(jobs);
   return {
     schema:"careerops.public-jobs.v1",generated_at:new Date().toISOString(),
     scope:"IT and non-IT roles at selected public Greenhouse/Ashby employers, worldwide. Not an exhaustive job search.",
     scan:{status,date:new Date().toISOString().slice(0,10),scanned:sources.length,
-      found,matched:published.length,error_count:errors.length,max_published:limit,
+      found,matched:published.length,error_count:errors.length,
       message:errors.length?"Some employers were unavailable; results may be incomplete.":
         "All published roles scanned without title, country, experience or seniority exclusions."},
     category_counts:Object.fromEntries(categories.map(c=>[c,published.filter(j=>j.category===c).length])),
@@ -143,7 +149,7 @@ async function main(){
   const sources=JSON.parse(readFileSync(sourceFile,"utf8")).sources;
   const feed=await runScan({sources});
   mkdirSync(path.dirname(output),{recursive:true});
-  writeFileSync(output,JSON.stringify(feed,null,2)+"\n",{mode:0o644});
+  writeFileSync(output,JSON.stringify(feed)+"\n",{mode:0o644});
   console.log(JSON.stringify({status:feed.scan.status,boards:feed.scan.scanned,
     inspected:feed.scan.found,published:feed.jobs.length,
     errors:feed.scan.error_count,categories:feed.category_counts},null,2));
