@@ -40,7 +40,7 @@ function harness(response,sharedStore) {
     setItem:(key,val)=>store.set(key,val),
     removeItem:key=>store.delete(key)
   },sessionStorage:{getItem:()=>null,setItem(){},removeItem(){}},
-  location:{hash:"",origin:"https://chennamatta889.github.io",pathname:"/career-ops-cloud/",search:""},
+  location:{hash:"",origin:"https://chennamatta889.github.io",pathname:"/",search:""},
   history:{replaceState(){}},
   // no real timers; cooldown UI still renders immediately
   setTimeout:()=>1,clearTimeout(){},setInterval:()=>1,clearInterval(){},
