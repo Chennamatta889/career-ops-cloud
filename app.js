@@ -346,7 +346,9 @@
     const experienceBadge='<span class="job-experience-badge" title="Based on an explicit employer requirement; verify the original posting">Experience: '+
       escapeHtml(experience?.label||"Not specified")+'</span>';
     const entrySignal=window.CareerOpsJobText?.entryOpportunity?.(j);
-    const entryBadge=entrySignal?.level==="fresher"?
+    const entryBadge=entrySignal?.level==="fresher"&&entrySignal?.basis==="title"?
+      '<span class="skill-chip fresher-entry-badge" title="Title suggests graduate/fresher audience; employer experience eligibility is not specified">Graduate/fresher title — eligibility unverified</span>':
+      entrySignal?.level==="fresher"?
       '<span class="skill-chip fresher-entry-badge" title="Fresher indication from job title or stated experience; verify graduate year and requirements on employer site">Fresher / intern pathway</span>':
       entrySignal?.level==="early"?
       '<span class="skill-chip fresher-entry-badge" title="A junior role or 1–2 year minimum is indicated; freshers must verify eligibility">Early-career opportunity</span>':"";

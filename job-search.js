@@ -11,8 +11,13 @@
   "use strict";
   function normalize(value){
     return String(value==null?"":value).normalize("NFKC").toLowerCase()
+      .replace(/(?:\basp\s*\.\s*net\b|\.\s*net\b|\bdot\s*net\b)/g,"dotnet")
+      .replace(/c\s*#/g,"csharp")
       .replace(/[^\p{L}\p{N}]+/gu," ").replace(/\s+/g," ").trim()
       // Treat well-known joined technology brands and their spaced forms equally.
+      .replace(/\b(?:dot\s*net|asp\s*net)\b/g,"dotnet")
+      .replace(/\bc\s*sharp\b/g,"csharp")
+      .replace(/\bqa\s*automation\b/g,"qa automation")
       .replace(/\bservice now\b/g,"servicenow")
       .replace(/\bsales force\b/g,"salesforce");
   }
