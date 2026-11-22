@@ -7,7 +7,9 @@
 import {readFileSync,appendFileSync,writeFileSync} from "node:fs";
 import {measureEnterpriseCoverage} from "./india-candidate-expansion.mjs";
 import {createRequire} from "node:module";
-const {entryOpportunity}=createRequire(import.meta.url)("../job-text.js");
+const require=createRequire(import.meta.url);
+const {entryOpportunity}=require("../job-text.js");
+const {measureRoleCoverage}=require("./phase12-role-coverage.cjs");
 const path=process.argv[2]||"public/data/jobs.json";
 const feed=JSON.parse(readFileSync(path,"utf8"));
 const jobs=feed.jobs;
@@ -33,6 +35,7 @@ for(const job of jobs){
   if(["fresher","early"].includes(classification.level))entry++;
   if(classification.level==="fresher"&&classification.basis==="explicit")zero++;
 }
+const roleCoverage=measureRoleCoverage(jobs);
 const lines=[
   "## Phase 12 verified India hiring coverage",
   "",
@@ -46,6 +49,17 @@ const lines=[
   "| Published MNC jobs | "+expected.published_jobs+" |",
   "",
   "Employer links without verified job cards are **not** counted. Fresher signals are not guarantees of eligibility.",
+  "",
+  "### Verified technology-role coverage",
+  "",
+  "| Role family | Published jobs | Explicit experience | Experience not specified | 0 years | 0–2 years | 3–5 years | 6+ years |",
+  "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+  ...Object.entries(roleCoverage).map(([name,row])=>
+    "| "+({dotnet:".NET / C#",java:"Java / Spring",testing:"QA / Testing"}[name])+ " | "+
+    [row.jobs,row.explicit_experience,row.experience_unspecified,row.zero_experience,
+      row.fresher_to_two_years,row.three_to_five_years,row.six_plus_years].join(" | ")+" |"),
+  "",
+  "Role-family counts overlap if a posting explicitly targets multiple stacks; titles, departments and stated skills are used, not incidental description mentions.",
   "",
   "### Verified MNC breakdown",
   "",
@@ -66,6 +80,7 @@ const evidence={
   entry_signals:entry,
   explicit_zero_experience:zero,
   enterprise_coverage:expected,
+  role_coverage:roleCoverage,
   candidate_discovery:{
     checked:feed.scan?.candidate_discovery?.checked??0,
     activated:feed.scan?.candidate_discovery?.activated??0,
