@@ -398,3 +398,21 @@ test("observed employer leads publish only recent India vacancies, not undated o
   assert.equal(out.jobs[0].title,"India Graduate Analyst");
   assert.equal(out.jobs[0].company,lead.name);
 });
+
+test("observed employer leads never duplicate curated boards or each other",()=>{
+  const key=s=>s.provider+":"+s.slug.toLowerCase();
+  const curatedKeys=new Set(curated.map(key));
+  const observed=observedRegistry.candidates;
+  assert.ok(observed.length>=11,"retain observed employer leads");
+  assert.equal(checkCandidateCatalog(observed),true);
+  assert.ok(observed.every(s=>!curatedKeys.has(key(s))),
+    "observed leads must not repeat an existing curated employer board");
+  for(const s of observed){
+    const url=new URL(s.reference_url);
+    assert.equal(url.protocol,"https:");
+    const expected={greenhouse:"job-boards.greenhouse.io",lever:"jobs.lever.co"};
+    assert.equal(url.hostname,expected[s.provider],"observed URL must use the employer ATS host");
+    assert.equal(url.pathname.split("/")[1].toLowerCase(),s.slug.toLowerCase(),
+      "reference URL must point to the declared employer board");
+  }
+});
