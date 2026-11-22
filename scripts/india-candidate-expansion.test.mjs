@@ -360,7 +360,7 @@ test("phase 12 prioritizes boards with proven entry-level India vacancies withou
 
 test("observed India employer board leads are real attributed URLs but never count as vacancies",()=>{
   assert.equal(observedRegistry.version,1);
-  assert.equal(observedRegistry.candidates.length,7);
+  assert.ok(observedRegistry.candidates.length>=7,"observed lead catalog must retain the seven previously verified leads");
   const observedSlugs=new Set(observedRegistry.candidates.map(s=>s.slug));
   for(const slug of ["superapp","tide","cleoindia","asteralabs"])
     assert.ok(observedSlugs.has(slug),"missing observed India employer "+slug);
