@@ -41,6 +41,7 @@ on:
       - scripts/india-observed-employer-leads.json
       - scripts/india-candidate-expansion.mjs
       - scripts/india-candidate-expansion.test.mjs
+      - scripts/phase12-role-coverage.cjs
       - scripts/report-published-coverage.mjs
       - scripts/report-published-coverage.test.mjs
       - job-categories.js
@@ -128,6 +129,7 @@ jobs:
           node --check scripts/job-freshness.test.mjs
           node --check scripts/india-candidate-expansion.mjs
           node --check scripts/india-candidate-expansion.test.mjs
+          node --check scripts/phase12-role-coverage.cjs
           node --check scripts/report-published-coverage.mjs
           node --check scripts/report-published-coverage.test.mjs
           node --check scripts/guard-public-feed.mjs
