@@ -2,11 +2,8 @@ name: Phase 08 real-browser website QA
 
 on:
   workflow_dispatch:
-  # Test only after GitHub Pages has finished publishing. Running on push
-  # raced with the deployment and could test an unrelated or stale root site.
-  workflow_run:
-    workflows: ["Publish Career-Ops dashboard"]
-    types: [completed]
+  # The project Pages workflow is disabled; root Pages is deployed by a separate repository.
+  # Dispatch only after confirming the root site's deployment completed.
 
 permissions:
   contents: read
@@ -17,7 +14,6 @@ concurrency:
 
 jobs:
   real-browser-qa:
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -27,11 +23,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - name: Validate canonical Pages QA configuration
+        run: node --test scripts/phase12-canonical-live-qa.test.mjs
       - name: Install pinned Playwright and isolated Chromium
         run: |
           npm install --no-save --package-lock=false --ignore-scripts --no-audit --no-fund playwright@1.56.1
           npx playwright install --with-deps chromium
       - name: Test the deployed site in real desktop and mobile browsers
         env:
-          CAREEROPS_LIVE_ORIGIN: https://chennamatta889.github.io/career-ops-cloud
+          CAREEROPS_LIVE_ORIGIN: https://chennamatta889.github.io
         run: node scripts/browser-live-smoke.mjs
