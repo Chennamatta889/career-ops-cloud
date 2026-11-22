@@ -60,6 +60,15 @@
       "sector": "Semiconductors",
       "reference_url": "https://job-boards.greenhouse.io/asteralabs",
       "observed_location": "Bengaluru, India"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "techholding",
+      "name": "Tech Holding",
+      "sector": "IT Services",
+      "reference_url": "https://job-boards.greenhouse.io/techholding",
+      "observed_location": "Ahmedabad and Pune, India",
+      "observed_role": "Lead Software Engineer - C# / .NET"
     }
   ]
 }
