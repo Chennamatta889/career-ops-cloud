@@ -13,12 +13,16 @@
     return String(value==null?"":value).normalize("NFKC").toLowerCase()
       .replace(/[^\p{L}\p{N}]+/gu," ").replace(/\s+/g," ").trim()
       // Treat well-known joined technology brands and their spaced forms equally.
+      .replace(/\b(?:dot\s*net|asp\s*net)\b/g,"dotnet")
+      .replace(/\bc\s*sharp\b/g,"csharp")
+      .replace(/\bqa\s*automation\b/g,"qa automation")
       .replace(/\bservice now\b/g,"servicenow")
       .replace(/\bsales force\b/g,"salesforce");
   }
   const containsTerm=(value,term)=>Boolean(value&&(" "+value+" ").includes(" "+term+" "));
   function evaluate(job,query,{includeDescription=false}={}){
-    const search=normalize(query);
+    const search=normalize(query)
+      .replace(/\b\.net\b/g,"dotnet");
     if(!search)return {matches:true,score:0,source:"all"};
     const terms=search.split(" ").filter(Boolean);
     const fields=[
