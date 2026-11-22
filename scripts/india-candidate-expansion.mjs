@@ -230,8 +230,16 @@ export function mergeIndiaCandidates(feed,expansion,balanceJobs){
   const normalizedUrl=job=>typeof job?.url==="string"?job.url.trim().toLowerCase():"";
   const baseUrls=new Set(feed.jobs.map(normalizedUrl));
   const candidateUrls=new Set(expansion.jobs.map(normalizedUrl));
-  const publishedCandidateJobs=jobs.filter(job=>candidateUrls.has(normalizedUrl(job))&&
-    !baseUrls.has(normalizedUrl(job)));
+  // Publication balancing may preserve duplicate URLs from overlapping sources.
+  // Count each real candidate URL once, even when the final feed contains repeats.
+  const countedCandidateUrls=new Set();
+  const publishedCandidateJobs=jobs.filter(job=>{
+    const url=normalizedUrl(job);
+    if(!url||!candidateUrls.has(url)||baseUrls.has(url)||countedCandidateUrls.has(url))
+      return false;
+    countedCandidateUrls.add(url);
+    return true;
+  });
   const entryJobs=publishedCandidateJobs.map(job=>({job,entry:entryOpportunity(job)}))
     .filter(row=>row.entry.level==="fresher"||row.entry.level==="early");
   const employers=new Map();

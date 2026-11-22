@@ -142,6 +142,29 @@ test("phase 12 reports unique published fresher roles and employers after dedupl
   assert.equal(base.jobs.length,1);
 });
 
+test("phase 12 does not inflate published candidate evidence when final feed repeats URLs",()=>{
+  const make=(url,title,company)=>({
+    url,title,company,location:"Hyderabad, India",category:"IT & Software",description:""
+  });
+  const base=make("https://jobs.example.org/existing","Developer","Existing");
+  const fresh=make("https://jobs.example.org/new","Graduate Engineer Trainee","New Employer");
+  const other=make("https://jobs.example.org/other","Junior Developer","Other Employer");
+  const feed={jobs:[base],category_counts:{},source_health:[],
+    scan:{scanned:1,found:1,matched:1}};
+  const expansion={jobs:[base,fresh,fresh,other],health:[],
+    report:{inspected_positions:4},history:{}};
+  // A non-deduplicating balancing function must not inflate evidence metrics.
+  const result=mergeIndiaCandidates(feed,expansion,jobs=>jobs);
+  assert.equal(result.jobs.length,5);
+  const evidence=result.scan.candidate_discovery.published_evidence;
+  assert.equal(evidence.unique_candidate_jobs,2);
+  assert.equal(evidence.unique_candidate_entry_positions,2);
+  assert.equal(evidence.employers_with_entry_positions,2);
+  assert.deepEqual(evidence.employer_breakdown,[
+    {name:"New Employer",positions:1},{name:"Other Employer",positions:1}
+  ]);
+});
+
 test("phase 12 enterprise coverage uses only unique actual employer jobs and exact names",()=>{
   const jobs=[
     {url:"https://example.org/a",company:"Microsoft",title:"Graduate Trainee",
