@@ -70,3 +70,27 @@ test("invalid coverage does not emit public evidence",()=>{
   assert.notEqual(result.status,0);
   assert.equal(result.evidence,null);
 });
+
+test("role-family evidence reflects only published titles and explicit experience",()=>{
+  const sample=[
+    {url:"https://jobs.example.org/dotnet",company:"A",title:".NET Developer",
+      requiredExperience:"3–5 years",location:"India"},
+    {url:"https://jobs.example.org/java",company:"B",title:"Java Spring Boot Engineer",
+      requiredExperience:"0–2 years",location:"India"},
+    {url:"https://jobs.example.org/qa",company:"C",title:"Manual Tester",
+      location:"India"},
+    {url:"https://jobs.example.org/unrelated",company:"D",title:"Sales Executive",
+      description:"Works with Java engineers",location:"India"}
+  ];
+  const input={market:"IN",jobs:sample,scan:{india_only:true,candidate_discovery:{
+    enterprise_coverage:measureEnterpriseCoverage(sample)}}};
+  const result=run(input);
+  assert.equal(result.status,0,result.stderr);
+  assert.equal(result.evidence.role_coverage.dotnet.jobs,1);
+  assert.equal(result.evidence.role_coverage.dotnet.three_to_five_years,1);
+  assert.equal(result.evidence.role_coverage.java.jobs,1);
+  assert.equal(result.evidence.role_coverage.java.fresher_to_two_years,1);
+  assert.equal(result.evidence.role_coverage.testing.jobs,1);
+  assert.equal(result.evidence.role_coverage.testing.experience_unspecified,1);
+  assert.match(result.stdout,/Verified technology-role coverage/);
+});
