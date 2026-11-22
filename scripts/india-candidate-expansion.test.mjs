@@ -360,23 +360,27 @@ test("phase 12 prioritizes boards with proven entry-level India vacancies withou
 
 test("observed India employer board leads are real attributed URLs but never count as vacancies",()=>{
   assert.equal(observedRegistry.version,1);
-  assert.equal(observedRegistry.candidates.length,7);
+  assert.ok(observedRegistry.candidates.length>=11,"retain observed employer coverage");
   const observedSlugs=new Set(observedRegistry.candidates.map(s=>s.slug));
   for(const slug of ["superapp","tide","cleoindia","asteralabs"])
     assert.ok(observedSlugs.has(slug),"missing observed India employer "+slug);
   const superapp=observedRegistry.candidates.find(s=>s.slug==="superapp");
   assert.equal(superapp.focus,"fresher");
   assert.match(superapp.observed_role,/Early Careers/);
-  assert.ok(observedRegistry.candidates.every(s=>s.reference_url.startsWith(
-    "https://job-boards.greenhouse.io/"+s.slug)));
+  assert.ok(observedRegistry.candidates.every(s=>{
+    const hosts={greenhouse:"job-boards.greenhouse.io",lever:"jobs.lever.co"};
+    const url=new URL(s.reference_url);
+    return url.protocol==="https:" && url.hostname===hosts[s.provider]
+      && url.pathname.split("/")[1].toLowerCase()===s.slug.toLowerCase();
+  }));
   assert.equal(checkCandidateCatalog(observedRegistry.candidates),true);
   const all=[...curated,...registry.candidates,...fresherRegistry.candidates,...earlyRegistry.candidates];
   const keys=new Set(all.map(s=>s.provider+":"+s.slug.toLowerCase()));
   for(const source of observedRegistry.candidates){
-    assert.equal(source.provider,"greenhouse");
+    assert.ok(["greenhouse","lever"].includes(source.provider));
     const url=new URL(source.reference_url);
-    assert.equal(url.origin,"https://job-boards.greenhouse.io");
-    assert.equal(url.pathname.split("/")[1],source.slug);
+    assert.equal(url.hostname,source.provider==="greenhouse"?"job-boards.greenhouse.io":"jobs.lever.co");
+    assert.equal(url.pathname.split("/")[1].toLowerCase(),source.slug.toLowerCase());
     assert.match(source.observed_location,/India/);
     assert.ok(!keys.has(source.provider+":"+source.slug.toLowerCase()),"existing source: "+source.slug);
   }
@@ -397,4 +401,22 @@ test("observed employer leads publish only recent India vacancies, not undated o
   assert.equal(out.jobs.length,1);
   assert.equal(out.jobs[0].title,"India Graduate Analyst");
   assert.equal(out.jobs[0].company,lead.name);
+});
+
+test("observed employer leads never duplicate curated boards or each other",()=>{
+  const key=s=>s.provider+":"+s.slug.toLowerCase();
+  const curatedKeys=new Set(curated.map(key));
+  const observed=observedRegistry.candidates;
+  assert.ok(observed.length>=11,"retain observed employer leads");
+  assert.equal(checkCandidateCatalog(observed),true);
+  assert.ok(observed.every(s=>!curatedKeys.has(key(s))),
+    "observed leads must not repeat an existing curated employer board");
+  for(const s of observed){
+    const url=new URL(s.reference_url);
+    assert.equal(url.protocol,"https:");
+    const expected={greenhouse:"job-boards.greenhouse.io",lever:"jobs.lever.co"};
+    assert.equal(url.hostname,expected[s.provider],"observed URL must use the employer ATS host");
+    assert.equal(url.pathname.split("/")[1].toLowerCase(),s.slug.toLowerCase(),
+      "reference URL must point to the declared employer board");
+  }
 });
