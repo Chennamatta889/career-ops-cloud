@@ -11,6 +11,8 @@
   "use strict";
   function normalize(value){
     return String(value==null?"":value).normalize("NFKC").toLowerCase()
+      .replace(/\b(?:asp\s*\.\s*net|\.\s*net|dot\s*net)\b/g,"dotnet")
+      .replace(/c\s*#/g,"csharp")
       .replace(/[^\p{L}\p{N}]+/gu," ").replace(/\s+/g," ").trim()
       // Treat well-known joined technology brands and their spaced forms equally.
       .replace(/\b(?:dot\s*net|asp\s*net)\b/g,"dotnet")
@@ -21,8 +23,7 @@
   }
   const containsTerm=(value,term)=>Boolean(value&&(" "+value+" ").includes(" "+term+" "));
   function evaluate(job,query,{includeDescription=false}={}){
-    const search=normalize(query)
-      .replace(/\b\.net\b/g,"dotnet");
+    const search=normalize(query);
     if(!search)return {matches:true,score:0,source:"all"};
     const terms=search.split(" ").filter(Boolean);
     const fields=[
