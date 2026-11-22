@@ -286,6 +286,14 @@
       "verified_previous_deployment_run": 44969134835,
       "verified_previous_browser_qa_run": 44969226223,
       "observed_candidate_boards_added": 4
+    },
+    {
+      "phase": 12,
+      "status": "in_progress",
+      "note": "PR #33 CI run 45005596461 failed 1/156 tests: observed board provenance regression incorrectly required all 12 official employer leads to be Greenhouse, while three are Lever. Corrected test to validate provider-specific official origins, slug path, India evidence, duplicate safety and catalog validation. Awaiting rerun CI; no merge/deploy/live QA or phase advancement.",
+      "pr": "https://github.com/Chennamatta889/career-ops-cloud/pull/33",
+      "failed_ci_run": 45005596461,
+      "repair_commit": "5a48fad5e04bff7ec60bc65d75577603c4f7270c"
     }
   ]
 }
