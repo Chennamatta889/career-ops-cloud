@@ -360,22 +360,21 @@ test("phase 12 prioritizes boards with proven entry-level India vacancies withou
 
 test("observed India employer board leads are real attributed URLs but never count as vacancies",()=>{
   assert.equal(observedRegistry.version,1);
-  assert.equal(observedRegistry.candidates.length,7);
+  assert.ok(observedRegistry.candidates.length>=7,"observed lead catalog must retain the seven previously verified leads");
   const observedSlugs=new Set(observedRegistry.candidates.map(s=>s.slug));
   for(const slug of ["superapp","tide","cleoindia","asteralabs"])
     assert.ok(observedSlugs.has(slug),"missing observed India employer "+slug);
   const superapp=observedRegistry.candidates.find(s=>s.slug==="superapp");
   assert.equal(superapp.focus,"fresher");
   assert.match(superapp.observed_role,/Early Careers/);
-  assert.ok(observedRegistry.candidates.every(s=>s.reference_url.startsWith(
-    "https://job-boards.greenhouse.io/"+s.slug)));
+  const allowedOrigins={greenhouse:"https://job-boards.greenhouse.io",lever:"https://jobs.lever.co"};
   assert.equal(checkCandidateCatalog(observedRegistry.candidates),true);
   const all=[...curated,...registry.candidates,...fresherRegistry.candidates,...earlyRegistry.candidates];
   const keys=new Set(all.map(s=>s.provider+":"+s.slug.toLowerCase()));
   for(const source of observedRegistry.candidates){
-    assert.equal(source.provider,"greenhouse");
+    assert.ok(Object.hasOwn(allowedOrigins,source.provider),"unsupported observed provider: "+source.provider);
     const url=new URL(source.reference_url);
-    assert.equal(url.origin,"https://job-boards.greenhouse.io");
+    assert.equal(url.origin,allowedOrigins[source.provider]);
     assert.equal(url.pathname.split("/")[1],source.slug);
     assert.match(source.observed_location,/India/);
     assert.ok(!keys.has(source.provider+":"+source.slug.toLowerCase()),"existing source: "+source.slug);
