@@ -132,7 +132,7 @@
     const earlyTitle=/\b(?:junior|associate[ -](?:software|engineer|developer|analyst|consultant)|(?:software[ -])?engineer[ -]?(?:i|1)|analyst[ -]?(?:i|1))\b/i.test(title);
     if(senior||minYears>2)return {level:"unknown",basis:"",minYears:minYears??null};
     if(minYears===0)return {level:"fresher",basis:"explicit",minYears:0};
-    if(fresherTitle&&minYears==null)return {level:"fresher",basis:"title",minYears:null};
+    if(fresherTitle&&minYears==null)return {level:"early",basis:"title",minYears:null};
     if(fresherTitle&&minYears===1)return {level:"early",basis:"title",minYears:1};
     if(minYears>=1&&minYears<=2)return {level:"early",basis:"explicit",minYears};
     if(earlyTitle&&minYears==null)return {level:"early",basis:"title",minYears:null};
