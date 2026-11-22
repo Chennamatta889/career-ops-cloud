@@ -360,7 +360,15 @@ test("phase 12 prioritizes boards with proven entry-level India vacancies withou
 
 test("observed India employer board leads are real attributed URLs but never count as vacancies",()=>{
   assert.equal(observedRegistry.version,1);
-  assert.equal(observedRegistry.candidates.length,3);
+  assert.equal(observedRegistry.candidates.length,7);
+  const observedSlugs=new Set(observedRegistry.candidates.map(s=>s.slug));
+  for(const slug of ["superapp","tide","cleoindia","asteralabs"])
+    assert.ok(observedSlugs.has(slug),"missing observed India employer "+slug);
+  const superapp=observedRegistry.candidates.find(s=>s.slug==="superapp");
+  assert.equal(superapp.focus,"fresher");
+  assert.match(superapp.observed_role,/Early Careers/);
+  assert.ok(observedRegistry.candidates.every(s=>s.reference_url.startsWith(
+    "https://job-boards.greenhouse.io/"+s.slug)));
   assert.equal(checkCandidateCatalog(observedRegistry.candidates),true);
   const all=[...curated,...registry.candidates,...fresherRegistry.candidates,...earlyRegistry.candidates];
   const keys=new Set(all.map(s=>s.provider+":"+s.slug.toLowerCase()));
