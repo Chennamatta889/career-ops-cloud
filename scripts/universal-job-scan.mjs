@@ -319,7 +319,12 @@ async function main(){
     const earlyCandidates=JSON.parse(readFileSync(earlyFile,"utf8")).candidates;
     // Source leads are NOT automatically validated openings: every board
     // must pass public API, India, real vacancy and 30-day eligibility gates.
-    const candidates=[...earlyCandidates,...fresherCandidates,...legacyCandidates];
+    // Observed official India boards are discovery leads, never job cards.
+    // All go through the same live ATS, India, freshness and deduplication gates.
+    const observedFile=process.env.OBSERVED_INDIA_JOB_CANDIDATES_FILE||
+      "scripts/india-observed-employer-leads.json";
+    const observedCandidates=JSON.parse(readFileSync(observedFile,"utf8")).candidates;
+    const candidates=[...earlyCandidates,...fresherCandidates,...observedCandidates,...legacyCandidates];
     const previousHealth=await readPreviousCandidateHealth();
     const expansion=await discoverIndiaCandidates({candidates,curatedSources:sources,
       scanBoard,isIndiaLocation,now,previousHealth});
