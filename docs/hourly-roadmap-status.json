@@ -1,7 +1,7 @@
 {
   "schema": "careerops.hourly-roadmap.v1",
   "project": "Career-Ops, India-only, free-API job discovery",
-  "active_phase": 12,
+  "active_phase": 13,
   "last_completed_phase": 11,
   "verification_required": [
     "PR regression tests pass",
@@ -79,13 +79,13 @@
     {
       "number": 12,
       "title": "Fresher and Indian MNC source expansion",
-      "status": "in_progress",
+      "status": "paused",
       "definition_of_done": "Integrate only permitted anonymous company feeds, prioritize verifiable zero-to-two-year India vacancies, prevent duplicates and stale postings, report real additions"
     },
     {
       "number": 13,
       "title": "Evidence-based matching and resume tailoring",
-      "status": "pending",
+      "status": "in_progress",
       "definition_of_done": "Improve relevance and career eligibility without inventing experience or application claims; add tests and private-by-design controls"
     },
     {
@@ -286,6 +286,16 @@
       "verified_previous_deployment_run": 44969134835,
       "verified_previous_browser_qa_run": 44969226223,
       "observed_candidate_boards_added": 4
+    },
+    {
+      "phase": 12,
+      "status": "paused",
+      "note": "User explicitly requested pausing Phase 12 and starting Phase 13 on 2026-11-22. Phase 12 remains incomplete; PRs #28 and #30 have failed CI and remain unmerged. This is a priority override, not verification or completion."
+    },
+    {
+      "phase": 13,
+      "status": "in_progress",
+      "note": "User-authorized out-of-order priority override; Phase 13 must preserve Phase 12 pending work and must not claim earlier acceptance criteria passed."
     }
   ]
 }
