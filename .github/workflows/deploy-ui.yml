@@ -2,6 +2,8 @@ name: Publish Career-Ops dashboard
 
 on:
   workflow_dispatch:
+  # Project-site publishing disabled: only the account root is the deployment target.
+  # Retain the former workflow for audit, but prevent all deployments.
   push:
     branches: [main]
     paths:
@@ -87,6 +89,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: ${{ false }} # Disabled; root repository owns Pages publishing.
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     environment:
