@@ -60,6 +60,51 @@
       "sector": "Semiconductors",
       "reference_url": "https://job-boards.greenhouse.io/asteralabs",
       "observed_location": "Bengaluru, India"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "techholding",
+      "name": "Tech Holding",
+      "sector": "IT Services",
+      "reference_url": "https://job-boards.greenhouse.io/techholding",
+      "observed_location": "Ahmedabad and Pune, India",
+      "observed_role": "Lead Software Engineer - C# / .NET"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "zenoti",
+      "name": "Zenoti",
+      "sector": "SaaS",
+      "reference_url": "https://job-boards.greenhouse.io/zenoti",
+      "observed_location": "Hyderabad, Telangana, India",
+      "observed_role": "Senior Software Engineer - .NET + AI"
+    },
+    {
+      "provider": "lever",
+      "slug": "mapsted",
+      "name": "Mapsted",
+      "sector": "Software",
+      "reference_url": "https://jobs.lever.co/mapsted/595ff56c-976e-4a24-b0a4-7862edda997a",
+      "observed_location": "India, Remote",
+      "observed_role": "Software Developer (.NET, React, Node.js), 3-12 years"
+    },
+    {
+      "provider": "lever",
+      "slug": "coupa",
+      "name": "Coupa",
+      "sector": "Enterprise Software",
+      "reference_url": "https://jobs.lever.co/coupa?department=Development",
+      "observed_location": "Bengaluru and Hyderabad, India",
+      "observed_role": "Lead Software Engineer - .NET"
+    },
+    {
+      "provider": "lever",
+      "slug": "reply",
+      "name": "Reply",
+      "sector": "IT Services",
+      "reference_url": "https://jobs.lever.co/reply?location=Kochi%2C+Kerala",
+      "observed_location": "Kochi, Kerala, India",
+      "observed_role": "Senior .NET Full Stack Developer (React)"
     }
   ]
 }
