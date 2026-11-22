@@ -268,6 +268,16 @@
         "servicenow_jobs": 54,
         "servicenow_entry_signals": 0
       }
+    },
+    {
+      "phase": 12,
+      "status": "in_progress",
+      "note": "Added three directly observed employer-operated Greenhouse India board leads (Definitive Healthcare India, Sahaj Software, 66degrees) as candidates only. Each must pass live anonymous ATS scan, India location, 30-day freshness and dedup; no MNC coverage or new jobs claimed. PR #24 CI passed and merged. Production deployment and independent live browser QA pending. Phase 12 remains active.",
+      "pr": "https://github.com/Chennamatta889/career-ops-cloud/pull/24",
+      "merge_commit": "eb5bc1bea9aa62af4d95a8a3e1894e917346dc65",
+      "pr_ci_run": 44969095917,
+      "deployment_run": 44969134835,
+      "observed_candidate_boards_added": 3
     }
   ]
 }
