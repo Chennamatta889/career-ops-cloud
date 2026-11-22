@@ -5,7 +5,7 @@
  */
 import assert from "node:assert/strict";
 import {chromium} from "playwright";
-const website=(process.env.CAREEROPS_LIVE_ORIGIN||"https://chennamatta889.github.io/career-ops-cloud").replace(/\/$/,"");
+const website=(process.env.CAREEROPS_LIVE_ORIGIN||"https://chennamatta889.github.io").replace(/\/$/,"");
 const browser=await chromium.launch({headless:true,args:["--disable-dev-shm-usage"]});
 const failures=[];
 function watch(page){page.on("pageerror",error=>failures.push(String(error.message||error)));}
