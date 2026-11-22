@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "purpose": "Directly observed employer-operated public Greenhouse boards advertising India roles. These are leads only; no claim of active/recent vacancies. Scanner must verify each public API response, India location and last-30-day publication date before publication.",
+  "checked_on": "2026-11-22",
+  "candidates": [
+    {
+      "provider": "greenhouse",
+      "slug": "definitivehcindia",
+      "name": "Definitive Healthcare India",
+      "sector": "Healthcare Technology",
+      "reference_url": "https://job-boards.greenhouse.io/definitivehcindia/jobs/6141869004",
+      "observed_location": "Bengaluru, India"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "sahajsoftware",
+      "name": "Sahaj Software",
+      "sector": "IT Services",
+      "reference_url": "https://job-boards.greenhouse.io/sahajsoftware",
+      "observed_location": "Bengaluru, Chennai, Hyderabad, Pune, India"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "66degrees",
+      "name": "66degrees",
+      "sector": "Cloud & AI Consulting",
+      "reference_url": "https://job-boards.greenhouse.io/66degrees/jobs/6209180004",
+      "observed_location": "Bengaluru, India"
+    }
+  ]
+}

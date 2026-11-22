@@ -11,6 +11,7 @@ on:
       - 'scripts/india-employer-candidates.json'
       - 'scripts/india-fresher-candidates.json'
       - 'scripts/india-early-career-candidates.json'
+      - 'scripts/india-observed-employer-leads.json'
       - 'scripts/india-candidate-expansion.mjs'
       - 'scripts/india-candidate-expansion.test.mjs'
       - 'scripts/report-published-coverage.mjs'

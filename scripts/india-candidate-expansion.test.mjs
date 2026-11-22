@@ -10,6 +10,7 @@ const {isIndiaLocation}=require("../india-jobs.js");
 const registry=JSON.parse(readFileSync("scripts/india-employer-candidates.json","utf8"));
 const fresherRegistry=JSON.parse(readFileSync("scripts/india-fresher-candidates.json","utf8"));
 const earlyRegistry=JSON.parse(readFileSync("scripts/india-early-career-candidates.json","utf8"));
+const observedRegistry=JSON.parse(readFileSync("scripts/india-observed-employer-leads.json","utf8"));
 const curated=JSON.parse(readFileSync("scripts/universal-job-sources.json","utf8")).sources;
 const fakeResponse=obj=>{
   const bytes=new TextEncoder().encode(JSON.stringify(obj));let done=false;
@@ -355,4 +356,37 @@ test("phase 12 prioritizes boards with proven entry-level India vacancies withou
   assert.equal(out.report.checked,3);
   assert.equal(out.report.entry_positions,3);
   assert.equal(out.report.explicit_zero_experience_positions,0);
+});
+
+test("observed India employer board leads are real attributed URLs but never count as vacancies",()=>{
+  assert.equal(observedRegistry.version,1);
+  assert.equal(observedRegistry.candidates.length,3);
+  assert.equal(checkCandidateCatalog(observedRegistry.candidates),true);
+  const all=[...curated,...registry.candidates,...fresherRegistry.candidates,...earlyRegistry.candidates];
+  const keys=new Set(all.map(s=>s.provider+":"+s.slug.toLowerCase()));
+  for(const source of observedRegistry.candidates){
+    assert.equal(source.provider,"greenhouse");
+    const url=new URL(source.reference_url);
+    assert.equal(url.origin,"https://job-boards.greenhouse.io");
+    assert.equal(url.pathname.split("/")[1],source.slug);
+    assert.match(source.observed_location,/India/);
+    assert.ok(!keys.has(source.provider+":"+source.slug.toLowerCase()),"existing source: "+source.slug);
+  }
+});
+test("observed employer leads publish only recent India vacancies, not undated or overseas listings",async()=>{
+  const lead=observedRegistry.candidates[0];
+  const out=await discoverIndiaCandidates({
+    candidates:[lead],curatedSources:[],scanBoard,isIndiaLocation,
+    now:new Date("2026-11-22T00:00:00Z"),
+    fetchImpl:async()=>fakeResponse({jobs:[
+      {id:6141869004,title:"India Graduate Analyst",location:{name:"Bengaluru, India"},first_published:"2026-11-21T10:00:00Z"},
+      {id:6141869005,title:"Old India Role",location:{name:"Bengaluru, India"},first_published:"2026-08-01T10:00:00Z"},
+      {id:6141869006,title:"Undated India Role",location:{name:"Bengaluru, India"}},
+      {id:6141869007,title:"London Role",location:{name:"London, UK"},first_published:"2026-11-21T10:00:00Z"}
+    ]})
+  });
+  assert.equal(out.report.activated,1);
+  assert.equal(out.jobs.length,1);
+  assert.equal(out.jobs[0].title,"India Graduate Analyst");
+  assert.equal(out.jobs[0].company,lead.name);
 });
