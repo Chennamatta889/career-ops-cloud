@@ -26,6 +26,40 @@
       "sector": "Cloud & AI Consulting",
       "reference_url": "https://job-boards.greenhouse.io/66degrees/jobs/6209180004",
       "observed_location": "Bengaluru, India"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "superapp",
+      "name": "SuperApp",
+      "sector": "Software & AI",
+      "reference_url": "https://job-boards.greenhouse.io/superapp",
+      "observed_location": "Bengaluru, India",
+      "focus": "fresher",
+      "observed_role": "Software Engineer, Backend (Early Careers)"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "tide",
+      "name": "Tide",
+      "sector": "Financial Technology",
+      "reference_url": "https://job-boards.greenhouse.io/tide",
+      "observed_location": "Hyderabad, Bengaluru, Delhi NCR, India"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "cleoindia",
+      "name": "Cleo India",
+      "sector": "Software",
+      "reference_url": "https://job-boards.greenhouse.io/cleoindia",
+      "observed_location": "Bengaluru, India"
+    },
+    {
+      "provider": "greenhouse",
+      "slug": "asteralabs",
+      "name": "Astera Labs",
+      "sector": "Semiconductors",
+      "reference_url": "https://job-boards.greenhouse.io/asteralabs",
+      "observed_location": "Bengaluru, India"
     }
   ]
 }
