@@ -23,6 +23,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - name: Validate canonical Pages QA configuration
+        run: node --test scripts/phase12-canonical-live-qa.test.mjs
       - name: Install pinned Playwright and isolated Chromium
         run: |
           npm install --no-save --package-lock=false --ignore-scripts --no-audit --no-fund playwright@1.56.1
