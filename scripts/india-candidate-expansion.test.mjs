@@ -366,7 +366,9 @@ test("observed India employer board leads are real attributed URLs but never cou
   const keys=new Set(all.map(s=>s.provider+":"+s.slug.toLowerCase()));
   for(const source of observedRegistry.candidates){
     assert.equal(source.provider,"greenhouse");
-    assert.match(source.reference_url,new RegExp("^https://job-boards\\.greenhouse\\.io/"+source.slug+"(?:/|$)"));
+    const url=new URL(source.reference_url);
+    assert.equal(url.origin,"https://job-boards.greenhouse.io");
+    assert.equal(url.pathname.split("/")[1],source.slug);
     assert.match(source.observed_location,/India/);
     assert.ok(!keys.has(source.provider+":"+source.slug.toLowerCase()),"existing source: "+source.slug);
   }
