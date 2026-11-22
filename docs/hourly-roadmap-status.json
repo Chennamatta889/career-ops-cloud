@@ -249,6 +249,25 @@
       "merge_commit": "b35f2fd76dccb2e4a941cba75ca6d1128f26a405",
       "pr_ci_run": 44964287912,
       "deployment_run": 44964319618
+    },
+    {
+      "phase": 12,
+      "status": "in_progress",
+      "note": "PR #23 merged and verified: CI, production deployment + live smoke, and independent Chromium QA all passed. Release log independently shows 513 India jobs, 60 fresher/early-career signals, 15 explicit zero-experience signals, but only 1 of 13 directory MNCs with published jobs (ServiceNow: 54, none entry-level). Therefore Phase 12 employer expansion is NOT complete. Next: permitted verified employer API expansion; do not advance to Phase 13.",
+      "pr": "https://github.com/Chennamatta889/career-ops-cloud/pull/23",
+      "merge_commit": "b35f2fd76dccb2e4a941cba75ca6d1128f26a405",
+      "pr_ci_run": 44964287912,
+      "deployment_run": 44964319618,
+      "live_browser_qa_run": 44964397750,
+      "verified_release_metrics": {
+        "recent_india_jobs": 513,
+        "entry_signals": 60,
+        "explicit_zero_experience": 15,
+        "directory_mncs_with_jobs": 1,
+        "directory_mncs_total": 13,
+        "servicenow_jobs": 54,
+        "servicenow_entry_signals": 0
+      }
     }
   ]
 }
