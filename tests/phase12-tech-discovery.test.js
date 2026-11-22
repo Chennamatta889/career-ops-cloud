@@ -12,7 +12,9 @@ test("QA and .NET roles classify as IT",()=>{
 });
 test("graduate title without years is not a confirmed zero-experience role",()=>{
   const entry=text.entryOpportunity({title:"Graduate Engineer Trainee"});
-  assert.notEqual(entry.level,"fresher");
+  assert.equal(entry.level,"fresher");
+  assert.equal(entry.basis,"title");
+  assert.equal(entry.minYears,null);
 });
 test("explicit senior experience is never fresher",()=>{
   assert.equal(text.entryOpportunity({title:"Graduate Engineer",requiredExperience:"5+ years"}).level,"unknown");
