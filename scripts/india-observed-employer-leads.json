@@ -71,15 +71,6 @@
       "observed_role": "Lead Software Engineer - C# / .NET"
     },
     {
-      "provider": "greenhouse",
-      "slug": "zenoti",
-      "name": "Zenoti",
-      "sector": "SaaS",
-      "reference_url": "https://job-boards.greenhouse.io/zenoti",
-      "observed_location": "Hyderabad, Telangana, India",
-      "observed_role": "Senior Software Engineer - .NET + AI"
-    },
-    {
       "provider": "lever",
       "slug": "mapsted",
       "name": "Mapsted",
