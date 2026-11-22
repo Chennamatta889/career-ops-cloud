@@ -11,7 +11,7 @@
   "use strict";
   function normalize(value){
     return String(value==null?"":value).normalize("NFKC").toLowerCase()
-      .replace(/\b(?:asp\s*\.\s*net|\.\s*net|dot\s*net)\b/g,"dotnet")
+      .replace(/(?:\basp\s*\.\s*net\b|\.\s*net\b|\bdot\s*net\b)/g,"dotnet")
       .replace(/c\s*#/g,"csharp")
       .replace(/[^\p{L}\p{N}]+/gu," ").replace(/\s+/g," ").trim()
       // Treat well-known joined technology brands and their spaced forms equally.
