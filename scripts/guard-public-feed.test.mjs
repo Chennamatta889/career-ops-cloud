@@ -1,4 +1,5 @@
 import test from "node:test";
+import {readFileSync} from "node:fs";
 import assert from "node:assert/strict";
 import {judgeFeed} from "./guard-public-feed.mjs";
 import {cutoffDay,MAX_JOB_AGE_DAYS} from "./job-freshness.mjs";
@@ -61,4 +62,11 @@ test("release guard rejects stale, undated, future and expired 30-day cutoffs",(
   assert.equal(judgeFeed({...current,jobs:[...current.jobs,{location:"Hyderabad, India",freshness_date:"2026-04-04"}]},null).ok,false);
   assert.equal(judgeFeed({...current,jobs:[...current.jobs,{location:"Hyderabad, India",freshness_date:null}]},null).ok,false);
   assert.equal(judgeFeed({...current,jobs:[...current.jobs,{location:"Hyderabad, India",freshness_date:"2099-01-01"}]},null).ok,false);
+});
+
+// Guard against literal escaped newlines turning the URL declaration into a comment.
+test("Phase 12 canonical production baseline is executable, not inside a comment",()=>{
+  const source=readFileSync(new URL("./guard-public-feed.mjs",import.meta.url),"utf8");
+  assert.match(source,/^\s*const url=process\.env\.PREVIOUS_PUBLIC_FEED\|\|"https:\/\/chennamatta889\.github\.io\/data\/jobs\.json";/m);
+  assert.doesNotMatch(source,/^\s*\/\/[^\n]*\\n[^\n]*const url=/m);
 });
