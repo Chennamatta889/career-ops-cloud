@@ -42,19 +42,31 @@ export function judgeFeed(next,previous){
       return {ok:false,reason:"Large India job-feed drop during a partial source outage"};
   return {ok:true,reason:"Feed passes safe-publication checks"};
 }
+export async function fetchPreviousFeed(fetcher=fetch){
+  const url=process.env.PREVIOUS_PUBLIC_FEED||"https://chennamatta889.github.io/data/jobs.json";
+  const r=await fetcher(url,{signal:AbortSignal.timeout(8500),headers:{Accept:"application/json"}});
+  if(!r.ok)throw new Error("HTTP "+r.status);
+  const declared=Number(r.headers.get("content-length")||0);
+  if(declared>=12*1024*1024)throw new Error("Production feed exceeds size limit");
+  const body=await r.text();
+  if(body.length>=12*1024*1024)throw new Error("Production feed exceeds size limit");
+  const previous=JSON.parse(body);
+  if(previous?.schema!=="careerops.public-jobs.v1"||!Array.isArray(previous.jobs)||previous.market!=="IN")
+    throw new Error("Invalid production baseline schema");
+  return previous;
+}
 async function run(){
   const next=JSON.parse(readFileSync(process.argv[2]||"public/data/jobs.json","utf8"));
-  let previous=null;
-  // The canonical root Pages site owns the production feed. Comparing against the
-  // retired project path silently disables the release regression baseline.
-  const url=process.env.PREVIOUS_PUBLIC_FEED||"https://chennamatta889.github.io/data/jobs.json";
-  try{
-    const r=await fetch(url,{signal:AbortSignal.timeout(8500),headers:{Accept:"application/json"}});
-    if(r.ok && Number(r.headers.get("content-length")||0)<12*1024*1024){
-      const body=await r.text();
-      if(body.length<12*1024*1024)previous=JSON.parse(body);
-    }
-  }catch(e){console.warn("Old public feed unavailable; validating this scan independently.");}
+  // A missing or invalid production baseline must not silently disable the
+  // large-feed regression check. Fail closed and retry on the next run.
+  let previous;
+  try {
+    previous=await fetchPreviousFeed();
+  } catch (error) {
+    console.error("Release blocked: production job-feed baseline unavailable:",error.message);
+    process.exitCode=1;
+    return;
+  }
   const verdict=judgeFeed(next,previous);
   console.log(verdict.reason);
   if(!verdict.ok)process.exitCode=1;
