@@ -45,7 +45,7 @@ export function judgeFeed(next,previous){
 async function run(){
   const next=JSON.parse(readFileSync(process.argv[2]||"public/data/jobs.json","utf8"));
   let previous=null;
-  const url=process.env.PREVIOUS_PUBLIC_FEED||"https://chennamatta889.github.io/career-ops-cloud/data/jobs.json";
+  // The canonical root Pages site owns the production feed. Comparing against the\n  // retired project path silently disables the release regression baseline.\n  const url=process.env.PREVIOUS_PUBLIC_FEED||"https://chennamatta889.github.io/data/jobs.json";
   try{
     const r=await fetch(url,{signal:AbortSignal.timeout(8500),headers:{Accept:"application/json"}});
     if(r.ok && Number(r.headers.get("content-length")||0)<12*1024*1024){
