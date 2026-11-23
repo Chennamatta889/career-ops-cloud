@@ -13,3 +13,10 @@ test("disabled project deployment cannot automatically trigger stale live QA",()
   assert.doesNotMatch(workflow,/workflow_run:/);
   assert.match(workflow,/node scripts\/browser-live-smoke\.mjs/);
 });
+
+test("Phase 12 release guard compares against the canonical root production feed",()=>{
+  const guard=readFileSync("scripts/guard-public-feed.mjs","utf8");
+  assert.match(guard,/process\.env\.PREVIOUS_PUBLIC_FEED\|\|"https:\/\/chennamatta889\.github\.io\/data\/jobs\.json"/);
+  assert.doesNotMatch(guard,/chennamatta889\.github\.io\/career-ops-cloud\/data\/jobs\.json/);
+  assert.match(guard,/previousIndiaCount>=100/);
+});
